@@ -160,7 +160,7 @@ export default function ToolsPanel() {
         {visibleTools.length === 0 ? (
           <p className="py-2 text-center text-xs opacity-60">{tr(locale, 'All tools are hidden. Show them from Settings → Tools.', 'كل الأدوات مخفية. أظهرها من الإعدادات ← الأدوات.')}</p>
         ) : (
-          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+          <div className="ui-tools-grid grid grid-cols-4 gap-2 sm:grid-cols-6">
             {visibleTools.map(({ id, label, Icon }) => {
               const win = wins.find(item => item.id === id)
               const localizedLabel = label[locale]

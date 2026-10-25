@@ -76,7 +76,7 @@ export default function AuthModal({ open, onClose }: Props) {
             role="dialog"
             aria-modal="true"
             aria-label={text('Account', 'الحساب')}
-            className="glass-strong ui-modal relative w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
+            className="glass-strong ui-modal relative max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto overscroll-contain rounded-2xl border border-white/10 shadow-2xl"
             initial={{ opacity: 0, y: 14, scale: 0.985 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8 }}

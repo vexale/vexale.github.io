@@ -281,7 +281,7 @@ export default function SettingsModal({ open, onClose, onRequestAuth }: Props) {
       {open && (
         <motion.div
           key="settings-modal"
-          className="fixed inset-0 z-[1500] flex items-start justify-end px-3 pt-[4.5rem] sm:px-6"
+          className="fixed inset-0 z-[1500] flex items-end justify-center px-0 pt-14 sm:items-start sm:justify-end sm:px-6 sm:pt-[4.5rem]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -293,7 +293,7 @@ export default function SettingsModal({ open, onClose, onRequestAuth }: Props) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="settings-modal-title"
-            className="glass-strong ui-modal relative flex max-h-[min(78dvh,38rem)] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-white/12 shadow-2xl shadow-black/35"
+            className="glass-strong ui-modal relative flex h-[calc(100dvh-3.5rem)] max-h-[calc(100dvh-3.5rem)] w-full max-w-none flex-col overflow-hidden rounded-t-2xl rounded-b-none border border-white/12 shadow-2xl shadow-black/35 sm:h-auto sm:max-h-[min(78dvh,38rem)] sm:max-w-xl sm:rounded-2xl"
             initial={{ opacity: 0, y: -8, x: 10, scale: 0.985 }}
             animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, x: 8, scale: 0.99 }}

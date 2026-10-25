@@ -45,7 +45,7 @@ export default function Library({ nodeId, color }: Props) {
         ))}
       </div>
       {!shown.length && <p className="text-sm opacity-60">{text('No files match this filter.', 'لا توجد ملفات من هذا النوع.')}</p>}
-      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <ul className="ui-library-grid grid grid-cols-2 gap-3 sm:grid-cols-3">
         {shown.map(item => (
           <li key={item.id} className="ui-card group relative rounded-lg p-2 text-xs">
             {item.kind === 'image' || item.kind === 'drawing' ? (

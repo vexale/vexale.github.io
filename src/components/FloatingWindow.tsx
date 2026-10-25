@@ -113,7 +113,7 @@ export default function FloatingWindow({ title, icon, initial, minimized, onMini
       exit={{ opacity: 0, scale: 0.96 }}
       transition={{ duration: 0.18 }}
       onPointerDown={onFocus}
-      className="glass-strong fixed flex flex-col overflow-hidden rounded-xl"
+      className="glass-strong ui-floating-window fixed flex min-w-0 flex-col overflow-hidden rounded-xl"
       style={{ ...frame, ...solidStyle, zIndex }}
     >
       {/* شريط العنوان: مقبض السحب */}
@@ -160,7 +160,7 @@ export default function FloatingWindow({ title, icon, initial, minimized, onMini
       </div>
 
       {/* المحتوى: يبقى مُركَّباً أثناء التصغير حتى لا تضيع حالة الأداة */}
-      <div className={minimized ? 'hidden' : 'min-h-0 flex-1 overflow-auto p-3'}>{children}</div>
+      <div className={minimized ? 'hidden' : 'min-h-0 min-w-0 flex-1 overflow-auto p-3'}>{children}</div>
 
       {/* مقبض التحجيم (الزاوية السفلية اليمنى) */}
       {!maximized && !minimized && (
@@ -170,7 +170,7 @@ export default function FloatingWindow({ title, icon, initial, minimized, onMini
           onPointerMove={moveResize}
           onPointerUp={endResize}
           onPointerCancel={endResize}
-          className="absolute bottom-0 right-0 z-10 flex h-5 w-5 cursor-nwse-resize touch-none items-end justify-end p-0.5"
+          className="absolute bottom-0 right-0 z-10 flex h-11 w-11 cursor-nwse-resize touch-none items-end justify-end p-2 sm:h-5 sm:w-5 sm:p-0.5"
         >
           <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden>
             <path d="M11 1 1 11M11 6 6 11" stroke="rgba(255,255,255,.45)" strokeWidth="1.5" strokeLinecap="round" />
