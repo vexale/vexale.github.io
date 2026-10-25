@@ -1,3 +1,0 @@
-In-app Browser JS state was preserved. Completed actions were not rolled back; refresh stale UI handles and continue only the remaining work.
-{"code":"UNSUPPORTED_CAPABILITY","location":"at <anonymous> (in-app-browser.js:2:33)"}
-Unknown browser method
