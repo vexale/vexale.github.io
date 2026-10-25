@@ -5,6 +5,7 @@ import { getGoogleIdToken, useGoogleAuth } from '../lib/googleAuth'
 import { submitSupportRequest } from '../lib/libraryApi'
 import { tr, useLocale } from '../lib/i18n'
 import type { SupportCategory } from '../lib/libraryApi'
+import { SUPPORT_EMAIL, SUPPORT_EMAIL_HREF } from '../lib/contact'
 
 interface SupportHubProps {
   onRequestAuth: () => void
@@ -56,6 +57,10 @@ export default function SupportHub({ onRequestAuth }: SupportHubProps) {
           <h3 className="text-sm font-semibold">{text('Send a message', 'أرسل رسالة')}</h3>
           <p className="mt-1 text-xs leading-5 opacity-60">{text('Share an idea or tell us what could work better for you.', 'شاركنا فكرة أو أخبرنا بما يمكن تحسينه من أجلك.')}</p>
         </div>
+        <p className="text-xs leading-5 opacity-70">
+          {text('For direct support, email ', 'للتواصل المباشر مع الدعم، راسل ')}
+          <a href={SUPPORT_EMAIL_HREF} dir="ltr" className="font-medium text-violet-200 underline decoration-violet-200/40 underline-offset-4 hover:text-white">{SUPPORT_EMAIL}</a>
+        </p>
 
         <div role="tablist" aria-label={text('Message type', 'نوع الرسالة')} className="grid grid-cols-2 gap-2">
           <button type="button" role="tab" aria-selected={category === 'suggestion'} onClick={() => { setCategory('suggestion'); setStatus(null) }} className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition ${category === 'suggestion' ? 'border-violet-300/50 bg-violet-300/10' : 'border-white/10 bg-white/[0.025] hover:bg-white/10'}`}>

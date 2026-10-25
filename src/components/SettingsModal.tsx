@@ -13,6 +13,7 @@ import type { TrashEntry } from '../lib/trash'
 import { tr, useLocale } from '../lib/i18n'
 import { requestStudyAI } from '../lib/studyAssistant'
 import type { Locale } from '../lib/i18n'
+import { SUPPORT_EMAIL, SUPPORT_EMAIL_HREF } from '../lib/contact'
 import SupportHub from './SupportHub'
 import LegalModal from './LegalModal'
 
@@ -517,7 +518,10 @@ export default function SettingsModal({ open, onClose, onRequestAuth }: Props) {
                       <button type="button" className={`${chip} w-full`} onClick={() => setLegalDocument('terms')}>{text('Read Terms of Service', 'قراءة شروط الخدمة')}</button>
                     </article>
                   </div>
-                  <p className="rounded-xl border border-amber-200/15 bg-amber-100/[0.04] p-3 text-xs leading-6 text-amber-100/80">{text('These documents identify vexale Development Team in Iraq and vexale.support@gmail.com as the responsible entity and contact.', 'تحدد الوثيقتان فريق تطوير vexale في العراق وبريد vexale.support@gmail.com بوصفهما الجهة المسؤولة ووسيلة التواصل.')}</p>
+                  <p className="rounded-xl border border-amber-200/15 bg-amber-100/[0.04] p-3 text-xs leading-6 text-amber-100/80">
+                    {text('These documents identify the vexale Development Team in Iraq as the responsible entity. Official contact: ', 'تحدد الوثيقتان فريق تطوير vexale في العراق بوصفه الجهة المسؤولة. بريد التواصل الرسمي: ')}
+                    <a href={SUPPORT_EMAIL_HREF} dir="ltr" className="underline decoration-amber-100/40 underline-offset-4 hover:text-white">{SUPPORT_EMAIL}</a>
+                  </p>
                 </section>
               )}
 

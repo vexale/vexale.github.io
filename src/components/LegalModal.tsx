@@ -1,8 +1,10 @@
-import { useEffect, useRef } from 'react'
+import { Fragment, useEffect, useRef } from 'react'
+import type { ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { useLocale } from '../lib/i18n'
 import type { Locale } from '../lib/i18n'
+import { SUPPORT_EMAIL, SUPPORT_EMAIL_HREF } from '../lib/contact'
 
 export type LegalDocument = 'privacy' | 'terms'
 interface Props {
@@ -113,6 +115,17 @@ function localized(locale: Locale, value: LocalizedText): string {
   return value[locale]
 }
 
+function renderLegalText(value: string): ReactNode {
+  const parts = value.split(SUPPORT_EMAIL)
+  if (parts.length === 1) return value
+  return parts.map((part, index) => (
+    <Fragment key={`support-email-${index}`}>
+      {part}
+      {index < parts.length - 1 && <a href={SUPPORT_EMAIL_HREF} dir="ltr" className="underline decoration-white/30 underline-offset-4 hover:text-violet-200">{SUPPORT_EMAIL}</a>}
+    </Fragment>
+  ))
+}
+
 export default function LegalModal({ document: activeDocument, onSelect, onClose }: Props) {
   const locale = useLocale()
   const direction = locale === 'ar' ? 'rtl' : 'ltr'
@@ -198,7 +211,7 @@ export default function LegalModal({ document: activeDocument, onSelect, onClose
                 {contentForDocument.sections.map((section, index) => (
                   <section key={index} id={`legal-section-${index}`} className="scroll-mt-4 space-y-2">
                     <h3 className="border-b border-white/10 pb-2 text-sm font-semibold text-white">{localized(locale, section.heading)}</h3>
-                    {section.paragraphs.map((paragraph, paragraphIndex) => <p key={paragraphIndex}>{localized(locale, paragraph)}</p>)}
+                    {section.paragraphs.map((paragraph, paragraphIndex) => <p key={paragraphIndex}>{renderLegalText(localized(locale, paragraph))}</p>)}
                   </section>
                 ))}
               </div>
