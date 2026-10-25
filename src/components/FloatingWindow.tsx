@@ -30,14 +30,16 @@ interface Props {
 const MIN_W = 280
 const MIN_H = 180
 
-// يبقي النافذة داخل الشاشة: شريط العنوان يظل ظاهراً وقابلاً للإمساك دائماً
+// يحافظ على ظهور النافذة كاملةً داخل مساحة العرض مع ترك هامش آمن حولها
 function clampRect(r: WinRect): WinRect {
   const vw = window.innerWidth
   const vh = window.innerHeight
-  const w = Math.min(Math.max(r.w, MIN_W), Math.max(MIN_W, vw - 16))
-  const h = Math.min(Math.max(r.h, MIN_H), Math.max(MIN_H, vh - 72))
-  const x = Math.min(Math.max(r.x, 100 - w), vw - 100)
-  const y = Math.min(Math.max(r.y, 0), vh - 44)
+  const availableWidth = Math.max(1, vw - 16)
+  const availableHeight = Math.max(1, vh - 72)
+  const w = Math.min(Math.max(r.w, Math.min(MIN_W, availableWidth)), availableWidth)
+  const h = Math.min(Math.max(r.h, Math.min(MIN_H, availableHeight)), availableHeight)
+  const x = Math.min(Math.max(r.x, 8), Math.max(8, vw - w - 8))
+  const y = Math.min(Math.max(r.y, 64), Math.max(64, vh - h - 8))
   return { x, y, w, h }
 }
 
@@ -54,12 +56,30 @@ export default function FloatingWindow({ title, icon, initial, minimized, onMini
   const [maximized, setMaximized] = useState<boolean>(() => window.innerWidth < 640)
   const dragRef = useRef<Gesture | null>(null)
   const resizeRef = useRef<Gesture | null>(null)
+  const rectFrameRef = useRef<number | null>(null)
+  const pendingRectRef = useRef<WinRect | null>(null)
+
+  const scheduleRect = (nextRect: WinRect): void => {
+    pendingRectRef.current = nextRect
+    if (rectFrameRef.current !== null) return
+    rectFrameRef.current = window.requestAnimationFrame(() => {
+      rectFrameRef.current = null
+      const pendingRect = pendingRectRef.current
+      pendingRectRef.current = null
+      if (pendingRect) setRect(clampRect(pendingRect))
+    })
+  }
 
   // عند تغيّر حجم المتصفح نعيد النافذة إلى داخل الشاشة
   useEffect(() => {
     const onResize = (): void => setRect(r => clampRect(r))
     window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
+    return () => {
+      window.removeEventListener('resize', onResize)
+      if (rectFrameRef.current !== null) window.cancelAnimationFrame(rectFrameRef.current)
+      rectFrameRef.current = null
+      pendingRectRef.current = null
+    }
   }, [])
 
   /* ---------- السحب من شريط العنوان ---------- */
@@ -72,7 +92,7 @@ export default function FloatingWindow({ title, icon, initial, minimized, onMini
   const moveDrag = (e: RPointerEvent<HTMLDivElement>): void => {
     const d = dragRef.current
     if (!d) return
-    setRect(clampRect({ ...d.r, x: d.r.x + e.clientX - d.px, y: d.r.y + e.clientY - d.py }))
+    scheduleRect({ ...d.r, x: d.r.x + e.clientX - d.px, y: d.r.y + e.clientY - d.py })
   }
   const endDrag = (): void => { dragRef.current = null }
 
@@ -85,7 +105,7 @@ export default function FloatingWindow({ title, icon, initial, minimized, onMini
   const moveResize = (e: RPointerEvent<HTMLDivElement>): void => {
     const d = resizeRef.current
     if (!d) return
-    setRect(clampRect({ ...d.r, w: d.r.w + e.clientX - d.px, h: d.r.h + e.clientY - d.py }))
+    scheduleRect({ ...d.r, w: d.r.w + e.clientX - d.px, h: d.r.h + e.clientY - d.py })
   }
   const endResize = (): void => { resizeRef.current = null }
 

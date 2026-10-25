@@ -325,6 +325,8 @@ html[data-theme='pastel-ai'] body::before {
   .ui-app button,
   .ui-app [role='button'],
   .ui-app [role='tab'],
+  .ui-app [role='toolbar'] summary,
+  .ui-floating-window [role='toolbar'] summary,
   .ui-floating-window button {
     min-inline-size: 44px;
     min-block-size: 44px;

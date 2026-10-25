@@ -539,7 +539,7 @@ export default function NotesEditor({ nodeId, title, nodePathKey }: NotesEditorP
           <summary className={`${TOOLBAR_BUTTON} list-none cursor-pointer`} aria-label={text('Text colors', 'ألوان النص')} title={text('Text colors', 'ألوان النص')}>
             <Palette size={15} /><span className="text-[11px]">{text('Text', 'النص')}</span>
           </summary>
-          <div className="absolute start-0 top-11 z-30 grid min-w-40 grid-cols-3 gap-1.5 rounded-xl border border-white/10 bg-[#12131d] p-2 shadow-xl">
+          <div className="absolute start-0 top-full z-30 mt-1 grid min-w-40 grid-cols-3 gap-1.5 rounded-xl border border-white/10 bg-[#12131d] p-2 shadow-xl">
             {TEXT_STYLES.map(style => (
               <button key={style.id} type="button" onMouseDown={event => event.preventDefault()} onClick={() => applyNoteStyle(style.id)} aria-label={style.label[locale]} title={style.label[locale]} className="flex h-8 items-center justify-center rounded-lg border border-white/10 text-xs font-semibold transition hover:bg-white/10" style={{ color: style.color }}>A</button>
             ))}
@@ -549,7 +549,7 @@ export default function NotesEditor({ nodeId, title, nodePathKey }: NotesEditorP
           <summary className={`${TOOLBAR_BUTTON} list-none cursor-pointer`} aria-label={text('Highlight colors', 'ألوان التمييز')} title={text('Highlight colors', 'ألوان التمييز')}>
             <Highlighter size={15} /><span className="text-[11px]">{text('Highlight', 'تمييز')}</span>
           </summary>
-          <div className="absolute start-0 top-11 z-30 grid min-w-40 grid-cols-2 gap-1.5 rounded-xl border border-white/10 bg-[#12131d] p-2 shadow-xl">
+          <div className="absolute start-0 top-full z-30 mt-1 grid min-w-40 grid-cols-2 gap-1.5 rounded-xl border border-white/10 bg-[#12131d] p-2 shadow-xl">
             {HIGHLIGHT_STYLES.map(style => (
               <button key={style.id} type="button" onMouseDown={event => event.preventDefault()} onClick={() => applyNoteStyle(style.id)} className="rounded-lg border border-white/10 px-2 py-1.5 text-[11px] transition hover:brightness-110" style={{ background: `${style.color}30`, color: style.color }}>{style.label[locale]}</button>
             ))}

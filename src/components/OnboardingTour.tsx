@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowLeft, ArrowRight, X } from 'lucide-react'
 import { tr, useLocale } from '../lib/i18n'
 
@@ -92,11 +92,26 @@ function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value))
 }
 
+function sameGeometry(current: TourGeometry | null, next: TourGeometry): boolean {
+  return current !== null
+    && current.left === next.left
+    && current.top === next.top
+    && current.width === next.width
+    && current.height === next.height
+    && current.tooltipLeft === next.tooltipLeft
+    && current.tooltipTop === next.tooltipTop
+    && current.lineX1 === next.lineX1
+    && current.lineY1 === next.lineY1
+    && current.lineX2 === next.lineX2
+    && current.lineY2 === next.lineY2
+}
+
 export default function OnboardingTour() {
   const locale = useLocale()
   const [visible, setVisible] = useState(() => typeof window !== 'undefined' && !wasCompleted())
   const [stepIndex, setStepIndex] = useState(0)
   const [geometry, setGeometry] = useState<TourGeometry | null>(null)
+  const geometryFrameRef = useRef<number | null>(null)
   const step = STEPS[stepIndex]
   const isLastStep = stepIndex === STEPS.length - 1
 
@@ -109,7 +124,7 @@ export default function OnboardingTour() {
     if (!visible || typeof window === 'undefined') return
     const target = document.querySelector<HTMLElement>(step.selector) ?? document.querySelector<HTMLElement>(step.fallback)
     if (!target) {
-      setGeometry(null)
+      setGeometry(current => current === null ? current : null)
       return
     }
 
@@ -126,7 +141,7 @@ export default function OnboardingTour() {
     const lineX2 = tooltipLeft + tooltipWidth / 2
     const lineY2 = placeBelow ? tooltipTop : tooltipTop + tooltipHeight
 
-    setGeometry({
+    const nextGeometry: TourGeometry = {
       left: Math.max(4, rect.left - 5),
       top: Math.max(4, rect.top - 5),
       width: rect.width + 10,
@@ -137,23 +152,38 @@ export default function OnboardingTour() {
       lineY1,
       lineX2,
       lineY2,
-    })
+    }
+    setGeometry(current => sameGeometry(current, nextGeometry) ? current : nextGeometry)
   }, [step.fallback, step.selector, visible])
+
+  const scheduleGeometry = useCallback((): void => {
+    if (geometryFrameRef.current !== null) return
+    geometryFrameRef.current = window.requestAnimationFrame(() => {
+      geometryFrameRef.current = null
+      updateGeometry()
+    })
+  }, [updateGeometry])
 
   useEffect(() => {
     if (!visible) return undefined
-    const timer = window.setTimeout(updateGeometry, 100)
-    const observer = new MutationObserver(updateGeometry)
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true })
-    window.addEventListener('resize', updateGeometry)
-    window.addEventListener('scroll', updateGeometry, true)
+    const timer = window.setTimeout(scheduleGeometry, 100)
+    const target = document.querySelector<HTMLElement>(step.selector) ?? document.querySelector<HTMLElement>(step.fallback)
+    const observer = target ? new ResizeObserver(scheduleGeometry) : null
+    const mutations = new MutationObserver(scheduleGeometry)
+    if (target) observer?.observe(target)
+    mutations.observe(document.getElementById('root') ?? document.body, { childList: true, subtree: true })
+    window.addEventListener('resize', scheduleGeometry)
+    window.addEventListener('scroll', scheduleGeometry, true)
     return () => {
       window.clearTimeout(timer)
-      observer.disconnect()
-      window.removeEventListener('resize', updateGeometry)
-      window.removeEventListener('scroll', updateGeometry, true)
+      observer?.disconnect()
+      mutations.disconnect()
+      window.removeEventListener('resize', scheduleGeometry)
+      window.removeEventListener('scroll', scheduleGeometry, true)
+      if (geometryFrameRef.current !== null) window.cancelAnimationFrame(geometryFrameRef.current)
+      geometryFrameRef.current = null
     }
-  }, [stepIndex, updateGeometry, visible])
+  }, [scheduleGeometry, step.fallback, step.selector, stepIndex, visible])
 
   useEffect(() => {
     if (!visible) return undefined
