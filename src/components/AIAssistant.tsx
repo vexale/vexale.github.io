@@ -37,7 +37,7 @@ export default function AIAssistant() {
   return (
     <div className={`fixed bottom-4 z-20 ${viewMode === 'compact' ? 'end-4' : 'start-4'}`}>
       {open ? (
-        <section aria-label={text('Quick library search', 'بحث سريع في المكتبة')} className="flex h-96 w-80 max-w-[90vw] flex-col rounded-xl border border-white/10 bg-[#14171f]/95 shadow-xl backdrop-blur-xl">
+        <section aria-label={text('Quick library search', 'بحث سريع في المكتبة')} className="glass-strong ui-modal ui-quick-search flex h-96 w-80 max-w-[90vw] flex-col shadow-xl">
           <header className="flex items-center justify-between border-b border-white/10 p-3">
             <b className="flex items-center gap-2"><Search size={15} style={{ color }} />{text('Quick library search', 'بحث سريع في المكتبة')}</b>
             <button type="button" aria-label={text('Close search', 'إغلاق البحث')} onClick={() => { setOpen(false); sfx.close() }}><X size={16} /></button>

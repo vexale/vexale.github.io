@@ -197,7 +197,7 @@ export default function OnboardingTour() {
             role="dialog"
             aria-modal="false"
             aria-labelledby="tour-step-title"
-            className="pointer-events-auto fixed w-[min(368px,calc(100vw-32px))] rounded-2xl border border-violet-200/20 bg-[#11121c]/95 p-4 shadow-2xl shadow-black/50 backdrop-blur-xl"
+            className="glass-strong ui-modal pointer-events-auto fixed w-[min(368px,calc(100vw-32px))] rounded-2xl p-4 shadow-2xl shadow-black/50"
             style={{ left: geometry.tooltipLeft, top: geometry.tooltipTop }}
           >
             <div className="mb-3 flex items-start justify-between gap-3">
@@ -238,7 +238,7 @@ export default function OnboardingTour() {
         </>
       )}
       {!geometry && (
-        <div className="pointer-events-auto fixed inset-x-4 top-4 flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#11121c]/95 p-3 text-sm shadow-xl">
+        <div className="glass ui-card pointer-events-auto fixed inset-x-4 top-4 flex items-center justify-between gap-3 p-3 text-sm shadow-xl">
           <span>{step.title[locale]}</span>
           <button type="button" onClick={finish} className="flex items-center gap-1 rounded-lg bg-rose-200/10 px-3 py-2 text-xs text-rose-100">
             <X size={13} />{tr(locale, 'Skip tour', 'تخطَّ الجولة')}

@@ -35,7 +35,7 @@ export default function Uploader({ nodeId, color }: Props) {
       tabIndex={0}
       aria-label={text('Upload files to this section', 'رفع ملفات إلى هذا القسم')}
       onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); input.current?.click() } }}
-      className="flex cursor-pointer flex-col items-center gap-1 rounded-lg border-2 border-dashed p-4 text-sm transition-colors"
+      className="ui-upload-zone flex cursor-pointer flex-col items-center gap-1 border-2 border-dashed p-4 text-sm transition-colors"
       style={{ borderColor: color, background: over ? color + '33' : 'transparent' }}
     >
       <UploadCloud style={{ color }} />

@@ -150,10 +150,10 @@ function TreeNodeItem({ node, parentPath, depth, onNotice, singleSectionFocus = 
 
   return (
     <div
-      className="overflow-hidden rounded-xl transition-shadow"
+      className="ui-category-card overflow-hidden rounded-xl transition-shadow"
       style={{
         borderInlineStart: `3px solid ${color}`,
-        background: open ? `linear-gradient(90deg, ${color}12, rgba(20,23,31,.78))` : 'rgba(20,23,31,.72)',
+        background: open ? `linear-gradient(90deg, ${color}12, var(--ui-surface-raised))` : 'var(--ui-surface)',
         boxShadow: open ? `0 0 0 1px ${color}55, 0 8px 24px ${color}22` : 'none',
       }}
     >
@@ -267,6 +267,7 @@ export default function TreeSidebar() {
     <main
       data-tour="tree-categories"
       data-view-mode={viewMode}
+      data-design-surface="sidebar"
       data-panel-side={locale === 'ar' ? 'right' : 'left'}
       className={singleSectionMode
         ? 'fixed inset-x-0 bottom-0 top-14 z-10 overflow-y-auto overscroll-contain bg-slate-950/95 px-3 py-3 shadow-2xl shadow-black/40 backdrop-blur-xl transition-all duration-300 sm:px-6 sm:py-5'

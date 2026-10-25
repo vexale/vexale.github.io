@@ -10,10 +10,24 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-optical-sizing: auto;
-  --app-background: #080a12;
-  --app-surface: #111421;
-  --app-text: #f4f3fa;
+  --app-background: #0a0f17;
+  --app-surface: #111a27;
+  --app-text: #f3f6fb;
   --accent: #a78bfa;
+  --ui-surface: #111a27;
+  --ui-surface-raised: #182334;
+  --ui-surface-soft: rgba(18, 27, 41, .9);
+  --ui-field-background: #0b1320;
+  --ui-text-primary: #f3f6fb;
+  --ui-text-secondary: #cbd5e1;
+  --ui-text-muted: #a3b0c2;
+  --ui-border: rgba(148, 163, 184, .18);
+  --ui-border-strong: rgba(148, 163, 184, .28);
+  --ui-radius-card: 1rem;
+  --ui-radius-control: .75rem;
+  --ui-space-2: .5rem;
+  --ui-space-3: .75rem;
+  --ui-space-4: 1rem;
   --pastel-background: #17152a;
   --pastel-surface: #28213b;
   --pastel-accent: #d9b8ff;
@@ -40,6 +54,7 @@ body {
   margin: 0;
   background: var(--app-background);
   color: var(--app-text);
+  line-height: 1.55;
 }
 
 body::before {

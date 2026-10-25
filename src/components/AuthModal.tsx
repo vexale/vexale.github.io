@@ -71,12 +71,12 @@ export default function AuthModal({ open, onClose }: Props) {
           exit={{ opacity: 0 }}
           onMouseDown={event => { if (event.target === event.currentTarget) close() }}
         >
-          <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" aria-hidden="true" />
+          <div className="ui-modal-backdrop absolute inset-0" aria-hidden="true" />
           <motion.div
             role="dialog"
             aria-modal="true"
             aria-label={text('Account', 'الحساب')}
-            className="glass-strong relative w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
+            className="glass-strong ui-modal relative w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
             initial={{ opacity: 0, y: 14, scale: 0.985 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8 }}

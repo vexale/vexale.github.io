@@ -226,7 +226,7 @@ export default function SettingsModal({ open, onClose, onRequestAuth }: Props) {
   const [legalDocument, setLegalDocument] = useState<LegalDocument | null>(null)
   const foreground = settings.accentMode === 'custom' ? readableOn(settings.customAccent) : '#111'
   const buttonStyle = (active: boolean): CSSProperties => active ? { background: HI, color: foreground } : {}
-  const chip = 'rounded-lg bg-white/10 px-3 py-1.5 text-sm transition hover:bg-white/20 active:scale-95'
+  const chip = 'ui-button-secondary px-3 py-1.5 text-sm transition active:scale-95'
   const visibleCount = TOOL_CATALOG.filter(tool => !settings.hiddenTools.includes(tool.id)).length
   const text = (english: string, arabic: string): string => tr(locale, english, arabic)
 
@@ -288,12 +288,12 @@ export default function SettingsModal({ open, onClose, onRequestAuth }: Props) {
           transition={{ duration: 0.16, ease: 'easeOut' }}
           onMouseDown={event => { if (event.target === event.currentTarget) close() }}
         >
-          <div aria-hidden="true" className="absolute inset-0 bg-black/15 backdrop-blur-[1px]" />
+          <div aria-hidden="true" className="ui-modal-backdrop absolute inset-0" />
           <motion.div
             role="dialog"
             aria-modal="true"
             aria-labelledby="settings-modal-title"
-            className="glass-strong relative flex max-h-[min(78dvh,38rem)] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-white/12 shadow-2xl shadow-black/35"
+            className="glass-strong ui-modal relative flex max-h-[min(78dvh,38rem)] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-white/12 shadow-2xl shadow-black/35"
             initial={{ opacity: 0, y: -8, x: 10, scale: 0.985 }}
             animate={{ opacity: 1, y: 0, x: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, x: 8, scale: 0.99 }}

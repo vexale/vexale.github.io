@@ -31,7 +31,7 @@ function Layout() {
   }, [])
 
   return (
-    <div lang={locale} dir={directionOf(locale)} data-view-mode={settings.viewMode} className="min-h-screen" style={{ '--accent': accent } as CSSProperties}>
+    <div lang={locale} dir={directionOf(locale)} data-view-mode={settings.viewMode} className="ui-app min-h-screen" style={{ '--accent': accent } as CSSProperties}>
       {isAnimatedTheme(settings.theme) && (
         <Suspense fallback={null}><SpaceBackground color={accent} theme={settings.theme} animationMode={settings.animationMode} /></Suspense>
       )}

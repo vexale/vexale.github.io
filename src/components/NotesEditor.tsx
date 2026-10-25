@@ -25,7 +25,7 @@ type SyncState = 'local' | 'connecting' | 'synced' | 'error'
 type EditorCommand = 'bold' | 'italic' | 'underline' | 'insertUnorderedList' | 'insertOrderedList' | 'undo' | 'redo'
 type NoteStyle = 'text-light' | 'text-dark' | 'text-lilac' | 'text-sky' | 'text-rose' | 'text-mint' | 'highlight-yellow' | 'highlight-lilac' | 'highlight-mint' | 'highlight-rose'
 
-const TOOLBAR_BUTTON = 'flex h-9 min-w-9 items-center justify-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2 text-sm transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-95'
+const TOOLBAR_BUTTON = 'ui-button-secondary flex h-9 min-w-9 items-center justify-center gap-1 px-2 text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-95'
 const ALLOWED_TAGS = new Set(['P', 'DIV', 'BR', 'H2', 'H3', 'H4', 'STRONG', 'B', 'EM', 'I', 'U', 'S', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'PRE', 'CODE', 'A', 'HR', 'SPAN'])
 const ALLOWED_NOTE_STYLES = new Set<NoteStyle>([
   'text-light', 'text-dark', 'text-lilac', 'text-sky', 'text-rose', 'text-mint',

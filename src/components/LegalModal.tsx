@@ -174,11 +174,11 @@ export default function LegalModal({ document: activeDocument, onSelect, onClose
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}
         >
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" aria-hidden="true" />
+          <div className="ui-modal-backdrop absolute inset-0" aria-hidden="true" />
           <motion.section
             ref={dialogRef}
             role="dialog" aria-modal="true" aria-labelledby="legal-title" dir={direction} lang={locale}
-            className="glass-strong relative flex max-h-[min(88dvh,52rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
+            className="glass-strong ui-modal relative flex max-h-[min(88dvh,52rem)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl"
             initial={{ opacity: 0, y: 12, scale: 0.985 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8 }}
             onMouseDown={event => event.stopPropagation()}
           >

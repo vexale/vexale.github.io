@@ -47,7 +47,7 @@ export default function Library({ nodeId, color }: Props) {
       {!shown.length && <p className="text-sm opacity-60">{text('No files match this filter.', 'لا توجد ملفات من هذا النوع.')}</p>}
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {shown.map(item => (
-          <li key={item.id} className="group relative rounded-lg bg-white/5 p-2 text-xs">
+          <li key={item.id} className="ui-card group relative rounded-lg p-2 text-xs">
             {item.kind === 'image' || item.kind === 'drawing' ? (
               <img src={item.url} alt={item.name} className="h-24 w-full rounded object-cover" />
             ) : item.kind === 'audio' ? (

@@ -4,11 +4,11 @@ import { PALETTE, findNode } from '../shared'
 import type { TNode } from '../shared'
 import { isSupabaseConfigured } from '../lib/supabase'
 
-/* ============ الأنماط المشتركة (زجاج داكن + بنفسجي) ============ */
+/* ============ رموز نظام التصميم المشترك ============ */
 export const ACCENT = '#a78bfa'
-export const panel = 'rounded-xl border border-white/10 bg-white/[0.04] backdrop-blur-md'
-export const btn = 'rounded-lg bg-white/10 px-3 py-1.5 text-sm transition hover:bg-white/20 active:scale-95'
-export const field = 'rounded-lg bg-white/10 px-3 py-1.5 text-sm outline-none transition focus:ring-1 focus:ring-[#a78bfa]'
+export const panel = 'ui-panel rounded-xl backdrop-blur-md'
+export const btn = 'ui-button-secondary px-3 py-1.5 text-sm transition active:scale-95'
+export const field = 'ui-field px-3 py-1.5 text-sm outline-none transition focus-visible:ring-2'
 
 /* ============ توافر خدمة الذكاء الاصطناعي ============ */
 // الطلبات تمر عبر Supabase Edge Function؛ لا يُرسل مفتاح Gemini إلى المتصفح.
