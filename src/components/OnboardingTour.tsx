@@ -30,8 +30,8 @@ const STEPS: readonly TourStep[] = [
     fallback: '[data-tour="tree-categories"]',
     title: { en: 'Your category tree', ar: 'شجرة الأقسام' },
     description: {
-      en: 'Build a clear hierarchy for Trading, Welding, Quran, Art, Learning, Projects, or any subject you choose.',
-      ar: 'أنشئ هيكلاً واضحاً للتداول واللحام والقرآن والفن والتعلم والمشاريع أو لأي موضوع تختاره.',
+      en: 'Organize Quran study, science, languages, revision, or any subject you choose.',
+      ar: 'نظّم أقساماً لدراسة القرآن والعلوم واللغات والمراجعة أو أي مادة تختارها.',
     },
   },
   {

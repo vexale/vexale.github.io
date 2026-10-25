@@ -38,6 +38,8 @@ function resolveSection(tree: TNode[], path: string[]): { node: TNode; parentPat
   return node ? { node, parentPath: path.slice(0, -1), depth: path.length - 1 } : null
 }
 
+const HIDDEN_EMPTY_STARTER_CATEGORY_IDS = new Set(['domain-trading', 'domain-welding'])
+
 interface AddFormProps {
   placeholder: string
   color: string
@@ -244,10 +246,16 @@ export default function TreeSidebar() {
   const compactMode = viewMode === 'compact'
   const singleSectionMode = viewMode === 'single-section'
   const { tree, path, setPath, addNode } = useTree()
+  const { items } = useLibrary()
   const [notice, setNotice] = useState('')
   const text = (english: string, arabic: string): string => tr(locale, english, arabic)
-  const options = sectionOptions(tree)
-  const selected = resolveSection(tree, path)
+  const visibleTree = tree.filter(node =>
+    !HIDDEN_EMPTY_STARTER_CATEGORY_IDS.has(node.id) ||
+    node.children.length > 0 ||
+    items.some(item => item.nodeId === node.id),
+  )
+  const options = sectionOptions(visibleTree)
+  const selected = resolveSection(visibleTree, path)
 
   useEffect(() => {
     if (!notice) return undefined
@@ -301,7 +309,7 @@ export default function TreeSidebar() {
               </motion.div>
             ) : (
               <motion.p key="no-selected-section" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="glass rounded-2xl px-4 py-10 text-center text-sm opacity-70">
-                {tree.length
+                {visibleTree.length
                   ? text('Choose a section from the selector above to focus on it.', 'اختر قسماً من القائمة أعلاه لعرضه وحده.')
                   : text('There are no sections yet. Switch to full view to create one.', 'لا توجد أقسام بعد. انتقل إلى العرض الكامل لإنشاء قسم.')}
               </motion.p>
@@ -315,7 +323,7 @@ export default function TreeSidebar() {
               <FolderPlus size={16} style={{ color: 'var(--accent)' }} />{text('Create a top-level category', 'إنشاء قسم رئيسي')}
             </div>
             <AddForm
-              placeholder={text('Trading, Welding, Quran, Art, Learning…', 'التداول، اللحام، القرآن، الفن، التعلم…')}
+              placeholder={text('Quran, science, languages, exam prep…', 'القرآن، العلوم، اللغات، مراجعة الاختبارات…')}
               color="var(--accent)"
               addLabel={text('Add category', 'إضافة قسم')}
               onSubmit={title => {
@@ -332,9 +340,9 @@ export default function TreeSidebar() {
             <ToolsPanel />
           </section>
 
-          {tree.length === 0 && <p className="py-6 text-center text-sm opacity-60">{text('No categories yet. Create your first one above.', 'لا توجد أقسام بعد. أنشئ أول قسم من الأعلى.')}</p>}
+          {visibleTree.length === 0 && <p className="py-6 text-center text-sm opacity-60">{text('No categories yet. Create your first one above.', 'لا توجد أقسام بعد. أنشئ أول قسم من الأعلى.')}</p>}
           <div className={compactMode ? 'space-y-2' : 'space-y-2.5'}>
-            {tree.map(node => <TreeNodeItem key={node.id} node={node} parentPath={[]} depth={0} onNotice={setNotice} />)}
+            {visibleTree.map(node => <TreeNodeItem key={node.id} node={node} parentPath={[]} depth={0} onNotice={setNotice} />)}
           </div>
         </>
       )}

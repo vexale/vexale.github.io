@@ -105,7 +105,7 @@ export default function SupportHub({ onRequestAuth }: SupportHubProps) {
         </details>
         <details className="rounded-xl border border-white/10 bg-white/[0.025] p-3">
           <summary className="cursor-pointer list-none text-sm font-medium">{text('Which domains can I organize here?', 'ما المجالات التي يمكن تنظيمها هنا؟')}</summary>
-          <p className="mt-2 text-xs leading-6 opacity-70">{text('Create a structure for trading, welding, Quran study, art, learning, projects, or any topic that matters to you.', 'أنشئ بنية للتداول أو اللحام أو دراسة القرآن أو الفن أو التعلم أو المشاريع، أو لأي موضوع يهمك.')}</p>
+          <p className="mt-2 text-xs leading-6 opacity-70">{text('Create a structure for Quran study, science, languages, exam revision, or any subject that matters to you.', 'أنشئ بنية لدراسة القرآن أو العلوم أو اللغات أو مراجعة الاختبارات أو أي مادة تهمك.')}</p>
         </details>
       </section>
     </div>
