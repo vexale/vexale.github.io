@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Columns3, Expand, Focus, Languages, Settings, UserRound } from 'lucide-react'
+import { Columns3, Expand, Focus, Languages, Monitor, Settings, UserRound } from 'lucide-react'
 import { useGoogleAuth } from '../lib/googleAuth'
 import { setLocale, tr, useLocale } from '../lib/i18n'
 import type { ViewMode } from '../lib/settings'
 import { sfx } from '../shared'
+import { useDesktopMessages } from '../modes/desktop/i18n'
 
 function ProfileBadge({ accent, onClick }: { accent: string; onClick: () => void }) {
   const locale = useLocale()
@@ -31,12 +32,14 @@ interface Props {
   accent: string
   viewMode: ViewMode
   onToggleViewMode: () => void
+  onSwitchToOffice: () => void
   onOpenSettings: () => void
   onOpenAuth: () => void
 }
 
-export default function AppHeader({ accent, viewMode, onToggleViewMode, onOpenSettings, onOpenAuth }: Props) {
+export default function AppHeader({ accent, viewMode, onToggleViewMode, onSwitchToOffice, onOpenSettings, onOpenAuth }: Props) {
   const locale = useLocale()
+  const desktopMessages = useDesktopMessages()
   const languageLabel = locale === 'en' ? 'العربية' : 'English'
   const modeLabel = viewMode === 'focus'
     ? tr(locale, 'Full', 'كامل')
@@ -61,6 +64,9 @@ export default function AppHeader({ accent, viewMode, onToggleViewMode, onOpenSe
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <button type="button" aria-label={tr(locale, 'Switch interface language', 'تبديل لغة الواجهة')} title={tr(locale, 'Switch language', 'تبديل اللغة')} onClick={() => { sfx.click(); setLocale(locale === 'en' ? 'ar' : 'en') }} className="flex h-11 min-w-11 items-center justify-center gap-0 rounded-full border border-white/10 bg-white/5 px-2 text-xs transition hover:bg-white/10 active:scale-95 sm:h-9 sm:min-w-0 sm:gap-1.5 sm:px-3">
             <Languages size={15} /><span className="hidden sm:inline">{languageLabel}</span>
+          </button>
+          <button type="button" aria-label={desktopMessages.mode.switchToOffice} title={desktopMessages.mode.switchToOffice} onClick={() => { sfx.click(); onSwitchToOffice() }} className="flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2 text-xs transition hover:bg-white/10 active:scale-95 sm:h-9 sm:min-w-0 sm:px-3">
+            <Monitor size={16} /><span className="hidden lg:inline">{desktopMessages.mode.office}</span>
           </button>
           <button type="button" aria-label={viewLabel} title={viewLabel} aria-pressed={viewMode === 'single-section'} onClick={() => { sfx.click(); onToggleViewMode() }} className="flex h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2 text-xs transition hover:bg-white/10 active:scale-95 sm:h-9 sm:min-w-0 sm:px-3">
             <ViewIcon size={16} />

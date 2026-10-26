@@ -12,8 +12,39 @@ import { activateWorkspaceFromInvite } from './lib/sharedWorkspace'
 import { directionOf, useLocale } from './lib/i18n'
 
 const SpaceBackground = lazy(() => import('./components/SpaceBackground'))
+const DesktopApp = lazy(() => import('./modes/desktop/DesktopApp'))
 
-function Layout() {
+type WorkspaceMode = 'space' | 'office'
+const WORKSPACE_MODE_KEY = 'vexale-workspace-mode-v1'
+
+function readWorkspaceMode(): WorkspaceMode {
+  if (typeof window === 'undefined') return 'space'
+  try {
+    return window.localStorage.getItem(WORKSPACE_MODE_KEY) === 'office' ? 'office' : 'space'
+  } catch {
+    return 'space'
+  }
+}
+
+function WorkspaceRouter() {
+  const [mode, setMode] = useState<WorkspaceMode>(readWorkspaceMode)
+  const selectMode = useCallback((nextMode: WorkspaceMode): void => {
+    setMode(nextMode)
+    try {
+      window.localStorage.setItem(WORKSPACE_MODE_KEY, nextMode)
+    } catch {
+      // يبقى تبديل الوضع فعالاً خلال الجلسة عند تعذر التخزين.
+    }
+  }, [])
+  const switchToOffice = useCallback((): void => selectMode('office'), [selectMode])
+  const switchToSpace = useCallback((): void => selectMode('space'), [selectMode])
+
+  return mode === 'office'
+    ? <Suspense fallback={null}><DesktopApp onSwitchToSpace={switchToSpace} /></Suspense>
+    : <Layout onSwitchToOffice={switchToOffice} />
+}
+
+function Layout({ onSwitchToOffice }: { onSwitchToOffice: () => void }) {
   const locale = useLocale()
   const { accent: branchAccent } = useTree()
   const settings = useSettings()
@@ -37,7 +68,7 @@ function Layout() {
       )}
       {settings.theme === 'space-static' && <div className="space-static" aria-hidden="true" />}
 
-      <AppHeader accent={accent} viewMode={settings.viewMode} onToggleViewMode={() => updateSettings({
+      <AppHeader accent={accent} viewMode={settings.viewMode} onSwitchToOffice={onSwitchToOffice} onToggleViewMode={() => updateSettings({
         viewMode: settings.viewMode === 'focus' ? 'compact' : settings.viewMode === 'compact' ? 'single-section' : 'focus',
       })} onOpenSettings={openSettings} onOpenAuth={openAuth} />
       <TreeSidebar />
@@ -54,7 +85,7 @@ export default function App() {
   return (
     <LibraryProvider>
       <TreeProvider>
-        <Layout />
+        <WorkspaceRouter />
       </TreeProvider>
     </LibraryProvider>
   )

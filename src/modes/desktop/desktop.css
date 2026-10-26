@@ -1,0 +1,275 @@
+@import './tokens.css';
+
+html[data-mode='desktop'] .desk-app {
+  display: grid;
+  min-height: 100vh;
+  grid-template-columns: 264px minmax(0, 1fr);
+  grid-template-rows: 64px minmax(0, 1fr);
+  background: var(--desk-bg);
+  color: var(--desk-text);
+  font-family: inherit;
+}
+
+html[data-mode='desktop'] .desk-topbar {
+  z-index: 5;
+  display: flex;
+  min-width: 0;
+  grid-column: 1 / -1;
+  grid-row: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-inline: 24px;
+  border-bottom: 1px solid var(--desk-border);
+  background: var(--desk-surface);
+}
+
+html[data-mode='desktop'] .desk-brand,
+html[data-mode='desktop'] .desk-topbar-actions,
+html[data-mode='desktop'] .desk-sidebar-heading,
+html[data-mode='desktop'] .desk-navigation-link,
+html[data-mode='desktop'] .desk-mode-switch {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+html[data-mode='desktop'] .desk-brand {
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+html[data-mode='desktop'] .desk-brand-mark {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--desk-border);
+  border-radius: 8px;
+  background: var(--desk-elevated);
+  color: var(--desk-accent);
+}
+
+html[data-mode='desktop'] .desk-brand-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-mode='desktop'] .desk-workspace-label {
+  overflow: hidden;
+  color: var(--desk-muted);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-mode='desktop'] .desk-topbar-actions {
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+html[data-mode='desktop'] .desk-button,
+html[data-mode='desktop'] .desk-navigation-link {
+  min-height: 40px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--desk-text);
+  cursor: pointer;
+  font: inherit;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+html[data-mode='desktop'] .desk-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 550;
+}
+
+html[data-mode='desktop'] .desk-button:hover,
+html[data-mode='desktop'] .desk-navigation-link:hover {
+  background: var(--desk-hover);
+}
+
+html[data-mode='desktop'] .desk-button-primary {
+  border-color: var(--desk-accent);
+  background: var(--desk-accent);
+  color: var(--desk-accent-foreground);
+}
+
+html[data-mode='desktop'] .desk-button-primary:hover {
+  background: var(--desk-selection);
+}
+
+html[data-mode='desktop'] .desk-sidebar {
+  display: flex;
+  min-height: 0;
+  grid-column: 1;
+  grid-row: 2;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px 14px;
+  border-inline-end: 1px solid var(--desk-border);
+  background: var(--desk-surface);
+}
+
+html[data-mode='desktop'] .desk-sidebar-heading {
+  gap: 10px;
+  padding: 0 10px;
+  color: var(--desk-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+html[data-mode='desktop'] .desk-navigation {
+  display: grid;
+  gap: 4px;
+}
+
+html[data-mode='desktop'] .desk-navigation-link {
+  width: 100%;
+  gap: 12px;
+  padding: 8px 10px;
+  text-align: start;
+  font-size: 14px;
+}
+
+html[data-mode='desktop'] .desk-navigation-link[aria-current='page'] {
+  border-color: var(--desk-border);
+  background: var(--desk-elevated);
+  color: var(--desk-text);
+}
+
+html[data-mode='desktop'] .desk-navigation-link svg,
+html[data-mode='desktop'] .desk-button svg {
+  flex: 0 0 auto;
+}
+
+html[data-mode='desktop'] .desk-sidebar-spacer {
+  flex: 1 1 auto;
+}
+
+html[data-mode='desktop'] .desk-mode-switch {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+html[data-mode='desktop'] .desk-main {
+  min-width: 0;
+  grid-column: 2;
+  grid-row: 2;
+  padding: 32px clamp(20px, 4vw, 56px);
+}
+
+html[data-mode='desktop'] .desk-page {
+  width: min(100%, var(--desk-content-width, 1040px));
+  margin-inline: auto;
+}
+
+html[data-mode='desktop'] .desk-page-header {
+  margin-block-end: 28px;
+}
+
+html[data-mode='desktop'] .desk-page-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+html[data-mode='desktop'] .desk-page-description {
+  margin-block: 8px 0;
+  color: var(--desk-muted);
+  font-size: 14px;
+}
+
+html[data-mode='desktop'] .desk-welcome {
+  display: grid;
+  min-height: 220px;
+  align-content: center;
+  gap: 12px;
+  padding: 28px;
+  border: 1px solid var(--desk-border);
+  border-radius: 12px;
+  background: var(--desk-surface);
+}
+
+html[data-mode='desktop'] .desk-welcome-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+html[data-mode='desktop'] .desk-welcome-copy {
+  max-width: 58ch;
+  margin: 0;
+  color: var(--desk-muted);
+  font-size: 14px;
+}
+
+html[data-mode='desktop'] .desk-navigation-link:focus-visible,
+html[data-mode='desktop'] .desk-button:focus-visible {
+  outline-color: var(--desk-accent);
+}
+
+@media (max-width: 760px) {
+  html[data-mode='desktop'] .desk-app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 60px auto minmax(0, 1fr);
+  }
+
+  html[data-mode='desktop'] .desk-topbar {
+    gap: 8px;
+    padding-inline: 12px;
+  }
+
+  html[data-mode='desktop'] .desk-workspace-label {
+    display: none;
+  }
+
+  html[data-mode='desktop'] .desk-sidebar {
+    grid-column: 1;
+    grid-row: 2;
+    gap: 8px;
+    padding: 8px 12px;
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--desk-border);
+  }
+
+  html[data-mode='desktop'] .desk-sidebar-heading,
+  html[data-mode='desktop'] .desk-sidebar-spacer,
+  html[data-mode='desktop'] .desk-mode-switch {
+    display: none;
+  }
+
+  html[data-mode='desktop'] .desk-navigation {
+    display: flex;
+    overflow-x: auto;
+    gap: 4px;
+  }
+
+  html[data-mode='desktop'] .desk-navigation-link {
+    width: auto;
+    flex: 0 0 auto;
+  }
+
+  html[data-mode='desktop'] .desk-main {
+    grid-column: 1;
+    grid-row: 3;
+    padding: 24px 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-mode='desktop'] .desk-button,
+  html[data-mode='desktop'] .desk-navigation-link {
+    transition: none;
+  }
+}
