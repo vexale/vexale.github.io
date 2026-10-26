@@ -6,6 +6,8 @@ import { useSettings } from '../../lib/settings'
 import { useDesktopMessages } from './i18n'
 import { useDesktopPreferences } from './preferences'
 import type { DesktopPage } from './types'
+import DesktopLibraryPage from './DesktopLibraryPage'
+import DesktopSectionTree from './DesktopSectionTree'
 import './desktop.css'
 
 interface DesktopAppProps {
@@ -40,6 +42,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
   const preferences = useDesktopPreferences()
   const [page, setPage] = useState<DesktopPage>('library')
   const currentPage = messages.pages[page]
+  const libraryPage = page === 'library'
 
   useLayoutEffect(() => {
     const root = document.documentElement
@@ -109,17 +112,16 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
         <div className="desk-sidebar-spacer" />
       </aside>
 
-      <main className="desk-main" id="main-content">
+      {libraryPage && <aside className="desk-section-pane"><DesktopSectionTree /></aside>}
+
+      <main className={`desk-main ${libraryPage ? 'desk-main-with-sections' : 'desk-main-full'}`} id="main-content">
         <div className="desk-page">
           <header className="desk-page-header">
             <h1 className="desk-page-title">{currentPage.title}</h1>
             <p className="desk-page-description">{currentPage.description}</p>
           </header>
-          {page === 'library' ? (
-            <section className="desk-welcome" aria-labelledby="desk-welcome-title">
-              <h2 id="desk-welcome-title" className="desk-welcome-title">{messages.shell.welcomeTitle}</h2>
-              <p className="desk-welcome-copy">{messages.shell.welcomeBody}</p>
-            </section>
+          {libraryPage ? (
+            <DesktopLibraryPage />
           ) : (
             <section className="desk-welcome" aria-label={currentPage.title}>
               <p className="desk-welcome-copy">{currentPage.description}</p>
