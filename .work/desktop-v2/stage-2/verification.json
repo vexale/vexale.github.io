@@ -1,0 +1,82 @@
+{
+  "appUrl": "file:///C:/Users/VICTUS/Desktop/3d-library-app/dist/index.html",
+  "rootTitle": "Quran",
+  "sharing": {
+    "spaceUploadVisibleInSpace": true,
+    "spaceUploadVisibleInOffice": true,
+    "officeUploadVisibleInSpace": true
+  },
+  "tree": {
+    "expanded": true,
+    "collapsed": true
+  },
+  "layout": {
+    "englishSidebarLeft": true,
+    "arabicSidebarRight": true
+  },
+  "pageErrors": [],
+  "consoleErrors": [],
+  "blockedResources": [],
+  "screenshots": {
+    "tree-expanded-en-1280x800.png": {
+      "path": "C:\\Users\\VICTUS\\Desktop\\3d-library-app\\.work\\desktop-v2\\stage-2\\tree-expanded-en-1280x800.png",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "horizontalOverflow": false,
+      "bodyWidth": 1280,
+      "sidebarX": 0
+    },
+    "tree-collapsed-en-1280x800.png": {
+      "path": "C:\\Users\\VICTUS\\Desktop\\3d-library-app\\.work\\desktop-v2\\stage-2\\tree-collapsed-en-1280x800.png",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "horizontalOverflow": false,
+      "bodyWidth": 1280,
+      "sidebarX": 0
+    },
+    "section-en-1280x800.png": {
+      "path": "C:\\Users\\VICTUS\\Desktop\\3d-library-app\\.work\\desktop-v2\\stage-2\\section-en-1280x800.png",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "horizontalOverflow": false,
+      "bodyWidth": 1280,
+      "sidebarX": 0
+    },
+    "section-ar-1280x800.png": {
+      "path": "C:\\Users\\VICTUS\\Desktop\\3d-library-app\\.work\\desktop-v2\\stage-2\\section-ar-1280x800.png",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "horizontalOverflow": false,
+      "bodyWidth": 1280,
+      "sidebarX": 1056
+    },
+    "section-ar-390x844.png": {
+      "path": "C:\\Users\\VICTUS\\Desktop\\3d-library-app\\.work\\desktop-v2\\stage-2\\section-ar-390x844.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "bodyWidth": 390,
+      "sidebarX": 0
+    },
+    "section-en-390x844.png": {
+      "path": "C:\\Users\\VICTUS\\Desktop\\3d-library-app\\.work\\desktop-v2\\stage-2\\section-en-390x844.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "bodyWidth": 390,
+      "sidebarX": 0
+    }
+  }
+}

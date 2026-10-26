@@ -1,0 +1,50 @@
+{
+  "appUrl": "file:///C:/Users/VICTUS/Desktop/3d-library-app/dist/index.html",
+  "mode": "desktop",
+  "currentPage": "Library",
+  "pageErrors": [],
+  "blockedResources": [
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&display=swap",
+      "failure": "net::ERR_NETWORK_ACCESS_DENIED"
+    }
+  ],
+  "captures": {
+    "en-1280x800.png": {
+      "file": "C:\\Users\\VICTUS\\Desktop\\3d-library-app\\.work\\desktop-v2\\stage-1\\en-1280x800.png",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "horizontalOverflow": false,
+      "sidebarX": 0
+    },
+    "ar-1280x800.png": {
+      "file": "C:\\Users\\VICTUS\\Desktop\\3d-library-app\\.work\\desktop-v2\\stage-1\\ar-1280x800.png",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "horizontalOverflow": false,
+      "sidebarX": 1016
+    },
+    "ar-390x844.png": {
+      "file": "C:\\Users\\VICTUS\\Desktop\\3d-library-app\\.work\\desktop-v2\\stage-1\\ar-390x844.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "sidebarX": 0
+    },
+    "en-390x844.png": {
+      "file": "C:\\Users\\VICTUS\\Desktop\\3d-library-app\\.work\\desktop-v2\\stage-1\\en-390x844.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "sidebarX": 0
+    }
+  }
+}
