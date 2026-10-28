@@ -217,6 +217,8 @@ interface TreeCtx {
   setPath: (p: string[]) => void
   addNode: (parentId: string | null, title: string) => string
   removeNode: (id: string) => void
+  renameNode: (id: string, title: string) => void
+  reorderNode: (id: string, parentId: string | null, index: number) => boolean
   restoreNode: (node: TNode, parentId: string | null, index: number) => RestoreResult
   titleOf: (id: string) => string
   accent: string
@@ -257,6 +259,34 @@ export function TreeProvider({ children }: { children: ReactNode }) {
     setTree(t => removeFrom(t, id))
   }
 
+  const renameNode: TreeCtx['renameNode'] = (id, title) => {
+    const nextTitle = title.trim()
+    if (!nextTitle || !findNode(treeRef.current, id)) return
+    const next = mapTree(treeRef.current, id, node => ({ ...node, title: nextTitle }))
+    treeRef.current = next
+    setTree(next)
+  }
+
+  const reorderNode: TreeCtx['reorderNode'] = (id, parentId, index) => {
+    const current = treeRef.current
+    const node = findNode(current, id)
+    const siblings = parentId === null ? current : findNode(current, parentId)?.children
+    if (!node || !siblings || (parentId !== null && (parentId === id || collectIds(node).includes(parentId)))) return false
+    const fromIndex = siblings.findIndex(sibling => sibling.id === id)
+    if (fromIndex < 0 || siblings.length < 2) return fromIndex >= 0
+    const nextSiblings = [...siblings]
+    nextSiblings.splice(fromIndex, 1)
+    const targetIndex = Math.min(Math.max(0, Math.trunc(index)), nextSiblings.length)
+    if (targetIndex === fromIndex) return true
+    nextSiblings.splice(targetIndex, 0, node)
+    const next = parentId === null
+      ? nextSiblings
+      : mapTree(current, parentId, parent => ({ ...parent, children: nextSiblings }))
+    treeRef.current = next
+    setTree(next)
+    return true
+  }
+
   // استعادة فرع من السلة إلى موضعه الأصلي، أو كقسم رئيسي إن لم يعد أبوه موجوداً
   const restoreNode: TreeCtx['restoreNode'] = (node, parentId, index) => {
     const current = treeRef.current
@@ -277,7 +307,7 @@ export function TreeProvider({ children }: { children: ReactNode }) {
   const accent = lastOpen ? PALETTE[lastOpen.ci % PALETTE.length] : '#8ab4ff'
 
   return (
-    <TreeContext.Provider value={{ tree, path, setPath, addNode, removeNode, restoreNode, titleOf, accent }}>
+      <TreeContext.Provider value={{ tree, path, setPath, addNode, removeNode, renameNode, reorderNode, restoreNode, titleOf, accent }}>
       {children}
     </TreeContext.Provider>
   )

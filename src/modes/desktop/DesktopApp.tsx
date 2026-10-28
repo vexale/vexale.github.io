@@ -8,6 +8,7 @@ import { updateDesktopPreferences, useDesktopPreferences } from './preferences'
 import type { DesktopPage } from './types'
 import DesktopLibraryPage from './DesktopLibraryPage'
 import DesktopSectionTree from './DesktopSectionTree'
+import DesktopThemesPage from './DesktopThemesPage'
 import './desktop.css'
 
 interface DesktopAppProps {
@@ -75,6 +76,15 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
     root.style.setProperty('--desk-font-size', `${preferences.fontSize}px`)
     root.style.setProperty('--desk-line-height', String(preferences.lineHeight))
     root.style.setProperty('--desk-content-width', CONTENT_WIDTHS[preferences.contentWidth])
+    if (preferences.accentColor) {
+      root.style.setProperty('--desk-accent', preferences.accentColor)
+      root.style.setProperty('--desk-accent-soft', `color-mix(in srgb, ${preferences.accentColor} 20%, var(--desk-surface))`)
+      root.style.setProperty('--desk-selection', `color-mix(in srgb, ${preferences.accentColor} 45%, var(--desk-surface))`)
+    } else {
+      root.style.removeProperty('--desk-accent')
+      root.style.removeProperty('--desk-accent-soft')
+      root.style.removeProperty('--desk-selection')
+    }
 
     return () => {
       if (previousMode) root.dataset.mode = previousMode
@@ -86,6 +96,9 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
       root.style.removeProperty('--desk-font-size')
       root.style.removeProperty('--desk-line-height')
       root.style.removeProperty('--desk-content-width')
+      root.style.removeProperty('--desk-accent')
+      root.style.removeProperty('--desk-accent-soft')
+      root.style.removeProperty('--desk-selection')
     }
   }, [preferences, spaceSettings.theme])
 
@@ -188,6 +201,8 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
           </header>
           {libraryPage ? (
             <DesktopLibraryPage />
+          ) : page === 'settings' ? (
+            <DesktopThemesPage />
           ) : (
             <section className="desk-welcome" aria-label={currentPage.title}>
               <p className="desk-welcome-copy">{currentPage.description}</p>

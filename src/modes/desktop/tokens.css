@@ -1,4 +1,5 @@
-html[data-mode='desktop'][data-theme='calm-violet'] {
+html[data-mode='desktop'][data-theme='calm-violet'],
+html[data-mode='desktop'] .desk-theme-preview[data-theme='calm-violet'] {
   color-scheme: dark;
   --desk-bg: #15171c;
   --desk-surface: #1a1c23;
@@ -17,7 +18,8 @@ html[data-mode='desktop'][data-theme='calm-violet'] {
   --desk-warning: #d7b16e;
 }
 
-html[data-mode='desktop'][data-theme='charcoal'] {
+html[data-mode='desktop'][data-theme='charcoal'],
+html[data-mode='desktop'] .desk-theme-preview[data-theme='charcoal'] {
   color-scheme: dark;
   --desk-bg: #151515;
   --desk-surface: #1c1c1c;
@@ -36,7 +38,8 @@ html[data-mode='desktop'][data-theme='charcoal'] {
   --desk-warning: #d3ae70;
 }
 
-html[data-mode='desktop'][data-theme='midnight-blue'] {
+html[data-mode='desktop'][data-theme='midnight-blue'],
+html[data-mode='desktop'] .desk-theme-preview[data-theme='midnight-blue'] {
   color-scheme: dark;
   --desk-bg: #121821;
   --desk-surface: #18212c;
@@ -55,7 +58,8 @@ html[data-mode='desktop'][data-theme='midnight-blue'] {
   --desk-warning: #d9b36f;
 }
 
-html[data-mode='desktop'][data-theme='forest'] {
+html[data-mode='desktop'][data-theme='forest'],
+html[data-mode='desktop'] .desk-theme-preview[data-theme='forest'] {
   color-scheme: dark;
   --desk-bg: #131915;
   --desk-surface: #1a211c;
@@ -74,7 +78,8 @@ html[data-mode='desktop'][data-theme='forest'] {
   --desk-warning: #d6b56e;
 }
 
-html[data-mode='desktop'][data-theme='sand-dark'] {
+html[data-mode='desktop'][data-theme='sand-dark'],
+html[data-mode='desktop'] .desk-theme-preview[data-theme='sand-dark'] {
   color-scheme: dark;
   --desk-bg: #1a1814;
   --desk-surface: #211e19;
@@ -93,7 +98,8 @@ html[data-mode='desktop'][data-theme='sand-dark'] {
   --desk-warning: #debd78;
 }
 
-html[data-mode='desktop'][data-theme='rose-dusk'] {
+html[data-mode='desktop'][data-theme='rose-dusk'],
+html[data-mode='desktop'] .desk-theme-preview[data-theme='rose-dusk'] {
   color-scheme: dark;
   --desk-bg: #1b171a;
   --desk-surface: #241f23;
@@ -112,7 +118,8 @@ html[data-mode='desktop'][data-theme='rose-dusk'] {
   --desk-warning: #d6b071;
 }
 
-html[data-mode='desktop'][data-theme='soft-light'] {
+html[data-mode='desktop'][data-theme='soft-light'],
+html[data-mode='desktop'] .desk-theme-preview[data-theme='soft-light'] {
   color-scheme: light;
   --desk-bg: #f2f1f7;
   --desk-surface: #e9e8f0;
