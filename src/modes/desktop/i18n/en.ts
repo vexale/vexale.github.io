@@ -27,6 +27,10 @@ export const en = {
     openNavigation: 'Open navigation',
     closeNavigation: 'Close navigation',
     selected: 'Current page',
+    toggleRail: 'Toggle navigation rail',
+    toggleSections: 'Toggle sections panel',
+    focusLayout: 'Toggle full-width focus layout',
+    closeDrawer: 'Close panel',
   },
   pages: {
     library: { title: 'Library', description: 'Your sections, notes, and study files.' },

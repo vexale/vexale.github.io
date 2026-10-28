@@ -27,6 +27,10 @@ export const ar = {
     openNavigation: 'فتح التنقل',
     closeNavigation: 'إغلاق التنقل',
     selected: 'الصفحة الحالية',
+    toggleRail: 'إظهار شريط التنقل أو طيّه',
+    toggleSections: 'إظهار لوحة الأقسام أو طيّها',
+    focusLayout: 'تبديل تخطيط التركيز بعرض كامل',
+    closeDrawer: 'إغلاق اللوحة',
   },
   pages: {
     library: { title: 'المكتبة', description: 'أقسامك وملاحظاتك وملفات الدراسة.' },

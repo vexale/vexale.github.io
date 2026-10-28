@@ -15,6 +15,8 @@ export interface DesktopPreferences {
   density: Density
   reduceMotion: boolean
   sidebarPosition: SidebarPosition
+  railCollapsed: boolean
+  sectionsCollapsed: boolean
 }
 
 export const DESKTOP_PREFERENCES_KEY = 'vexale-office-preferences-v1'
@@ -33,6 +35,8 @@ export const DEFAULT_DESKTOP_PREFERENCES: DesktopPreferences = {
   density: 'comfortable',
   reduceMotion: false,
   sidebarPosition: 'auto',
+  railCollapsed: false,
+  sectionsCollapsed: false,
 }
 
 function isOneOf<T extends string>(value: unknown, allowed: readonly T[]): value is T {
@@ -53,6 +57,8 @@ function sanitize(value: unknown): DesktopPreferences {
     density: isOneOf(raw.density, DENSITIES) ? raw.density : DEFAULT_DESKTOP_PREFERENCES.density,
     reduceMotion: typeof raw.reduceMotion === 'boolean' ? raw.reduceMotion : DEFAULT_DESKTOP_PREFERENCES.reduceMotion,
     sidebarPosition: isOneOf(raw.sidebarPosition, SIDEBAR_POSITIONS) ? raw.sidebarPosition : DEFAULT_DESKTOP_PREFERENCES.sidebarPosition,
+    railCollapsed: typeof raw.railCollapsed === 'boolean' ? raw.railCollapsed : DEFAULT_DESKTOP_PREFERENCES.railCollapsed,
+    sectionsCollapsed: typeof raw.sectionsCollapsed === 'boolean' ? raw.sectionsCollapsed : DEFAULT_DESKTOP_PREFERENCES.sectionsCollapsed,
   }
 }
 

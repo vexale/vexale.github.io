@@ -1,17 +1,24 @@
 @import './tokens.css';
 
 html[data-mode='desktop'] .desk-app {
+  --desk-rail-track: 224px;
+  --desk-sections-track: 292px;
   display: grid;
   min-height: 100vh;
-  grid-template-columns: 224px 292px minmax(0, 1fr);
+  grid-template-columns: var(--desk-rail-track) var(--desk-sections-track) minmax(0, 1fr);
   grid-template-rows: 64px minmax(0, 1fr);
   background: var(--desk-bg);
   color: var(--desk-text);
   font-family: inherit;
+  transition: grid-template-columns 150ms ease;
 }
 
+html[data-mode='desktop'] .desk-app[data-rail-collapsed='true'] { --desk-rail-track: 0px; }
+html[data-mode='desktop'] .desk-app[data-sections-collapsed='true'],
+html[data-mode='desktop'] .desk-app:not([data-desktop-page='library']) { --desk-sections-track: 0px; }
+
 html[data-mode='desktop'] .desk-topbar {
-  z-index: 5;
+  z-index: 60;
   display: flex;
   min-width: 0;
   grid-column: 1 / -1;
@@ -125,6 +132,7 @@ html[data-mode='desktop'] .desk-button-primary:hover {
 
 html[data-mode='desktop'] .desk-sidebar {
   display: flex;
+  min-width: 0;
   min-height: 0;
   grid-column: 1;
   grid-row: 2;
@@ -133,6 +141,7 @@ html[data-mode='desktop'] .desk-sidebar {
   padding: 20px 14px;
   border-inline-end: 1px solid var(--desk-border);
   background: var(--desk-surface);
+  transition: opacity 150ms ease;
 }
 
 html[data-mode='desktop'] .desk-sidebar-heading {
@@ -179,6 +188,14 @@ html[data-mode='desktop'] .desk-section-pane {
   overflow-y: auto;
   border-inline-end: 1px solid var(--desk-border);
   background: var(--desk-surface);
+  transition: opacity 150ms ease;
+}
+
+html[data-mode='desktop'] .desk-app[data-rail-collapsed='true'] .desk-sidebar,
+html[data-mode='desktop'] .desk-app[data-sections-collapsed='true'] .desk-section-pane {
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
 }
 
 html[data-mode='desktop'] .desk-section-tree {
@@ -242,6 +259,17 @@ html[data-mode='desktop'] .desk-icon-button {
   border-color: var(--desk-border);
   background: var(--desk-elevated);
 }
+
+html[data-mode='desktop'] .desk-panel-toggle {
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-color: var(--desk-border);
+  background: var(--desk-elevated);
+}
+
+html[data-mode='desktop'] .desk-app[dir='rtl'] .desk-panel-toggle svg { transform: scaleX(-1); }
+html[data-mode='desktop'] .desk-drawer-backdrop { display: none; }
 
 html[data-mode='desktop'] .desk-tree-navigation {
   min-width: 0;
@@ -347,8 +375,13 @@ html[data-mode='desktop'] .desk-main-full {
 
 html[data-mode='desktop'] .desk-page {
   width: min(100%, var(--desk-content-width, 1040px));
+  max-width: min(760px, var(--desk-content-width, 1040px));
   margin-inline: auto;
+  transition: max-width 150ms ease;
 }
+
+html[data-mode='desktop'] .desk-app[data-rail-collapsed='true'] .desk-page,
+html[data-mode='desktop'] .desk-app[data-sections-collapsed='true'] .desk-page { max-width: min(1000px, var(--desk-content-width, 1040px)); }
 
 html[data-mode='desktop'] .desk-page-header {
   margin-block-end: 22px;
@@ -700,9 +733,10 @@ html[data-mode='desktop'] .desk-section-create-control input:focus-visible {
   outline-color: var(--desk-accent);
 }
 
-@media (max-width: 1040px) and (min-width: 761px) {
+@media (max-width: 1040px) and (min-width: 768px) {
   html[data-mode='desktop'] .desk-app {
-    grid-template-columns: 204px 250px minmax(0, 1fr);
+    --desk-rail-track: 204px;
+    --desk-sections-track: 250px;
   }
 
   html[data-mode='desktop'] .desk-sidebar {
@@ -714,10 +748,10 @@ html[data-mode='desktop'] .desk-section-create-control input:focus-visible {
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 767px) {
   html[data-mode='desktop'] .desk-app {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: 60px auto auto minmax(0, 1fr);
+    grid-template-rows: 60px minmax(0, 1fr);
   }
 
   html[data-mode='desktop'] .desk-topbar {
@@ -725,46 +759,97 @@ html[data-mode='desktop'] .desk-section-create-control input:focus-visible {
     padding-inline: 12px;
   }
 
+  html[data-mode='desktop'] .desk-topbar-actions { gap: 4px; }
+  html[data-mode='desktop'] .desk-language-toggle,
+  html[data-mode='desktop'] .desk-mode-switch { width: 44px; min-width: 44px; padding: 6px; }
+  html[data-mode='desktop'] .desk-language-toggle span,
+  html[data-mode='desktop'] .desk-mode-switch span { display: none; }
+
   html[data-mode='desktop'] .desk-workspace-label {
     display: none;
   }
 
   html[data-mode='desktop'] .desk-sidebar {
-    grid-column: 1;
-    grid-row: 2;
-    gap: 8px;
-    padding: 8px 12px;
-    border-inline-end: 0;
-    border-bottom: 1px solid var(--desk-border);
+    position: fixed;
+    z-index: 50;
+    inset-block: 60px 0;
+    inset-inline-start: 0;
+    width: min(84vw, 320px);
+    min-height: 0;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+    padding: 16px 12px;
+    border: 0;
+    background: var(--desk-surface);
+    box-shadow: 0 10px 32px rgb(0 0 0 / 25%);
+    opacity: 1;
+    pointer-events: none;
+    transform: translateX(-105%);
+    transition: transform 150ms ease;
   }
 
-  html[data-mode='desktop'] .desk-sidebar-heading,
-  html[data-mode='desktop'] .desk-sidebar-spacer,
-  html[data-mode='desktop'] .desk-mode-switch {
-    display: none;
+  html[data-mode='desktop'] .desk-app[dir='rtl'] .desk-sidebar {
+    transform: translateX(105%);
+  }
+
+  html[data-mode='desktop'] .desk-app[data-mobile-drawer='rail'] .desk-sidebar {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
   }
 
   html[data-mode='desktop'] .desk-navigation {
-    display: flex;
-    overflow-x: auto;
-    gap: 4px;
+    display: grid;
+    gap: 5px;
   }
 
   html[data-mode='desktop'] .desk-navigation-link {
-    width: auto;
-    flex: 0 0 auto;
+    width: 100%;
+    min-height: 46px;
+    justify-content: flex-start;
+    padding: 9px 12px;
   }
 
   html[data-mode='desktop'] .desk-section-pane {
-    max-height: 190px;
-    grid-column: 1;
-    grid-row: 3;
-    border-inline-end: 0;
-    border-bottom: 1px solid var(--desk-border);
+    position: fixed;
+    z-index: 50;
+    inset-block: 60px 0;
+    inset-inline-start: 0;
+    width: min(90vw, 360px);
+    min-height: 0;
+    overflow: auto;
+    border: 0;
+    background: var(--desk-surface);
+    box-shadow: 0 10px 32px rgb(0 0 0 / 25%);
+    opacity: 1;
+    pointer-events: none;
+    transform: translateX(-105%);
+    transition: transform 150ms ease;
+  }
+
+  html[data-mode='desktop'] .desk-app[dir='rtl'] .desk-section-pane {
+    transform: translateX(105%);
+  }
+
+  html[data-mode='desktop'] .desk-app[data-mobile-drawer='sections'] .desk-section-pane {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+  }
+
+  html[data-mode='desktop'] .desk-drawer-backdrop {
+    position: fixed;
+    z-index: 40;
+    inset-block: 60px 0;
+    inset-inline: 0;
+    display: block;
+    border: 0;
+    background: rgb(5 6 9 / 58%);
   }
 
   html[data-mode='desktop'] .desk-section-tree {
-    min-height: 0;
+    min-height: 100%;
     gap: 12px;
     padding: 12px;
   }
@@ -776,7 +861,7 @@ html[data-mode='desktop'] .desk-section-create-control input:focus-visible {
   html[data-mode='desktop'] .desk-main,
   html[data-mode='desktop'] .desk-main-full {
     grid-column: 1;
-    grid-row: 4;
+    grid-row: 2;
     padding: 22px 16px;
   }
 
@@ -813,6 +898,10 @@ html[data-mode='desktop'] .desk-section-create-control input:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html[data-mode='desktop'] .desk-app,
+  html[data-mode='desktop'] .desk-app .desk-page,
+  html[data-mode='desktop'] .desk-app .desk-sidebar,
+  html[data-mode='desktop'] .desk-app .desk-section-pane,
   html[data-mode='desktop'] .desk-button,
   html[data-mode='desktop'] .desk-navigation-link,
   html[data-mode='desktop'] .desk-icon-button,
@@ -821,4 +910,12 @@ html[data-mode='desktop'] .desk-section-create-control input:focus-visible {
   html[data-mode='desktop'] .desk-note-toolbar-button {
     transition: none;
   }
+}
+
+html[data-mode='desktop'][data-reduce-motion='true'] .desk-app,
+html[data-mode='desktop'][data-reduce-motion='true'] .desk-app .desk-page,
+html[data-mode='desktop'][data-reduce-motion='true'] .desk-app .desk-sidebar,
+html[data-mode='desktop'][data-reduce-motion='true'] .desk-app .desk-section-pane,
+html[data-mode='desktop'][data-reduce-motion='true'] .desk-app .desk-panel-toggle {
+  transition: none !important;
 }
