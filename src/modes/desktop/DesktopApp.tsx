@@ -113,7 +113,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
       </aside>
       {page === 'library' && <aside id="desk-section-pane" className="desk-section-pane" inert={preferences.sectionsCollapsed && !isMobile} aria-label={messages.sections.title}><DesktopSectionTree /></aside>}
       <main className={`desk-main ${page === 'library' ? 'desk-main-with-sections' : 'desk-main-full'}`} id="main-content">
-        <div className="desk-page"><header className="desk-page-header"><h1 className="desk-page-title">{messages.pages[page].title}</h1></header>
+        <div className="desk-page"><header className="desk-page-header"><h1 className="desk-page-title">{messages.pages[page].title}</h1><p className="desk-page-description">{messages.pages[page].description}</p></header>
           {page === 'library' ? <DesktopLibraryPage /> : <DesktopPageContent page={page} onSwitchToSpace={onSwitchToSpace} />}
         </div>
       </main>

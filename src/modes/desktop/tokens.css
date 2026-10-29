@@ -164,6 +164,7 @@ html[data-mode='desktop'] :focus-visible {
 }
 
 html[data-mode='desktop'] * {
+  box-sizing: border-box;
   scrollbar-color: var(--desk-scroll-thumb) var(--desk-bg);
 }
 

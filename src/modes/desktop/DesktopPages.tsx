@@ -43,6 +43,15 @@ function flatten(nodes: ReturnType<typeof useTree>['tree']): Array<{ id: string;
   return nodes.flatMap(node => [{ id: node.id, title: node.title }, ...flatten(node.children)])
 }
 
+function nodeDepth(nodes: ReturnType<typeof useTree>['tree'], targetId: string, depth = 0): number | undefined {
+  for (const node of nodes) {
+    if (node.id === targetId) return depth
+    const childDepth = nodeDepth(node.children, targetId, depth + 1)
+    if (childDepth !== undefined) return childDepth
+  }
+  return undefined
+}
+
 export function DesktopPageContent({ page, onSwitchToSpace }: { page: DesktopPage; onSwitchToSpace: () => void }) {
   const m = useDesktopMessages()
   const locale = useLocale()
@@ -88,7 +97,7 @@ export function DesktopPageContent({ page, onSwitchToSpace }: { page: DesktopPag
       if (format === 'markdown') {
         const body = nodes.map(node => {
           const note = notes.find(([id]) => id === node.id)?.[1]
-          const depth = (() => { const visit = (items: typeof tree, d: number): number | undefined => { for (const x of items) { if (x.id === node.id) return d; const child = visit(x.children, d + 1); if (child !== undefined) return child } } return visit(tree, 0) ?? 0 })()
+          const depth = nodeDepth(tree, node.id) ?? 0
           const text = note?.html ? new DOMParser().parseFromString(note.html, 'text/html').body.textContent ?? '' : ''
           return `${'#'.repeat(Math.min(depth + 1, 6))} ${node.title}${text ? `\n\n${text}` : ''}`
         }).join('\n\n')
@@ -210,6 +219,7 @@ function SupportPage() {
     catch { setStatus(t.messageFailed) } finally { setBusy(false) }
   }
   return <section className="desk-form-page"><p>{t.supportIntro} {t.contactSupportPrefix}<a href={SUPPORT_EMAIL_HREF} dir="ltr">{SUPPORT_EMAIL}</a></p>
+    <aside className="desk-support-notes"><div><strong>{t.notes.title}</strong><p>{t.notes.placeholder}</p></div><span className="desk-count-pill">{t.notes.saved}</span></aside>
     <div className="desk-choice-row"><button type="button" className="desk-button" aria-pressed={category === 'suggestion'} onClick={() => setCategory('suggestion')}><Lightbulb size={16} />{t.suggestion}</button><button type="button" className="desk-button" aria-pressed={category === 'issue'} onClick={() => setCategory('issue')}><Bug size={16} />{t.bugReport}</button></div>
     <form onSubmit={e => void submit(e)}><label>{t.title}<input required maxLength={120} value={title} onChange={e => setTitle(e.target.value)} /></label><label>{t.details}<textarea required rows={5} maxLength={3000} value={details} onChange={e => setDetails(e.target.value)} dir="auto" /></label><label>{t.optionalEmail}<input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={user?.email} dir="ltr" /></label><button className="desk-button desk-button-primary" disabled={busy || !title.trim() || !details.trim()}><Send size={16} />{busy ? t.sending : t.send}</button></form>{status && <p role="status">{status}</p>}
   </section>
