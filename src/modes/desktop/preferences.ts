@@ -6,6 +6,8 @@ export type SidebarPosition = 'auto' | 'right' | 'left'
 export type ContentWidth = 'narrow' | 'comfortable' | 'wide'
 export type Density = 'comfortable' | 'compact' | 'spacious'
 
+export interface DesktopToolAssignment { global: boolean; sectionIds: string[] }
+
 export interface DesktopPreferences {
   theme: DesktopTheme
   accentColor: string | null
@@ -19,6 +21,7 @@ export interface DesktopPreferences {
   railCollapsed: boolean
   sectionsCollapsed: boolean
   expandedSectionIds: string[]
+  toolAssignments: Record<string, DesktopToolAssignment>
 }
 
 export const DESKTOP_PREFERENCES_KEY = 'vexale-office-preferences-v1'
@@ -41,6 +44,7 @@ export const DEFAULT_DESKTOP_PREFERENCES: DesktopPreferences = {
   railCollapsed: false,
   sectionsCollapsed: false,
   expandedSectionIds: [],
+  toolAssignments: {},
 }
 
 function isOneOf<T extends string>(value: unknown, allowed: readonly T[]): value is T {
@@ -65,6 +69,7 @@ function sanitize(value: unknown): DesktopPreferences {
     railCollapsed: typeof raw.railCollapsed === 'boolean' ? raw.railCollapsed : DEFAULT_DESKTOP_PREFERENCES.railCollapsed,
     sectionsCollapsed: typeof raw.sectionsCollapsed === 'boolean' ? raw.sectionsCollapsed : DEFAULT_DESKTOP_PREFERENCES.sectionsCollapsed,
     expandedSectionIds: Array.isArray(raw.expandedSectionIds) ? raw.expandedSectionIds.filter((id): id is string => typeof id === 'string') : [],
+    toolAssignments: raw.toolAssignments && typeof raw.toolAssignments === 'object' && !Array.isArray(raw.toolAssignments) ? Object.fromEntries(Object.entries(raw.toolAssignments as Record<string, unknown>).flatMap(([id, value]) => { if (!value || typeof value !== 'object') return []; const assignment = value as Record<string, unknown>; return [[id, { global: assignment.global === true, sectionIds: Array.isArray(assignment.sectionIds) ? assignment.sectionIds.filter((sectionId): sectionId is string => typeof sectionId === 'string') : [] }]] })) : {},
   }
 }
 

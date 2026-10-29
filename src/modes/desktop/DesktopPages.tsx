@@ -13,6 +13,7 @@ import { useLibrary, useTree } from '../../shared'
 import { useDesktopMessages } from './i18n'
 import { updateDesktopPreferences, useDesktopPreferences } from './preferences'
 import type { DesktopPage } from './types'
+import DesktopToolsPage from './DesktopToolsPage'
 
 const THEME_COLORS: Record<string, [string, string, string]> = {
   'calm-violet': ['#15171c', '#1a1c23', '#5b4fe0'], charcoal: ['#151515', '#1c1c1c', '#5b4fe0'],
@@ -179,6 +180,7 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
     {status && <p className="desk-inline-status" role="status">{status}</p>}
   </section>
 
+  if (page === 'tools') return <DesktopToolsPage />
   if (page === 'support') return <SupportPage onOpenPrivacy={onOpenPrivacy} />
   if (page === 'privacy') return <PrivacyPage />
   return <section className="desk-tools-page"><p>{t.toolsDescription}</p><button type="button" className="desk-button desk-button-primary" onClick={onSwitchToSpace}>{t.openTools}</button></section>

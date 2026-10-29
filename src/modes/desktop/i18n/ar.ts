@@ -7,12 +7,13 @@ export const ar = {
   pages: {
     library: { title: 'المكتبة', description: 'أقسامك وملاحظاتك وملفات الدراسة.' },
     tools: { title: 'الأدوات', description: 'افتح أدوات الدراسة المتاحة في مساحة الفضاء.' },
-    themes: { title: 'السمات', description: 'اختر مظهراً للمكتب. سمات الفضاء مستقلة.' },
+  themes: { title: 'السمات', description: 'اختر مظهراً للمكتب. سمات الفضاء مستقلة.' },
     settings: { title: 'الإعدادات', description: 'خصص مساحة العمل.' },
     account: { title: 'الحساب', description: 'أدر ملفك الشخصي وبيانات مكتبتك المحلية.' },
     support: { title: 'الدعم', description: 'أرسل اقتراحاً أو أبلغ عن مشكلة.' },
     privacy: { title: 'الخصوصية والشروط', description: 'راجع كيفية التعامل مع معلوماتك.' },
   },
+  toolHub: { global: 'عام', sectionSpecific: 'خاص بالقسم', noSections: 'أنشئ قسماً في المكتبة لإسناد الأدوات إليه.', addTool: 'إضافة أداة' },
   themes: { title: 'السمات', description: 'اختر مظهراً هادئاً ولون تمييز واضحاً.', names: { calmViolet: 'بنفسجي هادئ', charcoal: 'فحمي', midnightBlue: 'أزرق منتصف الليل', forest: 'غابة', sandDark: 'رملي داكن', roseDusk: 'وردي الغسق', softLight: 'ضوء ناعم' }, selected: 'محدد', chooseTheme: 'اختيار السمة', accentTitle: 'لون التمييز', accentDescription: 'اختر لوناً يحافظ على وضوح النص في مساحة العمل.', accents: { violet: 'بنفسجي', slate: 'رمادي أردوازي', teal: 'تركوازي', forest: 'غابة', amber: 'كهرماني', rose: 'وردي', coral: 'مرجاني' }, customAccent: 'لون مخصص', useThemeAccent: 'استخدام لون السمة', contrastHelp: 'يجب أن تحافظ الألوان المخصصة على تباين مقروء.', contrastError: 'اختر لون تمييز أغمق للحفاظ على وضوح القراءة.', accentSaved: 'تم حفظ لون التمييز.', accentReset: 'تمت استعادة لون السمة.' },
   workspacePages: {
     themes: { 'calm-violet': 'بنفسجي هادئ', charcoal: 'فحمي', 'midnight-blue': 'أزرق منتصف الليل', forest: 'الغابة', 'sand-dark': 'رملي داكن', 'rose-dusk': 'وردي الغسق', 'soft-light': 'ضوء ناعم' },

@@ -7,12 +7,13 @@ export const en = {
   pages: {
     library: { title: 'Library', description: 'Your sections, notes, and study files.' },
     tools: { title: 'Tools', description: 'Open the study tools available in Space.' },
-    themes: { title: 'Themes', description: 'Choose a look for Office. Space themes stay separate.' },
+  themes: { title: 'Themes', description: 'Choose a look for Office. Space themes stay separate.' },
     settings: { title: 'Settings', description: 'Personalize your workspace.' },
     account: { title: 'Account', description: 'Manage your profile and local library data.' },
     support: { title: 'Support', description: 'Send a suggestion or report a problem.' },
     privacy: { title: 'Privacy & terms', description: 'Review how your information is handled.' },
   },
+  toolHub: { global: 'Global', sectionSpecific: 'Section-specific', noSections: 'Create a section in the Library to assign tools to it.', addTool: 'Add tool' },
   themes: { title: 'Themes', description: 'Choose a calm visual style and an accessible accent color.', names: { calmViolet: 'Calm Violet', charcoal: 'Charcoal', midnightBlue: 'Midnight Blue', forest: 'Forest', sandDark: 'Sand Dark', roseDusk: 'Rose Dusk', softLight: 'Soft Light' }, selected: 'Selected', chooseTheme: 'Choose theme', accentTitle: 'Accent color', accentDescription: 'Choose an accent that keeps text readable across the workspace.', accents: { violet: 'Violet', slate: 'Slate', teal: 'Teal', forest: 'Forest', amber: 'Amber', rose: 'Rose', coral: 'Coral' }, customAccent: 'Custom accent', useThemeAccent: 'Use theme accent', contrastHelp: 'Custom accents must maintain readable contrast.', contrastError: 'Choose a darker accent for readable contrast.', accentSaved: 'Accent color saved.', accentReset: 'Theme accent restored.' },
   workspacePages: {
     themes: { 'calm-violet': 'Calm Violet', charcoal: 'Charcoal', 'midnight-blue': 'Midnight Blue', forest: 'Forest', 'sand-dark': 'Sand Dark', 'rose-dusk': 'Rose Dusk', 'soft-light': 'Soft Light' },

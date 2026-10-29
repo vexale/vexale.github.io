@@ -1,9 +1,12 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { FileAudio, FileImage, FileText, FileX2, FolderOpen, Plus, Trash2 } from 'lucide-react'
 import { findNode, useLibrary, useTree } from '../../shared'
 import type { Item, TNode } from '../../shared'
 import { useLocale } from '../../lib/i18n'
 import { useDesktopMessages } from './i18n'
+import { TOOL_CATALOG } from '../../lib/settings'
+import { useDesktopPreferences } from './preferences'
+import DesktopToolPanel from './DesktopToolsPage'
 import DesktopNoteEditor from './DesktopNoteEditor'
 
 function kindOf(file: File): Item['kind'] {
@@ -26,11 +29,14 @@ function formatFileSize(bytes: number, locale: string, byteUnit: string, kilobyt
 function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
   const locale = useLocale()
   const messages = useDesktopMessages()
+  const preferences = useDesktopPreferences()
+  const [openTool, setOpenTool] = useState('')
   const { items, add, remove, storageError } = useLibrary()
   const { tree } = useTree()
   const inputRef = useRef<HTMLInputElement>(null)
   const sectionPath = path.map(id => findNode(tree, id)).filter((part): part is TNode => part !== undefined)
   const nodeItems = items.filter(item => item.nodeId === node.id)
+  const sectionTools = TOOL_CATALOG.filter(tool => { const assignment = preferences.toolAssignments[tool.id] ?? { global: true, sectionIds: [] }; return assignment.global || assignment.sectionIds.includes(node.id) })
 
   const addFiles = (files: FileList | null): void => {
     if (!files?.length) return
@@ -76,6 +82,9 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
           onChange={event => { addFiles(event.target.files); event.target.value = '' }}
         />
       </header>
+      <section className="desk-section-tools" aria-label={messages.toolHub.sectionSpecific}>
+        <div className="desk-section-tools-list">{sectionTools.map(tool => <button type="button" className="desk-tool-chip-button" key={tool.id} onClick={() => setOpenTool(tool.id)}>{locale === 'ar' ? ({ calc: 'الحاسبة', notes: 'ملاحظات سريعة', plot: 'الإحداثيات', chat: 'محادثة المكتبة', math: 'حلّال الرياضيات', code: 'مساحة الأكواد', quiz: 'اختبارات وبطاقات', data: 'تحليل البيانات', board: 'لوحة وخرائط', docs: 'أدوات المستندات', tasks: 'المهام', audio: 'تركيز وصوت' }[tool.id] ?? tool.label) : tool.label}</button>)}<button type="button" className="desk-tool-chip-button desk-tool-add-button" onClick={() => { window.history.pushState({ desktopPage: 'tools' }, '', '#/office/tools'); window.dispatchEvent(new PopStateEvent('popstate')) }}>{messages.toolHub.addTool}</button></div>
+      </section>
       <div className="desk-library-content">
         <section className="desk-files-panel" aria-labelledby="desk-files-title">
           <header className="desk-panel-heading">
@@ -112,6 +121,7 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
         </section>
         <DesktopNoteEditor key={node.id} nodeId={node.id} sectionTitle={node.title} />
       </div>
+      {openTool && <DesktopToolPanel toolId={openTool} onClose={() => setOpenTool('')} />}
     </div>
   )
 }
