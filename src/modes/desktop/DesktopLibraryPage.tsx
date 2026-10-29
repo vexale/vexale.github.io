@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { FileAudio, FileImage, FileText, FileX2, FolderOpen, Plus, Trash2 } from 'lucide-react'
+import { Eye, FileAudio, FileImage, FileText, FileX2, FolderOpen, Plus, Trash2, X } from 'lucide-react'
 import { findNode, useLibrary, useTree } from '../../shared'
 import type { Item, TNode } from '../../shared'
 import { useLocale } from '../../lib/i18n'
@@ -26,16 +26,29 @@ function formatFileSize(bytes: number, locale: string, byteUnit: string, kilobyt
   return bytes < 1024 ? `${number.format(bytes)} ${byteUnit}` : `${number.format(bytes / 1024)} ${kilobyteUnit}`
 }
 
+function FilePreview({ item, messages, onClose }: { item: Item; messages: ReturnType<typeof useDesktopMessages>['files']; onClose: () => void }) {
+  const type = item.file?.type ?? ''
+  return <div className="desk-file-preview-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}>
+    <section className="desk-file-preview" role="dialog" aria-modal="true" aria-label={messages.preview}>
+      <header><h2>{item.name}</h2><button type="button" className="desk-icon-button" aria-label={messages.closePreview} onClick={onClose}><X size={17} /></button></header>
+      <div className="desk-file-preview-content">{type.startsWith('image/') ? <img src={item.url} alt={item.name} /> : type.startsWith('audio/') ? <audio controls src={item.url} /> : type.startsWith('video/') ? <video controls src={item.url} /> : type === 'application/pdf' ? <iframe title={item.name} src={item.url} /> : <div className="desk-preview-unavailable"><FileText size={28} /><p>{messages.previewUnavailable}</p><a href={item.url} target="_blank" rel="noreferrer">{messages.open}</a></div>}</div>
+    </section>
+  </div>
+}
+
 function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
   const locale = useLocale()
   const messages = useDesktopMessages()
   const preferences = useDesktopPreferences()
   const [openTool, setOpenTool] = useState('')
+  const [previewItem, setPreviewItem] = useState<Item | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
   const { items, add, remove, storageError } = useLibrary()
-  const { tree } = useTree()
+  const { tree, setPath } = useTree()
   const inputRef = useRef<HTMLInputElement>(null)
   const sectionPath = path.map(id => findNode(tree, id)).filter((part): part is TNode => part !== undefined)
   const nodeItems = items.filter(item => item.nodeId === node.id)
+  const childSections = node.children
   const sectionTools = TOOL_CATALOG.filter(tool => { const assignment = preferences.toolAssignments[tool.id] ?? { global: true, sectionIds: [] }; return assignment.global || assignment.sectionIds.includes(node.id) })
 
   const addFiles = (files: FileList | null): void => {
@@ -82,16 +95,18 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
           onChange={event => { addFiles(event.target.files); event.target.value = '' }}
         />
       </header>
+      <section className="desk-child-sections" aria-label={messages.sections.childSections}><h3>{messages.sections.childSections}</h3>{childSections.length ? <div className="desk-child-section-grid">{childSections.map(child => <button type="button" key={child.id} className="desk-child-section-card" onClick={() => setPath([...path, child.id])}><span>{child.title}</span><span>{child.children.length} {messages.sections.childrenCount}</span></button>)}</div> : <p className="desk-section-empty">{messages.sections.childEmpty}</p>}</section>
       <section className="desk-section-tools" aria-label={messages.toolHub.sectionSpecific}>
         <div className="desk-section-tools-list">{sectionTools.map(tool => <button type="button" className="desk-tool-chip-button" key={tool.id} onClick={() => setOpenTool(tool.id)}>{locale === 'ar' ? ({ calc: 'الحاسبة', notes: 'ملاحظات سريعة', plot: 'الإحداثيات', chat: 'محادثة المكتبة', math: 'حلّال الرياضيات', code: 'مساحة الأكواد', quiz: 'اختبارات وبطاقات', data: 'تحليل البيانات', board: 'لوحة وخرائط', docs: 'أدوات المستندات', tasks: 'المهام', audio: 'تركيز وصوت' }[tool.id] ?? tool.label) : tool.label}</button>)}<button type="button" className="desk-tool-chip-button desk-tool-add-button" onClick={() => { window.history.pushState({ desktopPage: 'tools' }, '', '#/office/tools'); window.dispatchEvent(new PopStateEvent('popstate')) }}>{messages.toolHub.addTool}</button></div>
       </section>
       <div className="desk-library-content">
-        <section className="desk-files-panel" aria-labelledby="desk-files-title">
+        <section className={`desk-files-panel ${isDragging ? 'desk-files-panel-dragging' : ''}`} aria-labelledby="desk-files-title" onDragOver={event => { event.preventDefault(); setIsDragging(true) }} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsDragging(false) }} onDrop={event => { event.preventDefault(); setIsDragging(false); addFiles(event.dataTransfer.files) }}>
           <header className="desk-panel-heading">
             <h3 id="desk-files-title">{messages.files.title}</h3>
             <span className="desk-count-pill">{nodeItems.length}</span>
           </header>
           {storageError && <p className="desk-inline-error" role="status">{messages.files.storageError}</p>}
+          {isDragging && <p className="desk-drop-hint" role="status">{messages.files.dropHere}</p>}
           {nodeItems.length ? (
             <ul className="desk-file-list">
               {nodeItems.map(item => (
@@ -102,9 +117,10 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
                     <span className="desk-file-meta">{formatFileSize(item.size, locale, messages.files.byteUnit, messages.files.kilobyteUnit)}</span>
                   </div>
                   <div className="desk-file-actions">
-                    <a className="desk-icon-button" href={item.url} download={item.name} aria-label={`${messages.files.download}: ${item.name}`}>
+                    <a className="desk-icon-button" href={item.url} target="_blank" rel="noreferrer" aria-label={`${messages.files.open}: ${item.name}`}>
                       <FolderOpen size={17} aria-hidden="true" />
                     </a>
+                    <button type="button" className="desk-icon-button" aria-label={messages.files.preview} title={messages.files.preview} onClick={() => setPreviewItem(item)}><Eye size={17} aria-hidden="true" /></button>
                     <button type="button" className="desk-icon-button desk-danger-button" aria-label={`${messages.files.remove}: ${item.name}`} onClick={() => removeFile(item)}>
                       <Trash2 size={16} aria-hidden="true" />
                     </button>
@@ -122,6 +138,7 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
         <DesktopNoteEditor key={node.id} nodeId={node.id} sectionTitle={node.title} />
       </div>
       {openTool && <DesktopToolPanel toolId={openTool} onClose={() => setOpenTool('')} />}
+      {previewItem && <FilePreview item={previewItem} messages={messages.files} onClose={() => setPreviewItem(null)} />}
     </div>
   )
 }
