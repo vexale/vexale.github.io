@@ -49,7 +49,7 @@ export default function DesktopCommandPalette({ open, onClose, onNavigate, onSwi
       const section = sections.find(candidate => candidate.id === item.nodeId)
       return { id: 'file:' + item.id, kind: p.files, label: item.name, detail: section?.title ?? '', run: () => { if (section) { onNavigate('library'); setPath(section.path); window.setTimeout(() => Array.from(document.querySelectorAll<HTMLElement>('[data-file-id]')).find(row => row.dataset.fileId === item.id)?.scrollIntoView({ block: 'center' }), 140) } } }
     })
-    const pageIds: DesktopPage[] = ['library', 'tools', 'themes', 'settings', 'account', 'support', 'privacy']
+    const pageIds: DesktopPage[] = ['library', 'tasks', 'tools', 'themes', 'settings', 'account', 'support', 'privacy']
     const pages: PaletteResult[] = pageIds.map(page => ({ id: 'page:' + page, kind: p.pages, label: messages.pages[page].title, detail: messages.pages[page].description, run: () => onNavigate(page) }))
     const actions: PaletteResult[] = [
       { id: 'action:add-section', kind: p.actions, label: p.addSection, detail: p.actionHint, run: () => { updateDesktopPreferences({ railCollapsed: false, sectionsCollapsed: false }); onNavigate('library'); window.setTimeout(() => document.getElementById('desk-new-section')?.focus(), 120) } },

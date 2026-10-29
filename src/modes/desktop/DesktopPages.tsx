@@ -14,6 +14,7 @@ import { useDesktopMessages } from './i18n'
 import { updateDesktopPreferences, useDesktopPreferences } from './preferences'
 import type { DesktopPage } from './types'
 import DesktopToolsPage from './DesktopToolsPage'
+import DesktopTaskTreePage from './DesktopTaskTreePage'
 
 const THEME_COLORS: Record<string, [string, string, string]> = {
   'calm-violet': ['#15171c', '#1a1c23', '#5b4fe0'], charcoal: ['#151515', '#1c1c1c', '#5b4fe0'],
@@ -180,6 +181,7 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
     {status && <p className="desk-inline-status" role="status">{status}</p>}
   </section>
 
+  if (page === 'tasks') return <DesktopTaskTreePage />
   if (page === 'tools') return <DesktopToolsPage />
   if (page === 'support') return <SupportPage onOpenPrivacy={onOpenPrivacy} />
   if (page === 'privacy') return <PrivacyPage />
@@ -192,7 +194,7 @@ function DeleteLocalData({ t }: { t: ReturnType<typeof useDesktopMessages>['work
   const phrase = t.deletePhrase
   const erase = (): void => {
     if (typed !== phrase) return
-    for (const key of ['atelier-tree-v1', 'atelier-path-v1', 'vexale-office-preferences-v1', 'atelier-google-auth-v1', 'vexale-anonymous-analytics']) localStorage.removeItem(key)
+    for (const key of ['atelier-tree-v1', 'atelier-path-v1', 'vexale-office-preferences-v1', 'vexale-task-tree-v1', 'atelier-google-auth-v1', 'vexale-anonymous-analytics']) localStorage.removeItem(key)
     leaveSharedWorkspace()
     signOutGoogle()
     const request = indexedDB.deleteDatabase('atelier-library')
