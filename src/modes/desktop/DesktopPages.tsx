@@ -15,10 +15,10 @@ import { updateDesktopPreferences, useDesktopPreferences } from './preferences'
 import type { DesktopPage } from './types'
 
 const THEME_COLORS: Record<string, [string, string, string]> = {
-  'calm-violet': ['#15171c', '#1a1c23', '#5b4fe0'], charcoal: ['#151515', '#1c1c1c', '#786c5c'],
-  'midnight-blue': ['#121821', '#18212c', '#506f8c'], forest: ['#131915', '#1a211c', '#477650'],
-  'sand-dark': ['#1a1814', '#211e19', '#88662f'], 'rose-dusk': ['#1b171a', '#241f23', '#91566f'],
-  'soft-light': ['#f2f1f7', '#e9e8f0', '#5142c6'],
+  'calm-violet': ['#15171c', '#1a1c23', '#5b4fe0'], charcoal: ['#151515', '#1c1c1c', '#5b4fe0'],
+  'midnight-blue': ['#121821', '#18212c', '#5b4fe0'], forest: ['#131915', '#1a211c', '#5b4fe0'],
+  'sand-dark': ['#1a1814', '#211e19', '#5b4fe0'], 'rose-dusk': ['#1b171a', '#241f23', '#5b4fe0'],
+  'soft-light': ['#f2f1f7', '#e9e8f0', '#5b4fe0'],
 }
 
 function download(name: string, data: Blob): void {

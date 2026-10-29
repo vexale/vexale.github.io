@@ -97,9 +97,9 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
           <div className="desk-menu-wrap">
             <button type="button" className="desk-icon-button" aria-label={messages.shell.menu} aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}><Ellipsis size={18} aria-hidden="true" /></button>
             {menuOpen && <div className="desk-topbar-menu" role="menu">
-              <button type="button" role="menuitem" onClick={toggleRail}>{railExpanded ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}{messages.shell.toggleRail}<kbd>Ctrl+Shift+B</kbd></button>
-              <button type="button" role="menuitem" disabled={page !== 'library'} onClick={toggleSections}>{sectionsExpanded ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}{messages.shell.toggleSections}<kbd>Ctrl+B</kbd></button>
-              <button type="button" role="menuitem" onClick={toggleFocus}>{bothPanelsCollapsed ? <Minimize2 size={16} /> : <Maximize2 size={16} />}{messages.shell.collapseAll}<kbd>Ctrl+\</kbd></button>
+              <button type="button" role="menuitem" onClick={toggleRail}>{railExpanded ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}{messages.shell.toggleRail}<kbd dir="ltr">Ctrl+Shift+B</kbd></button>
+              <button type="button" role="menuitem" disabled={page !== 'library'} onClick={toggleSections}>{sectionsExpanded ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}{messages.shell.toggleSections}<kbd dir="ltr">Ctrl+B</kbd></button>
+              <button type="button" role="menuitem" onClick={toggleFocus}>{bothPanelsCollapsed ? <Minimize2 size={16} /> : <Maximize2 size={16} />}{messages.shell.collapseAll}<kbd dir="ltr">Ctrl+\</kbd></button>
             </div>}
           </div>
           <button type="button" className="desk-button desk-language-toggle" aria-label={messages.language.switch} onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}><span>{messages.language.nextLabel}</span></button>

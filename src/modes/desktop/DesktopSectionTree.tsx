@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import DesktopSectionAddControl from './DesktopSectionAddControl'
 import type { CSSProperties, FormEvent } from 'react'
 import { ChevronDown, ChevronRight, Folder, Plus } from 'lucide-react'
 import { useLibrary, useTree } from '../../shared'
@@ -52,9 +53,7 @@ function TreeBranch({ nodes, parentPath, activePath, depth, onSelect, onToggle, 
                   {expanded ? <ChevronDown size={15} aria-hidden="true" /> : <ChevronRight size={15} aria-hidden="true" />}
                 </button>
               )}
-              <button type="button" className="desk-tree-toggle" aria-label={`${labels.addChild}: ${node.title}`} title={labels.addChild} onClick={() => onAddChild(nodePath)}>
-                <Plus size={15} aria-hidden="true" />
-              </button>
+              <DesktopSectionAddControl parentId={node.id} parentPath={nodePath} targetTitle={node.title} />
             </div>
             {hasChildren && expanded && (
               <TreeBranch
@@ -93,14 +92,6 @@ export default function DesktopSectionTree() {
     setSectionName('')
     setPath([id])
   }
-  const addChildSection = (parentPath: string[]): void => {
-    const parentId = parentPath[parentPath.length - 1]
-    const title = window.prompt(labels.addChild)?.trim()
-    if (!parentId || !title) return
-    const id = addNode(parentId, title)
-    setPath([...parentPath, id])
-  }
-
   return (
     <section className="desk-section-tree" aria-labelledby="desk-section-tree-title">
       <header className="desk-section-tree-header">
@@ -131,7 +122,7 @@ export default function DesktopSectionTree() {
             depth={0}
             onSelect={setPath}
             onToggle={(nodePath, parentPath) => setPath(path[parentPath.length] === nodePath[nodePath.length - 1] ? parentPath : nodePath)}
-            onAddChild={addChildSection}
+            onAddChild={() => undefined}
             fileCountFor={fileCountFor}
             labels={labels}
             fileLabel={messages.files.title}
