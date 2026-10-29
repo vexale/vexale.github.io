@@ -1,1 +1,1 @@
-export type DesktopPage = 'library' | 'account' | 'settings' | 'support' | 'feedback' | 'privacy'
+export type DesktopPage = 'library' | 'tools' | 'themes' | 'settings' | 'account' | 'support' | 'privacy'

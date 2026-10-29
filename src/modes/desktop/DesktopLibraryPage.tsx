@@ -5,7 +5,6 @@ import type { Item, TNode } from '../../shared'
 import { useLocale } from '../../lib/i18n'
 import { useDesktopMessages } from './i18n'
 import DesktopNoteEditor from './DesktopNoteEditor'
-import DesktopSectionAddControl from './DesktopSectionAddControl'
 
 function kindOf(file: File): Item['kind'] {
   if (file.type.startsWith('image/')) return 'image'
@@ -64,13 +63,10 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
           <h2>{node.title}</h2>
           <p>{messages.sections.sectionDescription}</p>
         </div>
-        <div className="desk-section-heading-actions">
-          <DesktopSectionAddControl parentId={node.id} parentPath={path} targetTitle={node.title} variant="page" />
-          <button type="button" className="desk-button desk-button-primary" onClick={() => inputRef.current?.click()}>
-            <Plus size={17} aria-hidden="true" />
-            <span>{messages.files.add}</span>
-          </button>
-        </div>
+        <button type="button" className="desk-button desk-button-primary" onClick={() => inputRef.current?.click()}>
+          <Plus size={17} aria-hidden="true" />
+          <span>{messages.files.add}</span>
+        </button>
         <input
           ref={inputRef}
           type="file"
