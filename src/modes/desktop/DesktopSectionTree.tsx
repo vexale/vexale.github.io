@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import DesktopSectionAddControl from './DesktopSectionAddControl'
 import type { CSSProperties, FormEvent } from 'react'
-import { ChevronDown, ChevronRight, Folder, Plus, Star } from 'lucide-react'
+import { Check, ChevronDown, ChevronRight, Folder, Pencil, Plus, Star, X } from 'lucide-react'
 import { useLibrary, useTree } from '../../shared'
 import { updateDesktopPreferences, useDesktopPreferences } from './preferences'
 import type { TNode } from '../../shared'
@@ -14,15 +14,20 @@ interface TreeBranchProps {
   depth: number
   onSelect: (path: string[]) => void
   onToggle: (path: string[], parentPath: string[]) => void
-  onAddChild: (path: string[]) => void
   fileCountFor: (nodeId: string) => number
   labels: ReturnType<typeof useDesktopMessages>['sections']
   fileLabel: string
   favoriteSectionIds: string[]
   onToggleFavorite: (node: TNode) => void
+  editingId: string
+  editingTitle: string
+  onStartRename: (node: TNode) => void
+  onRenameTitle: (title: string) => void
+  onCommitRename: (event: FormEvent<HTMLFormElement>, nodeId: string) => void
+  onCancelRename: () => void
 }
 
-function TreeBranch({ nodes, parentPath, activePath, depth, onSelect, onToggle, onAddChild, fileCountFor, labels, fileLabel, favoriteSectionIds, onToggleFavorite }: TreeBranchProps) {
+function TreeBranch({ nodes, parentPath, activePath, depth, onSelect, onToggle, fileCountFor, labels, fileLabel, favoriteSectionIds, onToggleFavorite, editingId, editingTitle, onStartRename, onRenameTitle, onCommitRename, onCancelRename }: TreeBranchProps) {
   return (
     <ul className="desk-tree-list">
       {nodes.map(node => {
@@ -35,7 +40,12 @@ function TreeBranch({ nodes, parentPath, activePath, depth, onSelect, onToggle, 
         return (
           <li key={node.id} className="desk-tree-item">
             <div className="desk-tree-row" style={{ '--desk-tree-depth': depth } as CSSProperties}>
-              <button
+              {editingId === node.id ? <form className="desk-tree-rename-form" onSubmit={event => onCommitRename(event, node.id)}>
+                <label className="desk-visually-hidden" htmlFor={`desk-rename-${node.id}`}>{labels.renameInput}</label>
+                <input id={`desk-rename-${node.id}`} autoFocus value={editingTitle} onChange={event => onRenameTitle(event.target.value)} onKeyDown={event => { if (event.key === 'Escape') onCancelRename() }} maxLength={80} />
+                <button type="submit" className="desk-icon-button" aria-label={labels.saveEdit} disabled={!editingTitle.trim()}><Check size={15} aria-hidden="true" /></button>
+                <button type="button" className="desk-icon-button" aria-label={labels.cancelEdit} onClick={onCancelRename}><X size={15} aria-hidden="true" /></button>
+              </form> : <button
                 type="button"
                 className="desk-tree-select"
                 aria-current={selected ? 'page' : undefined}
@@ -44,7 +54,7 @@ function TreeBranch({ nodes, parentPath, activePath, depth, onSelect, onToggle, 
                 <Folder size={16} aria-hidden="true" />
                 <span className="desk-tree-name">{node.title}</span>
                 {fileCount > 0 && <span className="desk-tree-count" aria-label={`${fileCount} ${fileLabel}`}>{fileCount}</span>}
-              </button>
+              </button>}
               {hasChildren && (
                 <button
                   type="button"
@@ -57,6 +67,7 @@ function TreeBranch({ nodes, parentPath, activePath, depth, onSelect, onToggle, 
                 </button>
               )}
               <button type="button" className={`desk-tree-favorite ${favoriteSectionIds.includes(node.id) ? 'is-favorite' : ''}`} aria-pressed={favoriteSectionIds.includes(node.id)} aria-label={`${favoriteSectionIds.includes(node.id) ? labels.unfavorite : labels.favorite}: ${node.title}`} title={`${favoriteSectionIds.includes(node.id) ? labels.unfavorite : labels.favorite}: ${node.title}`} onClick={() => onToggleFavorite(node)}><Star size={15} fill={favoriteSectionIds.includes(node.id) ? 'currentColor' : 'none'} aria-hidden="true" /></button>
+              <button type="button" className="desk-icon-button desk-tree-action" aria-label={`${labels.rename}: ${node.title}`} title={`${labels.rename}: ${node.title}`} onClick={() => onStartRename(node)}><Pencil size={15} aria-hidden="true" /></button>
               <DesktopSectionAddControl parentId={node.id} parentPath={nodePath} targetTitle={node.title} />
             </div>
             {hasChildren && expanded && (
@@ -67,12 +78,17 @@ function TreeBranch({ nodes, parentPath, activePath, depth, onSelect, onToggle, 
                 depth={depth + 1}
                 onSelect={onSelect}
                 onToggle={onToggle}
-                onAddChild={onAddChild}
                 fileCountFor={fileCountFor}
                 labels={labels}
                 fileLabel={fileLabel}
                 favoriteSectionIds={favoriteSectionIds}
                 onToggleFavorite={onToggleFavorite}
+                editingId={editingId}
+                editingTitle={editingTitle}
+                onStartRename={onStartRename}
+                onRenameTitle={onRenameTitle}
+                onCommitRename={onCommitRename}
+                onCancelRename={onCancelRename}
               />
             )}
           </li>
@@ -84,15 +100,20 @@ function TreeBranch({ nodes, parentPath, activePath, depth, onSelect, onToggle, 
 
 export default function DesktopSectionTree() {
   const messages = useDesktopMessages()
-  const { tree, path, setPath, addNode } = useTree()
+  const { tree, path, setPath, addNode, renameNode } = useTree()
   const preferences = useDesktopPreferences()
   const { items } = useLibrary()
   const [sectionName, setSectionName] = useState('')
+  const [editingId, setEditingId] = useState('')
+  const [editingTitle, setEditingTitle] = useState('')
   const labels = messages.sections
   const favoriteSectionIds = preferences.favoriteSectionIds
   const allSections = (nodes: TNode[], parent: string[] = []): Array<{ node: TNode; path: string[] }> => nodes.flatMap(node => { const next = [...parent, node.id]; return [{ node, path: next }, ...allSections(node.children, next)] })
   const favoriteSections = allSections(tree).filter(entry => favoriteSectionIds.includes(entry.node.id))
   const toggleFavorite = (node: TNode): void => updateDesktopPreferences({ favoriteSectionIds: favoriteSectionIds.includes(node.id) ? favoriteSectionIds.filter(id => id !== node.id) : [...favoriteSectionIds, node.id] })
+  const startRename = (node: TNode): void => { setEditingId(node.id); setEditingTitle(node.title) }
+  const cancelRename = (): void => { setEditingId(''); setEditingTitle('') }
+  const commitRename = (event: FormEvent<HTMLFormElement>, nodeId: string): void => { event.preventDefault(); if (editingTitle.trim()) renameNode(nodeId, editingTitle); cancelRename() }
 
   const fileCountFor = (nodeId: string): number => items.reduce((count, item) => count + Number(item.nodeId === nodeId), 0)
   const addSection = (event: FormEvent<HTMLFormElement>): void => {
@@ -134,13 +155,18 @@ export default function DesktopSectionTree() {
             depth={0}
             onSelect={setPath}
             onToggle={(nodePath, parentPath) => setPath(path[parentPath.length] === nodePath[nodePath.length - 1] ? parentPath : nodePath)}
-            onAddChild={() => undefined}
-            fileCountFor={fileCountFor}
+                fileCountFor={fileCountFor}
             labels={labels}
             fileLabel={messages.files.title}
-            favoriteSectionIds={favoriteSectionIds}
-            onToggleFavorite={toggleFavorite}
-          />
+                favoriteSectionIds={favoriteSectionIds}
+                onToggleFavorite={toggleFavorite}
+                editingId={editingId}
+                editingTitle={editingTitle}
+                onStartRename={startRename}
+                onRenameTitle={setEditingTitle}
+                onCommitRename={commitRename}
+                onCancelRename={cancelRename}
+              />
         ) : <p className="desk-tree-empty">{labels.empty}</p>}
       </nav>
     </section>

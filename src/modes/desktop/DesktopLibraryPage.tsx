@@ -28,10 +28,11 @@ function formatFileSize(bytes: number, locale: string, byteUnit: string, kilobyt
 
 function FilePreview({ item, messages, onClose }: { item: Item; messages: ReturnType<typeof useDesktopMessages>['files']; onClose: () => void }) {
   const type = item.file?.type ?? ''
+  const isPdf = type === 'application/pdf' || item.name.toLowerCase().endsWith('.pdf')
   return <div className="desk-file-preview-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}>
     <section className="desk-file-preview" role="dialog" aria-modal="true" aria-label={messages.preview}>
       <header><h2>{item.name}</h2><button type="button" className="desk-icon-button" aria-label={messages.closePreview} onClick={onClose}><X size={17} /></button></header>
-      <div className="desk-file-preview-content">{type.startsWith('image/') ? <img src={item.url} alt={item.name} /> : type.startsWith('audio/') ? <audio controls src={item.url} /> : type.startsWith('video/') ? <video controls src={item.url} /> : type === 'application/pdf' ? <iframe title={item.name} src={item.url} /> : <div className="desk-preview-unavailable"><FileText size={28} /><p>{messages.previewUnavailable}</p><a href={item.url} target="_blank" rel="noreferrer">{messages.open}</a></div>}</div>
+      <div className="desk-file-preview-content">{type.startsWith('image/') ? <img src={item.url} alt={item.name} /> : type.startsWith('audio/') ? <audio controls src={item.url} /> : type.startsWith('video/') ? <video controls src={item.url} /> : isPdf ? <iframe title={item.name} src={`${item.url}#page=1&view=FitH`} /> : <div className="desk-preview-unavailable"><FileText size={28} /><p>{messages.previewUnavailable}</p><a href={item.url} target="_blank" rel="noreferrer">{messages.open}</a></div>}</div>
     </section>
   </div>
 }
@@ -43,6 +44,7 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
   const [openTool, setOpenTool] = useState('')
   const [previewItem, setPreviewItem] = useState<Item | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const { items, add, remove, storageError } = useLibrary()
   const { tree, setPath } = useTree()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -51,16 +53,16 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
   const childSections = node.children
   const sectionTools = TOOL_CATALOG.filter(tool => { const assignment = preferences.toolAssignments[tool.id] ?? { global: true, sectionIds: [] }; return assignment.global || assignment.sectionIds.includes(node.id) })
 
-  const addFiles = (files: FileList | null): void => {
-    if (!files?.length) return
-    Array.from(files).forEach(file => add({
-      nodeId: node.id,
-      name: file.name,
-      kind: kindOf(file),
-      url: URL.createObjectURL(file),
-      size: file.size,
-      file,
-    }))
+  const addFiles = async (files: FileList | null): Promise<void> => {
+    const selectedFiles = files ? Array.from(files) : []
+    if (!selectedFiles.length) return
+    setUploadProgress(0)
+    for (const [index, file] of selectedFiles.entries()) {
+      add({ nodeId: node.id, name: file.name, kind: kindOf(file), url: URL.createObjectURL(file), size: file.size, file })
+      setUploadProgress(Math.round(((index + 1) / selectedFiles.length) * 100))
+      await new Promise<void>(resolve => window.setTimeout(resolve, 0))
+    }
+    window.setTimeout(() => setUploadProgress(null), 500)
   }
 
   const removeFile = (item: Item): void => {
@@ -92,7 +94,7 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
           multiple
           className="desk-visually-hidden"
           aria-label={messages.files.choose}
-          onChange={event => { addFiles(event.target.files); event.target.value = '' }}
+          onChange={event => { void addFiles(event.target.files); event.target.value = '' }}
         />
       </header>
       <section className="desk-child-sections" aria-label={messages.sections.childSections}><h3>{messages.sections.childSections}</h3>{childSections.length ? <div className="desk-child-section-grid">{childSections.map(child => <button type="button" key={child.id} className="desk-child-section-card" onClick={() => setPath([...path, child.id])}><span>{child.title}</span><span>{child.children.length} {messages.sections.childrenCount}</span></button>)}</div> : <p className="desk-section-empty">{messages.sections.childEmpty}</p>}</section>
@@ -100,21 +102,22 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
         <div className="desk-section-tools-list">{sectionTools.map(tool => <button type="button" className="desk-tool-chip-button" key={tool.id} onClick={() => setOpenTool(tool.id)}>{locale === 'ar' ? ({ calc: 'الحاسبة', notes: 'ملاحظات سريعة', plot: 'الإحداثيات', chat: 'محادثة المكتبة', math: 'حلّال الرياضيات', code: 'مساحة الأكواد', quiz: 'اختبارات وبطاقات', data: 'تحليل البيانات', board: 'لوحة وخرائط', docs: 'أدوات المستندات', tasks: 'المهام', audio: 'تركيز وصوت' }[tool.id] ?? tool.label) : tool.label}</button>)}<button type="button" className="desk-tool-chip-button desk-tool-add-button" onClick={() => { window.history.pushState({ desktopPage: 'tools' }, '', '#/office/tools'); window.dispatchEvent(new PopStateEvent('popstate')) }}>{messages.toolHub.addTool}</button></div>
       </section>
       <div className="desk-library-content">
-        <section className={`desk-files-panel ${isDragging ? 'desk-files-panel-dragging' : ''}`} aria-labelledby="desk-files-title" onDragOver={event => { event.preventDefault(); setIsDragging(true) }} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsDragging(false) }} onDrop={event => { event.preventDefault(); setIsDragging(false); addFiles(event.dataTransfer.files) }}>
+        <section className={`desk-files-panel ${isDragging ? 'desk-files-panel-dragging' : ''}`} aria-labelledby="desk-files-title" onDragOver={event => { event.preventDefault(); setIsDragging(true) }} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsDragging(false) }} onDrop={event => { event.preventDefault(); setIsDragging(false); void addFiles(event.dataTransfer.files) }}>
           <header className="desk-panel-heading">
             <h3 id="desk-files-title">{messages.files.title}</h3>
             <span className="desk-count-pill">{nodeItems.length}</span>
           </header>
           {storageError && <p className="desk-inline-error" role="status">{messages.files.storageError}</p>}
           {isDragging && <p className="desk-drop-hint" role="status">{messages.files.dropHere}</p>}
+          {uploadProgress !== null && <div className="desk-upload-progress" role="status"><progress value={uploadProgress} max="100" /> <span>{messages.files.uploading} {uploadProgress}%</span></div>}
           {nodeItems.length ? (
-            <ul className="desk-file-list">
+            <ul className="desk-file-grid">
               {nodeItems.map(item => (
-                <li key={item.id} className="desk-file-row" data-file-id={item.id}>
-                  <span className="desk-file-icon"><FileKindIcon kind={item.kind} /></span>
+                <li key={item.id} className="desk-file-card" data-file-id={item.id}>
+                  <div className="desk-file-card-preview">{item.kind === 'image' ? <img src={item.url} alt="" loading="lazy" /> : (item.file?.type === 'application/pdf' || item.name.toLowerCase().endsWith('.pdf')) ? <iframe title={item.name} src={`${item.url}#page=1&view=FitH`} tabIndex={-1} /> : <span className="desk-file-icon"><FileKindIcon kind={item.kind} /></span>}</div>
                   <div className="desk-file-details">
                     <bdi className="desk-file-name" title={item.name}>{item.name}</bdi>
-                    <span className="desk-file-meta">{formatFileSize(item.size, locale, messages.files.byteUnit, messages.files.kilobyteUnit)}</span>
+                    <span className="desk-file-meta"><FileKindIcon kind={item.kind} />{formatFileSize(item.size, locale, messages.files.byteUnit, messages.files.kilobyteUnit)}</span>
                   </div>
                   <div className="desk-file-actions">
                     <a className="desk-icon-button" href={item.url} target="_blank" rel="noreferrer" aria-label={`${messages.files.open}: ${item.name}`}>

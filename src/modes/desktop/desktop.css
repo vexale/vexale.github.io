@@ -544,6 +544,21 @@ html[data-mode='desktop'] .desk-files-empty p {
   margin: 0;
 }
 
+html[data-mode='desktop'] .desk-upload-progress { display: flex; align-items: center; gap: 9px; margin-block-end: 12px; color: var(--desk-muted); font-size: 13px; }
+html[data-mode='desktop'] .desk-upload-progress progress { width: min(240px, 100%); height: 8px; accent-color: var(--desk-accent); }
+html[data-mode='desktop'] .desk-file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+html[data-mode='desktop'] .desk-file-card { display: grid; min-width: 0; grid-template-rows: 116px auto auto; overflow: hidden; border: 1px solid var(--desk-border); border-radius: 9px; background: var(--desk-elevated); }
+html[data-mode='desktop'] .desk-file-card-preview { display: grid; min-width: 0; min-height: 0; place-items: center; overflow: hidden; border-block-end: 1px solid var(--desk-border); background: var(--desk-bg); color: var(--desk-accent); }
+html[data-mode='desktop'] .desk-file-card-preview img,
+html[data-mode='desktop'] .desk-file-card-preview iframe { width: 100%; height: 100%; border: 0; object-fit: cover; }
+html[data-mode='desktop'] .desk-file-card-preview iframe { pointer-events: none; }
+html[data-mode='desktop'] .desk-file-card-preview .desk-file-icon { width: 42px; height: 42px; }
+html[data-mode='desktop'] .desk-file-card .desk-file-details { gap: 5px; padding: 9px 10px 5px; }
+html[data-mode='desktop'] .desk-file-card .desk-file-name { font-size: 13px; }
+html[data-mode='desktop'] .desk-file-card .desk-file-meta { display: flex; align-items: center; gap: 5px; font-size: 12px; }
+html[data-mode='desktop'] .desk-file-card .desk-file-meta svg { width: 14px; height: 14px; color: var(--desk-accent); }
+html[data-mode='desktop'] .desk-file-card .desk-file-actions { justify-content: flex-end; padding: 4px 6px 6px; }
+
 html[data-mode='desktop'] .desk-inline-error,
 html[data-mode='desktop'] .desk-note-error {
   margin: 0 0 10px;
@@ -1007,6 +1022,25 @@ html[data-mode='desktop'] .desk-section-add-control-row { flex: 0 0 30px; min-wi
 html[data-mode='desktop'] .desk-section-add-control-row .desk-section-add-form { position: absolute; z-index: 3; inset-inline-end: 0; display: flex; width: min(250px, calc(100% - 8px)); gap: 4px; padding: 5px; border: 1px solid var(--desk-border); border-radius: 8px; background: var(--desk-surface); }
 html[data-mode='desktop'] .desk-section-add-control-row .desk-section-add-form input { width: 100%; min-width: 0; }
 html[data-mode='desktop'] .desk-tree-row:focus-within .desk-tree-action { opacity: 1; }
+html[data-mode='desktop'] .desk-tree-row { min-height: 36px; overflow: visible; }
+html[data-mode='desktop'] .desk-tree-select,
+html[data-mode='desktop'] .desk-tree-toggle,
+html[data-mode='desktop'] .desk-tree-favorite,
+html[data-mode='desktop'] .desk-tree-action { min-height: 36px; }
+html[data-mode='desktop'] .desk-tree-favorite { opacity: 0; }
+html[data-mode='desktop'] .desk-tree-row:hover .desk-tree-favorite,
+html[data-mode='desktop'] .desk-tree-select[aria-current='page'] ~ .desk-tree-favorite,
+html[data-mode='desktop'] .desk-tree-favorite:focus-visible,
+html[data-mode='desktop'] .desk-tree-favorite.is-favorite { opacity: 1; }
+html[data-mode='desktop'] .desk-tree-select[aria-current='page'] ~ .desk-tree-action,
+html[data-mode='desktop'] .desk-tree-row:hover .desk-tree-action,
+html[data-mode='desktop'] .desk-tree-row:focus-within .desk-tree-action { opacity: 1; }
+html[data-mode='desktop'] .desk-tree-rename-form { display: flex; min-width: 0; flex: 1 1 auto; align-items: center; gap: 4px; }
+html[data-mode='desktop'] .desk-tree-rename-form input { width: 100%; min-width: 0; min-height: 32px; padding: 5px 8px; border: 1px solid var(--desk-accent); border-radius: 6px; background: var(--desk-bg); color: var(--desk-text); font: inherit; font-size: 13px; }
+html[data-mode='desktop'] .desk-tree-rename-form .desk-icon-button { width: 32px; min-width: 32px; min-height: 32px; padding: 4px; }
+html[data-mode='desktop'] .desk-section-tree { min-width: 0; overflow: hidden; }
+html[data-mode='desktop'] .desk-tree-navigation { min-height: 0; overflow-x: hidden; overflow-y: auto; }
+html[data-mode='desktop'] .desk-main { overflow-x: hidden; overflow-y: auto; scroll-padding-block-start: 24px; }
 
 html[data-mode='desktop'] .desk-tools-hub { width: min(960px, 100%); margin-inline: auto; }
 html[data-mode='desktop'] .desk-tools-grid { display: grid; gap: 8px; }
@@ -1075,6 +1109,14 @@ html[data-mode='desktop'] .desk-favorite-link:hover { background: var(--desk-ele
 html[data-mode='desktop'] .desk-tree-favorite { display: inline-flex; width: 25px; min-width: 25px; min-height: 30px; align-items: center; justify-content: center; padding: 3px; border: 0; border-radius: 6px; background: transparent; color: var(--desk-muted); opacity: .58; cursor: pointer; }
 html[data-mode='desktop'] .desk-tree-row:hover .desk-tree-favorite, html[data-mode='desktop'] .desk-tree-favorite:focus-visible, html[data-mode='desktop'] .desk-tree-favorite.is-favorite { opacity: 1; }
 html[data-mode='desktop'] .desk-tree-favorite.is-favorite { color: var(--desk-accent); }
+html[data-mode='desktop'] .desk-tree-favorite { opacity: 0; min-height: 36px; }
+html[data-mode='desktop'] .desk-tree-row:hover .desk-tree-favorite,
+html[data-mode='desktop'] .desk-tree-select[aria-current='page'] ~ .desk-tree-favorite,
+html[data-mode='desktop'] .desk-tree-favorite:focus-visible,
+html[data-mode='desktop'] .desk-tree-favorite.is-favorite { opacity: 1; }
+html[data-mode='desktop'] .desk-tree-select[aria-current='page'] ~ .desk-tree-action,
+html[data-mode='desktop'] .desk-tree-row:hover .desk-tree-action,
+html[data-mode='desktop'] .desk-tree-row:focus-within .desk-tree-action { opacity: 1; }
 html[data-mode='desktop'] .desk-command-backdrop { position: fixed; z-index: 60; inset: 0; display: flex; justify-content: center; align-items: center; overflow: auto; padding: 24px 16px; background: #090a0dcc; backdrop-filter: blur(5px); }
 html[data-mode='desktop'] .desk-command-palette { display: flex; width: min(680px, 100%); max-height: min(680px, 78vh); flex-direction: column; overflow: hidden; border: 1px solid var(--desk-border); border-radius: 13px; background: var(--desk-surface); color: var(--desk-text); box-shadow: 0 24px 80px #0009; }
 html[data-mode='desktop'] .desk-command-search { display: flex; min-height: 58px; align-items: center; gap: 12px; padding: 9px 14px; border-bottom: 1px solid var(--desk-border); }
