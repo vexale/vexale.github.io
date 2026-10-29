@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
-import { AlertTriangle, Bug, Check, Download, FileText, Lightbulb, Moon, Send, Upload, UserRound } from 'lucide-react'
+import { AlertTriangle, Bug, Check, CheckCircle2, Download, FileText, Lightbulb, Moon, Send, Upload, UserRound } from 'lucide-react'
 import { dbGetAll, dbGetNote, dbPutNote } from '../../db'
 import { content as legalContent, LAST_UPDATED } from '../../lib/legalContent'
 import { createSharedWorkspace } from '../../lib/libraryApi'
 import { activateWorkspace, createWorkspaceInvite, leaveSharedWorkspace, useSharedWorkspace } from '../../lib/sharedWorkspace'
 import { useGoogleAuth, getGoogleIdToken, renderGoogleButton, signOutGoogle } from '../../lib/googleAuth'
 import { submitSupportRequest } from '../../lib/libraryApi'
-import { SUPPORT_EMAIL, SUPPORT_EMAIL_HREF } from '../../lib/contact'
+import { SUPPORT_EMAIL } from '../../lib/contact'
 import { useLocale, setLocale } from '../../lib/i18n'
 import { useLibrary, useTree } from '../../shared'
 import { useDesktopMessages } from './i18n'
@@ -52,7 +52,7 @@ function nodeDepth(nodes: ReturnType<typeof useTree>['tree'], targetId: string, 
   return undefined
 }
 
-export function DesktopPageContent({ page, onSwitchToSpace }: { page: DesktopPage; onSwitchToSpace: () => void }) {
+export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { page: DesktopPage; onSwitchToSpace: () => void; onOpenPrivacy: () => void }) {
   const m = useDesktopMessages()
   const locale = useLocale()
   const prefs = useDesktopPreferences()
@@ -179,7 +179,7 @@ export function DesktopPageContent({ page, onSwitchToSpace }: { page: DesktopPag
     {status && <p className="desk-inline-status" role="status">{status}</p>}
   </section>
 
-  if (page === 'support') return <SupportPage />
+  if (page === 'support') return <SupportPage onOpenPrivacy={onOpenPrivacy} />
   if (page === 'privacy') return <PrivacyPage />
   return <section className="desk-tools-page"><p>{t.toolsDescription}</p><button type="button" className="desk-button desk-button-primary" onClick={onSwitchToSpace}>{t.openTools}</button></section>
 }
@@ -201,8 +201,11 @@ function DeleteLocalData({ t }: { t: ReturnType<typeof useDesktopMessages>['work
   </section>
 }
 
-function SupportPage() {
+type SupportStatus = { kind: 'success' | 'error'; text: string }
+
+function SupportPage({ onOpenPrivacy }: { onOpenPrivacy: () => void }) {
   const m = useDesktopMessages()
+  const locale = useLocale()
   const { user } = useGoogleAuth()
   const t = m.workspacePages
   const [category, setCategory] = useState<'suggestion' | 'issue'>('suggestion')
@@ -210,18 +213,25 @@ function SupportPage() {
   const [details, setDetails] = useState('')
   const [email, setEmail] = useState('')
   const [busy, setBusy] = useState(false)
-  const [status, setStatus] = useState('')
+  const [status, setStatus] = useState<SupportStatus | null>(null)
+  const text = (english: string, arabic: string): string => locale === 'ar' ? arabic : english
   const submit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault()
-    if (!getGoogleIdToken()) { setStatus(t.signInToSend); return }
-    setBusy(true); setStatus('')
-    try { await submitSupportRequest({ category, subject: title, message: details, contactEmail: email || user?.email || '' }); setStatus(t.messageSent); setTitle(''); setDetails('') }
-    catch { setStatus(t.messageFailed) } finally { setBusy(false) }
+    if (busy) return
+    if (!getGoogleIdToken()) { setStatus({ kind: 'error', text: t.signInToSend }); return }
+    setBusy(true); setStatus(null)
+    try { await submitSupportRequest({ category, subject: title, message: details, contactEmail: email || user?.email || '' }); setStatus({ kind: 'success', text: t.messageSent }); setTitle(''); setDetails('') }
+    catch { setStatus({ kind: 'error', text: t.messageFailed }) } finally { setBusy(false) }
   }
-  return <section className="desk-form-page"><p>{t.supportIntro} {t.contactSupportPrefix}<a href={SUPPORT_EMAIL_HREF} dir="ltr">{SUPPORT_EMAIL}</a></p>
-    <aside className="desk-support-notes"><div><strong>{t.notes.title}</strong><p>{t.notes.placeholder}</p></div><span className="desk-count-pill">{t.notes.saved}</span></aside>
-    <div className="desk-choice-row"><button type="button" className="desk-button" aria-pressed={category === 'suggestion'} onClick={() => setCategory('suggestion')}><Lightbulb size={16} />{t.suggestion}</button><button type="button" className="desk-button" aria-pressed={category === 'issue'} onClick={() => setCategory('issue')}><Bug size={16} />{t.bugReport}</button></div>
-    <form onSubmit={e => void submit(e)}><label>{t.title}<input required maxLength={120} value={title} onChange={e => setTitle(e.target.value)} /></label><label>{t.details}<textarea required rows={5} maxLength={3000} value={details} onChange={e => setDetails(e.target.value)} dir="auto" /></label><label>{t.optionalEmail}<input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={user?.email} dir="ltr" /></label><button className="desk-button desk-button-primary" disabled={busy || !title.trim() || !details.trim()}><Send size={16} />{busy ? t.sending : t.send}</button></form>{status && <p role="status">{status}</p>}
+  return <section className="desk-support-page">
+    <section className="desk-support-card"><header><h2>{text('Send a message', 'أرسل رسالة')}</h2><p>{text('Share an idea or tell us what could work better for you.', 'شاركنا فكرة أو أخبرنا بما يمكن تحسينه من أجلك.')}</p></header>
+      <p className="desk-support-direct">{t.contactSupportPrefix}<span dir="ltr">{SUPPORT_EMAIL}</span></p>
+      <div className="desk-choice-row" role="tablist" aria-label={text('Message type', 'نوع الرسالة')}><button type="button" role="tab" aria-selected={category === 'suggestion'} className="desk-button" onClick={() => { setCategory('suggestion'); setStatus(null) }}><Lightbulb size={16} />{t.suggestion}</button><button type="button" role="tab" aria-selected={category === 'issue'} className="desk-button" onClick={() => { setCategory('issue'); setStatus(null) }}><Bug size={16} />{text('Bug report / complaint', 'بلاغ عن خلل / شكوى')}</button></div>
+      <form onSubmit={event => void submit(event)}><label>{t.title}<input required value={title} onChange={event => setTitle(event.target.value)} maxLength={120} placeholder={text('A short summary', 'ملخص قصير')} /></label><label>{t.details}<textarea required value={details} onChange={event => setDetails(event.target.value)} maxLength={3000} rows={4} dir="auto" placeholder={text('Tell us a little more…', 'أخبرنا بمزيد من التفاصيل…')} /></label><label>{t.optionalEmail}<input type="email" value={email} onChange={event => setEmail(event.target.value)} maxLength={254} autoComplete="email" placeholder={user?.email ?? 'name@example.com'} dir="ltr" /></label><button type="submit" className="desk-button desk-button-primary" disabled={busy || !title.trim() || !details.trim()}><Send size={16} />{busy ? t.sending : t.send}</button></form>
+      {status && <p role={status.kind === 'error' ? 'alert' : 'status'} className={`desk-support-status desk-support-status-${status.kind}`}>{status.kind === 'success' && <CheckCircle2 size={16} />}{status.text}</p>}
+    </section>
+    <section className="desk-support-faq"><h2>{text('Frequently asked questions', 'الأسئلة الشائعة')}</h2><details><summary>{text('How does live library sharing work?', 'كيف تعمل مشاركة المكتبة المباشرة؟')}</summary><p>{text('Create a live workspace from a section note and share its invitation link. People with that link can view and edit notes for matching section paths; updates appear in connected views.', 'أنشئ مساحة مباشرة من ملاحظات أحد الأقسام وشارك رابط الدعوة. يستطيع من يملك الرابط مشاهدة ملاحظات المسارات المطابقة وتعديلها، وتظهر التغييرات فوراً في الجلسات المتصلة.')}</p></details><details><summary>{text('How is my data protected?', 'كيف تتم حماية بياناتي؟')}</summary><p>{text('Private notes stay in this browser. Cloud support messages and shared notes are sent only when you choose those actions. A live-workspace invitation is a bearer link: anyone who has it can access that shared workspace.', 'تبقى الملاحظات الخاصة في هذا المتصفح. لا تُرسل رسائل الدعم أو الملاحظات المشتركة إلى السحابة إلا عند اختيارك ذلك. رابط مساحة المشاركة هو رابط وصول؛ يستطيع كل من يملكه الوصول إلى تلك المساحة.')}</p></details><details><summary>{text('What can the study assistant do?', 'ما مهام مساعد الدراسة؟')}</summary><p>{text('It can summarize the current section, create review questions, and answer questions using the note text you choose to send. It does not browse your private library or send notes automatically.', 'يمكنه تلخيص القسم الحالي وإنشاء أسئلة للمراجعة والإجابة عن أسئلة بالاستناد إلى نص الملاحظات الذي تختار إرساله. لا يتصفح مكتبتك الخاصة ولا يرسل الملاحظات تلقائياً.')}</p></details><details><summary>{text('Which domains can I organize here?', 'ما المجالات التي يمكن تنظيمها هنا؟')}</summary><p>{text('Create a structure for Quran study, science, languages, exam revision, or any subject that matters to you.', 'أنشئ بنية لدراسة القرآن أو العلوم أو اللغات أو مراجعة الاختبارات أو أي مادة تهمك.')}</p></details></section>
+    <section className="desk-support-legal"><h2>{text('Legal information', 'المعلومات القانونية')}</h2><div><button type="button" className="desk-button" onClick={onOpenPrivacy}>{t.privacyTab}</button><button type="button" className="desk-button" onClick={onOpenPrivacy}>{t.termsTab}</button></div></section>
   </section>
 }
 

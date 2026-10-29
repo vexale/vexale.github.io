@@ -889,6 +889,23 @@ html[data-mode='desktop'] .desk-form-page textarea { resize: vertical; }
 html[data-mode='desktop'] .desk-support-notes { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; border: 1px solid var(--desk-border); border-radius: 9px; background: var(--desk-surface); }
 html[data-mode='desktop'] .desk-support-notes strong { font-size: 15px; }
 html[data-mode='desktop'] .desk-support-notes p { margin: 3px 0 0; color: var(--desk-muted); font-size: 13px; }
+html[data-mode='desktop'] .desk-support-page { display: grid; gap: var(--desk-density-space, 14px); }
+html[data-mode='desktop'] .desk-support-card, html[data-mode='desktop'] .desk-support-faq, html[data-mode='desktop'] .desk-support-legal { display: grid; gap: 12px; min-width: 0; padding: 16px; border: 1px solid var(--desk-border); border-radius: 10px; background: var(--desk-surface); }
+html[data-mode='desktop'] .desk-support-card header h2, html[data-mode='desktop'] .desk-support-faq h2, html[data-mode='desktop'] .desk-support-legal h2 { margin: 0; font-size: 16px; }
+html[data-mode='desktop'] .desk-support-card header p, html[data-mode='desktop'] .desk-support-direct, html[data-mode='desktop'] .desk-support-faq p { margin: 0; color: var(--desk-muted); font-size: 13px; line-height: 1.7; }
+html[data-mode='desktop'] .desk-support-direct span { color: var(--desk-accent); }
+html[data-mode='desktop'] .desk-support-card form { display: grid; gap: 12px; }
+html[data-mode='desktop'] .desk-support-card form label { display: grid; gap: 6px; }
+html[data-mode='desktop'] .desk-support-card form input, html[data-mode='desktop'] .desk-support-card form textarea { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--desk-border); border-radius: 8px; background: var(--desk-bg); color: var(--desk-text); font: inherit; }
+html[data-mode='desktop'] .desk-support-card form textarea { resize: vertical; }
+html[data-mode='desktop'] .desk-support-card form input:focus-visible, html[data-mode='desktop'] .desk-support-card form textarea:focus-visible { border-color: var(--desk-accent); }
+html[data-mode='desktop'] .desk-support-status { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 10px; border: 1px solid var(--desk-border); border-radius: 8px; font-size: 13px; }
+html[data-mode='desktop'] .desk-support-status-success { color: var(--desk-success); }
+html[data-mode='desktop'] .desk-support-status-error { color: var(--desk-danger); }
+html[data-mode='desktop'] .desk-support-faq details { border: 1px solid var(--desk-border); border-radius: 8px; background: var(--desk-elevated); }
+html[data-mode='desktop'] .desk-support-faq summary { padding: 11px 12px; cursor: pointer; font-size: 14px; font-weight: 600; }
+html[data-mode='desktop'] .desk-support-faq details p { padding: 0 12px 12px; }
+html[data-mode='desktop'] .desk-support-legal > div { display: flex; flex-wrap: wrap; gap: 8px; }
 html[data-mode='desktop'] .desk-choice-row button[aria-pressed='true'] { border-color: var(--desk-accent); color: var(--desk-accent); }
 html[data-mode='desktop'] .desk-inline-status { color: var(--desk-success); }
 html[data-mode='desktop'] .desk-legal-page { display: grid; gap: 18px; }
