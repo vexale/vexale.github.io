@@ -63,7 +63,7 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
   const { user } = useGoogleAuth()
   const sharedWorkspace = useSharedWorkspace()
   const { tree, addNode } = useTree()
-  const { items, add } = useLibrary()
+  const { add } = useLibrary()
   const fileRef = useRef<HTMLInputElement>(null)
   const authRef = useRef<HTMLDivElement>(null)
   const t = m.workspacePages

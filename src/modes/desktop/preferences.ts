@@ -8,6 +8,7 @@ export type Density = 'comfortable' | 'compact' | 'spacious'
 
 export interface DesktopPreferences {
   theme: DesktopTheme
+  accentColor: string | null
   font: DesktopFont
   fontSize: number
   lineHeight: number
@@ -17,6 +18,7 @@ export interface DesktopPreferences {
   sidebarPosition: SidebarPosition
   railCollapsed: boolean
   sectionsCollapsed: boolean
+  expandedSectionIds: string[]
 }
 
 export const DESKTOP_PREFERENCES_KEY = 'vexale-office-preferences-v1'
@@ -28,6 +30,7 @@ const SIDEBAR_POSITIONS: readonly SidebarPosition[] = ['auto', 'right', 'left']
 
 export const DEFAULT_DESKTOP_PREFERENCES: DesktopPreferences = {
   theme: 'calm-violet',
+  accentColor: null,
   font: 'instrument',
   fontSize: 16,
   lineHeight: 1.6,
@@ -37,6 +40,7 @@ export const DEFAULT_DESKTOP_PREFERENCES: DesktopPreferences = {
   sidebarPosition: 'auto',
   railCollapsed: false,
   sectionsCollapsed: false,
+  expandedSectionIds: [],
 }
 
 function isOneOf<T extends string>(value: unknown, allowed: readonly T[]): value is T {
@@ -50,6 +54,7 @@ function sanitize(value: unknown): DesktopPreferences {
   const lineHeight = typeof raw.lineHeight === 'number' && Number.isFinite(raw.lineHeight) ? Math.max(1.2, Math.min(2, raw.lineHeight)) : DEFAULT_DESKTOP_PREFERENCES.lineHeight
   return {
     theme: isOneOf(raw.theme, THEME_IDS) ? raw.theme : DEFAULT_DESKTOP_PREFERENCES.theme,
+    accentColor: typeof raw.accentColor === 'string' && /^#[\da-f]{6}$/i.test(raw.accentColor) ? raw.accentColor.toLowerCase() : null,
     font: isOneOf(raw.font, FONT_IDS) ? raw.font : DEFAULT_DESKTOP_PREFERENCES.font,
     fontSize,
     lineHeight,
@@ -59,6 +64,7 @@ function sanitize(value: unknown): DesktopPreferences {
     sidebarPosition: isOneOf(raw.sidebarPosition, SIDEBAR_POSITIONS) ? raw.sidebarPosition : DEFAULT_DESKTOP_PREFERENCES.sidebarPosition,
     railCollapsed: typeof raw.railCollapsed === 'boolean' ? raw.railCollapsed : DEFAULT_DESKTOP_PREFERENCES.railCollapsed,
     sectionsCollapsed: typeof raw.sectionsCollapsed === 'boolean' ? raw.sectionsCollapsed : DEFAULT_DESKTOP_PREFERENCES.sectionsCollapsed,
+    expandedSectionIds: Array.isArray(raw.expandedSectionIds) ? raw.expandedSectionIds.filter((id): id is string => typeof id === 'string') : [],
   }
 }
 
