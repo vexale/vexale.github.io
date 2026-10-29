@@ -22,6 +22,8 @@ export interface DesktopPreferences {
   sectionsCollapsed: boolean
   expandedSectionIds: string[]
   toolAssignments: Record<string, DesktopToolAssignment>
+  favoriteSectionIds: string[]
+  recentItems: string[]
 }
 
 export const DESKTOP_PREFERENCES_KEY = 'vexale-office-preferences-v1'
@@ -45,6 +47,8 @@ export const DEFAULT_DESKTOP_PREFERENCES: DesktopPreferences = {
   sectionsCollapsed: false,
   expandedSectionIds: [],
   toolAssignments: {},
+  favoriteSectionIds: [],
+  recentItems: [],
 }
 
 function isOneOf<T extends string>(value: unknown, allowed: readonly T[]): value is T {
@@ -70,6 +74,8 @@ function sanitize(value: unknown): DesktopPreferences {
     sectionsCollapsed: typeof raw.sectionsCollapsed === 'boolean' ? raw.sectionsCollapsed : DEFAULT_DESKTOP_PREFERENCES.sectionsCollapsed,
     expandedSectionIds: Array.isArray(raw.expandedSectionIds) ? raw.expandedSectionIds.filter((id): id is string => typeof id === 'string') : [],
     toolAssignments: raw.toolAssignments && typeof raw.toolAssignments === 'object' && !Array.isArray(raw.toolAssignments) ? Object.fromEntries(Object.entries(raw.toolAssignments as Record<string, unknown>).flatMap(([id, value]) => { if (!value || typeof value !== 'object') return []; const assignment = value as Record<string, unknown>; return [[id, { global: assignment.global === true, sectionIds: Array.isArray(assignment.sectionIds) ? assignment.sectionIds.filter((sectionId): sectionId is string => typeof sectionId === 'string') : [] }]] })) : {},
+    favoriteSectionIds: Array.isArray(raw.favoriteSectionIds) ? raw.favoriteSectionIds.filter((id): id is string => typeof id === 'string') : [],
+    recentItems: Array.isArray(raw.recentItems) ? raw.recentItems.filter((id): id is string => typeof id === 'string').slice(0, 8) : [],
   }
 }
 

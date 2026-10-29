@@ -110,7 +110,7 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
           {nodeItems.length ? (
             <ul className="desk-file-list">
               {nodeItems.map(item => (
-                <li key={item.id} className="desk-file-row">
+                <li key={item.id} className="desk-file-row" data-file-id={item.id}>
                   <span className="desk-file-icon"><FileKindIcon kind={item.kind} /></span>
                   <div className="desk-file-details">
                     <bdi className="desk-file-name" title={item.name}>{item.name}</bdi>

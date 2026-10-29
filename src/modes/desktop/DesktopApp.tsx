@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
-import { BookOpen, Building2, Ellipsis, LifeBuoy, Monitor, Palette, Settings, ShieldCheck, UserRound, Wrench, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize2, Minimize2 } from 'lucide-react'
+import { BookOpen, Building2, Ellipsis, LifeBuoy, Monitor, Palette, Settings, ShieldCheck, UserRound, Wrench, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize2, Minimize2, Search } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { setLocale, useLocale } from '../../lib/i18n'
 import { useSettings } from '../../lib/settings'
@@ -9,6 +9,7 @@ import type { DesktopPage } from './types'
 import DesktopLibraryPage from './DesktopLibraryPage'
 import DesktopSectionTree from './DesktopSectionTree'
 import { DesktopPageContent } from './DesktopPages'
+import DesktopCommandPalette from './DesktopCommandPalette'
 import './desktop.css'
 
 interface DesktopAppProps { onSwitchToSpace: () => void }
@@ -33,6 +34,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
   const preferences = useDesktopPreferences()
   const [page, setPage] = useState<DesktopPage>(() => typeof window === 'undefined' ? 'library' : pageFromHash())
   const [menuOpen, setMenuOpen] = useState(false)
+  const [paletteOpen, setPaletteOpen] = useState(false)
   const bothPanelsCollapsed = preferences.railCollapsed && preferences.sectionsCollapsed
   const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
   const railExpanded = !preferences.railCollapsed
@@ -74,8 +76,9 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
   useEffect(() => {
     const syncHash = (): void => setPage(pageFromHash())
     const onShortcut = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') { setMenuOpen(false); return }
+      if (event.key === 'Escape') { setMenuOpen(false); setPaletteOpen(false); return }
       if (!(event.ctrlKey || event.metaKey)) return
+      if (event.key.toLowerCase() === 'k') { event.preventDefault(); setPaletteOpen(value => !value); setMenuOpen(false); return }
       const target = event.target
       if (target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return
       if (event.key === '\\') { event.preventDefault(); toggleFocus() }
@@ -102,6 +105,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
               <button type="button" role="menuitem" onClick={toggleFocus}>{bothPanelsCollapsed ? <Minimize2 size={16} /> : <Maximize2 size={16} />}{messages.shell.collapseAll}<kbd dir="ltr">Ctrl+\</kbd></button>
             </div>}
           </div>
+          <button type="button" className="desk-command-trigger" aria-label={messages.commandPalette.open} onClick={() => setPaletteOpen(true)}><Search size={16} aria-hidden="true" /><span>{messages.commandPalette.open}</span><kbd dir="ltr">Ctrl+K</kbd></button>
           <button type="button" className="desk-button desk-language-toggle" aria-label={messages.language.switch} onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}><span>{messages.language.nextLabel}</span></button>
           <button type="button" className="desk-button desk-mode-switch" aria-label={messages.mode.switchToSpace} onClick={onSwitchToSpace}><Monitor size={17} aria-hidden="true" /><span>{messages.mode.space}</span></button>
         </div>
@@ -117,6 +121,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
           {page === 'library' ? <DesktopLibraryPage /> : <DesktopPageContent page={page} onSwitchToSpace={onSwitchToSpace} onOpenPrivacy={() => navigate('privacy')} />}
         </div>
       </main>
+      <DesktopCommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onNavigate={navigate} onSwitchToSpace={onSwitchToSpace} />
     </div>
   )
 }
