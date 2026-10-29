@@ -61,6 +61,8 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
     root.style.setProperty('--desk-line-height', String(preferences.lineHeight))
     root.style.setProperty('--desk-content-width', CONTENT_WIDTHS[preferences.contentWidth])
     root.style.setProperty('--desk-density-space', DENSITY_GAPS[preferences.density])
+    if (preferences.accentColor) root.style.setProperty('--desk-accent', preferences.accentColor)
+    else root.style.removeProperty('--desk-accent')
     return () => {
       if (previousMode) root.dataset.mode = previousMode
       else delete root.dataset.mode
@@ -70,6 +72,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
       root.style.removeProperty('--desk-font-family'); root.style.removeProperty('--desk-font-size')
       root.style.removeProperty('--desk-line-height'); root.style.removeProperty('--desk-content-width')
       root.style.removeProperty('--desk-density-space')
+      root.style.removeProperty('--desk-accent')
     }
   }, [preferences, spaceSettings.theme])
 

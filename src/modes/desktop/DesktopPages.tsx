@@ -15,13 +15,7 @@ import { updateDesktopPreferences, useDesktopPreferences } from './preferences'
 import type { DesktopPage } from './types'
 import DesktopToolsPage from './DesktopToolsPage'
 import DesktopTaskTreePage from './DesktopTaskTreePage'
-
-const THEME_COLORS: Record<string, [string, string, string]> = {
-  'calm-violet': ['#15171c', '#1a1c23', '#5b4fe0'], charcoal: ['#151515', '#1c1c1c', '#5b4fe0'],
-  'midnight-blue': ['#121821', '#18212c', '#5b4fe0'], forest: ['#131915', '#1a211c', '#5b4fe0'],
-  'sand-dark': ['#1a1814', '#211e19', '#5b4fe0'], 'rose-dusk': ['#1b171a', '#241f23', '#5b4fe0'],
-  'soft-light': ['#f2f1f7', '#e9e8f0', '#5b4fe0'],
-}
+import { DESKTOP_THEME_COLORS as THEME_COLORS } from './themeCatalog'
 
 function download(name: string, data: Blob): void {
   const url = URL.createObjectURL(data)

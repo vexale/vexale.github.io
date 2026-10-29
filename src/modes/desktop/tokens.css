@@ -134,6 +134,7 @@ html[data-mode='desktop'][data-theme='soft-light'] {
 html[data-mode='desktop'] {
   background: var(--desk-bg);
   color: var(--desk-text);
+  --accent: var(--desk-accent);
   font-family: var(--desk-font-family, 'Instrument Sans', 'Noto Kufi Arabic', system-ui, sans-serif);
   font-size: var(--desk-font-size, 16px);
   line-height: var(--desk-line-height, 1.6);
@@ -166,6 +167,10 @@ html[data-mode='desktop'] :focus-visible {
 html[data-mode='desktop'] * {
   box-sizing: border-box;
   scrollbar-color: var(--desk-scroll-thumb) var(--desk-bg);
+}
+
+html[data-mode='desktop'] :is(input, select, textarea) {
+  accent-color: var(--desk-accent);
 }
 
 html[data-mode='desktop'] *::-webkit-scrollbar {

@@ -1,6 +1,6 @@
 export const ACCENT_CATALOG = [
   { id: 'violet', hex: '#5b4fe0' },
-  { id: 'slate', hex: '#475569' },
+  { id: 'slate', hex: '#52525b' },
   { id: 'teal', hex: '#0f665f' },
   { id: 'forest', hex: '#176b4d' },
   { id: 'amber', hex: '#77530c' },

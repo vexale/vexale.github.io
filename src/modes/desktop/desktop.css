@@ -993,8 +993,7 @@ html[data-mode='desktop'] .desk-tree-row > .desk-tree-toggle { flex: 0 0 34px; }
   html[data-mode='desktop'] .desk-app[data-rail-collapsed='true'][data-sections-collapsed='true'] .desk-main { grid-row: 3; }
 }
 
-/* Step 1: shared desktop page measure and fixed violet accent. */
-html[data-mode='desktop'] .desk-app { --desk-accent: #5b4fe0; --accent: #5b4fe0; }
+/* Step 1: shared desktop page measure. */
 html[data-mode='desktop'] .desk-page { --desk-content-width: 760px; }
 html[data-mode='desktop'] .desk-app[data-desktop-page='tools'] .desk-page, html[data-mode='desktop'] .desk-app[data-desktop-page='themes'] .desk-page { --desk-content-width: 960px; }
 html[data-mode='desktop'] .desk-tree-row { position: relative; min-width: 0; }
