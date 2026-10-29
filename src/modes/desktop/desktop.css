@@ -1126,12 +1126,16 @@ html[data-mode='desktop'] .desk-command-search input:focus-visible { outline: 0;
 html[data-mode='desktop'] .desk-command-subhead, html[data-mode='desktop'] .desk-command-palette footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; color: var(--desk-muted); font-size: 12px; }
 html[data-mode='desktop'] .desk-command-subhead kbd, html[data-mode='desktop'] .desk-command-palette footer kbd { padding: 2px 5px; border: 1px solid var(--desk-border); border-radius: 4px; }
 html[data-mode='desktop'] .desk-command-results { min-height: 100px; overflow-y: auto; overscroll-behavior: contain; padding: 4px 8px 8px; }
+html[data-mode='desktop'] .desk-command-group { display: grid; gap: 2px; margin-block-end: 10px; }
+html[data-mode='desktop'] .desk-command-group:last-child { margin-block-end: 0; }
+html[data-mode='desktop'] .desk-command-group h3 { margin: 7px 9px 3px; color: var(--desk-muted); font-size: 11px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; }
 html[data-mode='desktop'] .desk-command-result { display: flex; width: 100%; min-height: 48px; align-items: center; gap: 10px; padding: 7px 9px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--desk-text); font: inherit; text-align: start; cursor: pointer; }
 html[data-mode='desktop'] .desk-command-result[aria-selected='true'], html[data-mode='desktop'] .desk-command-result:hover { border-color: var(--desk-border); background: var(--desk-elevated); }
 html[data-mode='desktop'] .desk-command-result-icon { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border-radius: 7px; background: var(--desk-accent-soft); color: var(--desk-accent); }
 html[data-mode='desktop'] .desk-command-result-copy { display: grid; min-width: 0; flex: 1; gap: 2px; }
 html[data-mode='desktop'] .desk-command-result-copy b { overflow: hidden; font-size: 14px; font-weight: 550; text-overflow: ellipsis; white-space: nowrap; }
 html[data-mode='desktop'] .desk-command-result-copy small { overflow: hidden; color: var(--desk-muted); text-overflow: ellipsis; white-space: nowrap; }
+html[data-mode='desktop'] .desk-command-result-copy mark { border-radius: 3px; background: var(--desk-accent-soft); color: var(--desk-text); box-shadow: 0 0 0 1px var(--desk-accent); }
 html[data-mode='desktop'] .desk-command-kind { color: var(--desk-muted); font-size: 11px; }
 html[data-mode='desktop'] .desk-command-empty { margin: 0; padding: 24px 12px; color: var(--desk-muted); text-align: center; }
 html[data-mode='desktop'] .desk-command-palette footer { border-top: 1px solid var(--desk-border); }
