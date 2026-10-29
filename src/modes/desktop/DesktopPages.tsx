@@ -162,7 +162,7 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
     <label>{t.contentWidth}<select value={prefs.contentWidth} onChange={e => updateDesktopPreferences({ contentWidth: e.target.value as typeof prefs.contentWidth })}>{(['narrow', 'comfortable', 'wide'] as const).map(x => <option key={x} value={x}>{t.widths[x]}</option>)}</select></label>
     <label>{t.density}<select value={prefs.density} onChange={e => updateDesktopPreferences({ density: e.target.value as typeof prefs.density })}>{(['comfortable', 'compact', 'spacious'] as const).map(x => <option key={x} value={x}>{t.densities[x]}</option>)}</select></label>
     <label className="desk-setting-check"><input type="checkbox" checked={prefs.reduceMotion} onChange={e => updateDesktopPreferences({ reduceMotion: e.target.checked })} />{t.reduceMotion}<Moon size={16} aria-hidden="true" /></label>
-    <div className="desk-live-preview"><strong>{t.preview}</strong><p>{t.previewText}</p></div>
+    <div className="desk-live-preview"><strong>{t.preview}</strong><div className="desk-preview-sample" style={{ fontFamily: prefs.font === 'noto' ? "'Noto Kufi Arabic', 'Instrument Sans', system-ui, sans-serif" : prefs.font === 'system' ? "system-ui, 'Noto Kufi Arabic', sans-serif" : "'Instrument Sans', 'Noto Kufi Arabic', system-ui, sans-serif", fontSize: prefs.fontSize, lineHeight: prefs.lineHeight, maxWidth: prefs.contentWidth === 'narrow' ? '42ch' : prefs.contentWidth === 'wide' ? '72ch' : '58ch' }}><h3>{t.preview}</h3><p>{t.previewText}</p></div><small>{t.widths[prefs.contentWidth]} · {prefs.fontSize}px · {prefs.lineHeight.toFixed(1)}</small></div>
   </section>
 
   if (page === 'account') return <section className="desk-account-layout">
