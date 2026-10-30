@@ -1262,3 +1262,42 @@ html[data-mode='desktop'] .desk-task-map-node.is-done .desk-task-map-status-icon
   html[data-mode='desktop'] .desk-task-map-ring-value { animation: none !important; transition: none !important; }
   html[data-mode='desktop'] .desk-task-map-node:hover, html[data-mode='desktop'] .desk-task-map-node:focus-visible { transform: none; }
 }
+
+html[data-mode='desktop'] .desk-task-limit-warning { margin: 0; padding: 10px 12px; border: 1px solid #f87171; border-radius: 9px; background: #371c29; color: #ffe1e6; font-size: 13px; }
+html[data-mode='desktop'] .desk-task-map { display: grid; min-width: 0; gap: 10px; }
+html[data-mode='desktop'] .desk-task-map-toolbar { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+html[data-mode='desktop'] .desk-task-map-search { display: flex; min-width: min(100%, 220px); min-height: 38px; flex: 1 1 260px; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid #403453; border-radius: 9px; background: #15111f; color: #c7b7df; }
+html[data-mode='desktop'] .desk-task-map-search:focus-within { border-color: #a78bfa; box-shadow: 0 0 0 2px #7c3aed55; }
+html[data-mode='desktop'] .desk-task-map-search input { min-width: 0; min-height: 36px; flex: 1; border: 0; outline: 0; background: transparent; color: #f4efff; font: inherit; }
+html[data-mode='desktop'] .desk-task-map-search input::placeholder { color: #9d8bb6; }
+html[data-mode='desktop'] .desk-task-map-search button { display: grid; width: 30px; height: 30px; place-items: center; border: 0; border-radius: 7px; background: transparent; color: #c7b7df; cursor: pointer; }
+html[data-mode='desktop'] .desk-task-map-controls { display: flex; align-items: center; gap: 5px; }
+html[data-mode='desktop'] .desk-task-map-control { display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid #403453; border-radius: 8px; background: #15111f; color: #e8def8; cursor: pointer; }
+html[data-mode='desktop'] .desk-task-map-control:hover { border-color: #8b5cf6; background: #211a30; }
+html[data-mode='desktop'] .desk-task-map-control:focus-visible, html[data-mode='desktop'] .desk-task-map-search button:focus-visible { outline: 2px solid #c4b5fd; outline-offset: 2px; }
+html[data-mode='desktop'] .desk-task-map-zoom-level { min-width: 42px; color: #b9a9cf; font-size: 11px; font-variant-numeric: tabular-nums; text-align: center; }
+html[data-mode='desktop'] .desk-task-map-count { margin-inline-end: 5px; color: #b9a9cf; font-size: 11px; white-space: nowrap; }
+html[data-mode='desktop'] .desk-task-map-scroll { position: relative; width: 100%; height: min(68vh, 720px); min-height: 360px; overflow: hidden; touch-action: none; cursor: grab; user-select: none; }
+html[data-mode='desktop'] .desk-task-map-scroll:active { cursor: grabbing; }
+html[data-mode='desktop'] .desk-task-map-canvas { min-width: 0; position: relative; transform-origin: top left; will-change: transform; }
+html[data-mode='desktop'] .desk-task-map-node.is-selected { border-color: #c4b5fd; box-shadow: 0 0 0 2px #8b5cf677, 0 10px 26px #0007; }
+html[data-mode='desktop'] .desk-task-map-node.is-drop-target { border-color: #34d399; outline: 2px dashed #34d399; outline-offset: 3px; }
+html[data-mode='desktop'] .desk-task-map-node.is-dragged { opacity: .55; }
+html[data-mode='desktop'] .desk-task-map-node[draggable='true'] { cursor: grab; }
+html[data-mode='desktop'] .desk-task-map-node[draggable='true']:active { cursor: grabbing; }
+html[data-mode='desktop'] .desk-task-map-branch-icon { width: 24px; height: 24px; padding: 0; border: 0; border-radius: 5px; background: transparent; cursor: pointer; }
+html[data-mode='desktop'] .desk-task-map-branch-icon:hover { background: #3a2a52; color: #fff; }
+html[data-mode='desktop'] .desk-task-map-rename { min-width: 30px; flex: 1; padding: 4px 6px; border: 1px solid #a78bfa; border-radius: 6px; outline: 0; background: #0f0b19; color: #fff; font: inherit; }
+html[data-mode='desktop'] .desk-task-map-selection, html[data-mode='desktop'] .desk-task-map-help { margin: 0; color: #aa9bbf; font-size: 11px; line-height: 1.45; }
+html[data-mode='desktop'] .desk-task-map-selection span { color: #ded2f1; font-weight: 600; }
+html[data-mode='desktop'] .desk-task-map-search-error { margin: 0; color: #fda4af; font-size: 12px; }
+html[data-mode='desktop'] .desk-task-map-context-menu { position: absolute; z-index: 8; display: grid; min-width: 190px; gap: 3px; padding: 5px; border: 1px solid #55446e; border-radius: 10px; background: #181322; box-shadow: 0 16px 40px #000b; }
+html[data-mode='desktop'] .desk-task-map-context-menu button { min-height: 36px; padding: 7px 10px; border: 0; border-radius: 6px; background: transparent; color: #eee6fa; font: inherit; text-align: start; cursor: pointer; }
+html[data-mode='desktop'] .desk-task-map-context-menu button:hover, html[data-mode='desktop'] .desk-task-map-context-menu button:focus-visible { outline: 0; background: #332747; }
+html[data-mode='desktop'] .desk-task-map-context-menu button.is-danger { color: #fda4af; }
+@media (max-width: 700px) {
+  html[data-mode='desktop'] .desk-task-map-toolbar { align-items: stretch; }
+  html[data-mode='desktop'] .desk-task-map-controls { justify-content: space-between; }
+  html[data-mode='desktop'] .desk-task-map-count { flex: 1; }
+  html[data-mode='desktop'] .desk-task-map-scroll { height: 60vh; min-height: 300px; }
+}

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
-import { CalendarDays, Check, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Download, FilePlus2, ListTree, Map as MapIcon, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { CalendarDays, Check, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Download, FilePlus2, ListTree, Map as MapIcon, Pencil, Plus, Redo2, Trash2, Undo2, X } from 'lucide-react'
 import { dbGetNote } from '../../db'
 import { useLibrary, useTree } from '../../shared'
 import type { Item, TNode } from '../../shared'
 import { useDesktopMessages } from './i18n'
-import { createTask, removeTask, reorderSiblingTasks, updateTask, useTaskTreeStore } from './taskStore'
+import { createTask, MAX_TASK_COUNT, redoTaskTree, removeTask, reorderSiblingTasks, undoTaskTree, updateTask, useTaskTreeHistory, useTaskTreeStore } from './taskStore'
 import type { TaskRecord, TaskStatus } from './taskStore'
 import TaskMap from './TaskMap'
 
@@ -74,6 +74,7 @@ export default function DesktopTaskTreePage() {
   const messages = useDesktopMessages()
   const labels = messages.taskTree
   const tasks = useTaskTreeStore()
+  const taskHistory = useTaskTreeHistory()
   const { items } = useLibrary()
   const { tree } = useTree()
   const [notes, setNotes] = useState<NoteOption[]>([])
@@ -86,6 +87,7 @@ export default function DesktopTaskTreePage() {
   const [attachmentTaskId, setAttachmentTaskId] = useState<string | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
   const [activeView, setActiveView] = useState<'outline' | 'map'>('outline')
+  const [taskLimitReached, setTaskLimitReached] = useState(false)
   const treeRef = useRef<HTMLDivElement>(null)
   const sections = useMemo(() => sectionList(tree), [tree])
   const children = useMemo(() => { const map = new Map<string | null, TaskRecord[]>(); for (const task of tasks) map.set(task.parentId, [...(map.get(task.parentId) ?? []), task]); return map }, [tasks])
@@ -94,9 +96,10 @@ export default function DesktopTaskTreePage() {
   const attachmentTask = attachmentTaskId ? tasks.find(task => task.id === attachmentTaskId) : undefined
 
   useEffect(() => { let cancelled = false; void Promise.all(sections.map(async section => { try { const note = await dbGetNote(section.id); return note?.html?.trim() ? { id: section.id, title: section.title } : null } catch { return null } })).then(rows => { if (!cancelled) setNotes(rows.filter((note): note is NoteOption => Boolean(note))) }); return () => { cancelled = true } }, [sections])
+  const createTaskWithLimit = (parentId: string | null, title: string, afterId?: string): string | null => { const id = createTask(parentId, title, afterId); setTaskLimitReached(!id); return id }
   const startCreate = (target: CreateTarget): void => { setCreateTarget(target); setDraft('') }
-  const submitCreate = (): void => { if (!createTarget || !draft.trim()) return; createTask(createTarget.parentId, draft, createTarget.afterId); setCreateTarget(null); setDraft('') }
-  const submitRoot = (event: FormEvent<HTMLFormElement>): void => { event.preventDefault(); if (!rootDraft.trim()) return; createTask(null, rootDraft); setRootDraft('') }
+  const submitCreate = (): void => { if (!createTarget || !draft.trim()) return; if (!createTaskWithLimit(createTarget.parentId, draft, createTarget.afterId)) return; setCreateTarget(null); setDraft('') }
+  const submitRoot = (event: FormEvent<HTMLFormElement>): void => { event.preventDefault(); if (!rootDraft.trim()) return; if (createTaskWithLimit(null, rootDraft)) setRootDraft('') }
   const beginEdit = (task: TaskRecord): void => { setEditingId(task.id); setEditValue(task.title) }
   const saveEdit = (): void => { if (editingId && editValue.trim()) updateTask(editingId, { title: editValue.trim() }); setEditingId(null); setEditValue('') }
   const cancelEdit = (): void => { setEditingId(null); setEditValue('') }
@@ -135,16 +138,17 @@ export default function DesktopTaskTreePage() {
   }
 
   return <section className="desk-task-page" aria-label={messages.pages.tasks.title}>
-    <div className="desk-task-toolbar"><form className="desk-task-root-form" onSubmit={submitRoot}><input value={rootDraft} onChange={event => setRootDraft(event.target.value)} placeholder={labels.placeholder} aria-label={labels.newTask} maxLength={180} /><button type="submit" className="desk-button desk-button-primary" disabled={!rootDraft.trim()}><Plus size={16} />{labels.addTask}</button></form><div className="desk-task-toolbar-actions"><button type="button" className="desk-button" onClick={() => expandAll(true)}><ChevronsUpDown size={15} />{labels.expandAll}</button><button type="button" className="desk-button" onClick={() => expandAll(false)}><ChevronsDownUp size={15} />{labels.collapseAll}</button><button type="button" className="desk-button" onClick={exportJson}><Download size={15} />{labels.exportJson}</button><button type="button" className="desk-button" onClick={exportMarkdown}><Download size={15} />{labels.exportMarkdown}</button></div></div>
+    <div className="desk-task-toolbar"><form className="desk-task-root-form" onSubmit={submitRoot}><input value={rootDraft} onChange={event => setRootDraft(event.target.value)} placeholder={labels.placeholder} aria-label={labels.newTask} maxLength={180} /><button type="submit" className="desk-button desk-button-primary" disabled={!rootDraft.trim()}><Plus size={16} />{labels.addTask}</button></form><div className="desk-task-toolbar-actions"><button type="button" className="desk-button" onClick={() => undoTaskTree()} disabled={!taskHistory.canUndo}><Undo2 size={15} />{labels.undo}</button><button type="button" className="desk-button" onClick={() => redoTaskTree()} disabled={!taskHistory.canRedo}><Redo2 size={15} />{labels.redo}</button><button type="button" className="desk-button" onClick={() => expandAll(true)}><ChevronsUpDown size={15} />{labels.expandAll}</button><button type="button" className="desk-button" onClick={() => expandAll(false)}><ChevronsDownUp size={15} />{labels.collapseAll}</button><button type="button" className="desk-button" onClick={exportJson}><Download size={15} />{labels.exportJson}</button><button type="button" className="desk-button" onClick={exportMarkdown}><Download size={15} />{labels.exportMarkdown}</button></div></div>
     <div className="desk-task-views" role="tablist" aria-label={labels.views}>
       <button type="button" role="tab" aria-selected={activeView === 'outline'} className={activeView === 'outline' ? 'is-active' : ''} onClick={() => setActiveView('outline')}><ListTree size={15} />{labels.outlineView}</button>
       <button type="button" role="tab" aria-selected={activeView === 'map'} className={activeView === 'map' ? 'is-active' : ''} onClick={() => setActiveView('map')}><MapIcon size={15} />{labels.mapView}</button>
     </div>
     {activeView === 'outline' && <p id="desk-task-keyboard-help" className="desk-task-keyboard-hint">{labels.keyboardHelp}</p>}
+    {taskLimitReached && tasks.length >= MAX_TASK_COUNT && <p className="desk-task-limit-warning" role="alert">{labels.taskLimitReached}</p>}
     {tasks.length === 0 && <div className="desk-task-empty"><ListTree size={24} /><strong>{labels.emptyTitle}</strong><p>{labels.emptyText}</p></div>}
     {activeView === 'outline' ? <div className="desk-task-tree-wrap" ref={treeRef} onKeyDown={handleTreeKeyDown}>
       <TaskBranch parentId={null} tasks={tasks} children={children} progress={progress} collapsed={collapsed} setCollapsed={setTaskCollapsed} createTarget={createTarget} draft={draft} setDraft={setDraft} submitCreate={submitCreate} cancelCreate={() => setCreateTarget(null)} labels={labels} statusLabels={statusLabels} editingId={editingId} editValue={editValue} setEditValue={setEditValue} beginEdit={beginEdit} saveEdit={saveEdit} cancelEdit={cancelEdit} onStatus={(id, status) => updateTask(id, { status })} onDueDate={(id, dueDate) => updateTask(id, { dueDate: dueDate || null })} onAddChild={id => startCreate({ parentId: id })} onAddSibling={task => startCreate({ parentId: task.parentId, afterId: task.id })} onDelete={handleDelete} onAttach={setAttachmentTaskId} dragId={dragId} setDragId={setDragId} />
-    </div> : tasks.length > 0 && <TaskMap tasks={tasks} children={children} progress={progress} collapsed={collapsed} onToggleCollapsed={setTaskCollapsed} files={items} notes={notes} statusLabels={statusLabels} progressLabel={labels.progress} />}
+    </div> : tasks.length > 0 && <TaskMap tasks={tasks} children={children} progress={progress} collapsed={collapsed} onToggleCollapsed={setTaskCollapsed} files={items} notes={notes} labels={labels} onAddTask={createTaskWithLimit} onLimitReached={() => setTaskLimitReached(true)} />}
     {attachmentTask && <AttachmentPicker task={attachmentTask} files={items} notes={notes} labels={labels} onClose={() => setAttachmentTaskId(null)} />}
   </section>
 }
