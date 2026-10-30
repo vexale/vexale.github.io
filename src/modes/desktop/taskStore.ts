@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { reorderSiblingTaskTree, reparentTaskTree } from './taskTreeLogic'
 
 export type TaskStatus = 'todo' | 'doing' | 'done' | 'late'
 export const MAX_TASK_COUNT = 200
@@ -91,32 +92,12 @@ export function removeTask(id: string): void {
   commit(tasks.filter(task => !ids.has(task.id)))
 }
 export function reparentTask(sourceId: string, parentId: string): boolean {
-  const source = tasks.find(task => task.id === sourceId), parent = tasks.find(task => task.id === parentId)
-  if (!source || !parent || source.id === parent.id || source.parentId === parent.id) return false
-  let ancestor: TaskRecord | undefined = parent
-  while (ancestor) {
-    if (ancestor.id === source.id) return false
-    const ancestorId = ancestor.parentId
-    ancestor = ancestorId ? tasks.find(task => task.id === ancestorId) : undefined
-  }
-  const oldSiblings = tasks.filter(task => task.parentId === source.parentId && task.id !== source.id).sort((a, b) => a.order - b.order)
-  const newSiblings = [...tasks.filter(task => task.parentId === parentId && task.id !== source.id).sort((a, b) => a.order - b.order), source]
-  const oldOrders = new Map(oldSiblings.map((task, index) => [task.id, index]))
-  const newOrders = new Map(newSiblings.map((task, index) => [task.id, index]))
-  commit(tasks.map(task => {
-    if (task.id === source.id) return { ...task, parentId, order: newOrders.get(task.id) ?? 0 }
-    if (oldOrders.has(task.id)) return { ...task, order: oldOrders.get(task.id)! }
-    if (newOrders.has(task.id)) return { ...task, order: newOrders.get(task.id)! }
-    return task
-  }))
+  const result = reparentTaskTree(tasks, sourceId, parentId)
+  if (!result.changed) return false
+  commit(result.tasks)
   return true
 }
 export function reorderSiblingTasks(sourceId: string, targetId: string, position: 'before' | 'after' = 'before'): void {
-  const source = tasks.find(task => task.id === sourceId), target = tasks.find(task => task.id === targetId)
-  if (!source || !target || source.id === target.id || source.parentId !== target.parentId) return
-  const siblings = tasks.filter(task => task.parentId === source.parentId).sort((a, b) => a.order - b.order)
-  const from = siblings.findIndex(task => task.id === sourceId), to = siblings.findIndex(task => task.id === targetId)
-  const [moved] = siblings.splice(from, 1); siblings.splice(to + (position === 'after' ? 1 : 0), 0, moved)
-  const orderMap = new Map(siblings.map((task, index) => [task.id, index]))
-  commit(tasks.map(task => orderMap.has(task.id) ? { ...task, order: orderMap.get(task.id)! } : task))
+  const next = reorderSiblingTaskTree(tasks, sourceId, targetId, position)
+  if (next !== tasks) commit(next)
 }

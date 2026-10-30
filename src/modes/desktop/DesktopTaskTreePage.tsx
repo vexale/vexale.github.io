@@ -9,23 +9,13 @@ import { createTask, MAX_TASK_COUNT, redoTaskTree, removeTask, reorderSiblingTas
 import type { TaskRecord, TaskStatus } from './taskStore'
 import TaskMap from './TaskMap'
 import { requestFocusTimer } from './focusTimerEvents'
+import { calculateTaskProgress } from './taskTreeLogic'
 
 interface NoteOption { id: string; title: string }
 interface CreateTarget { parentId: string | null; afterId?: string }
 type Labels = ReturnType<typeof useDesktopMessages>['taskTree']
 
 function sectionList(nodes: TNode[]): TNode[] { return nodes.flatMap(node => [node, ...sectionList(node.children)]) }
-function progressMap(tasks: TaskRecord[], children: Map<string | null, TaskRecord[]>): Map<string, number> {
-  const result = new Map<string, number>()
-  const calculate = (task: TaskRecord): number => {
-    const kids = children.get(task.id) ?? []
-    const value = kids.length ? Math.round(kids.reduce((sum, child) => sum + calculate(child), 0) / kids.length) : task.status === 'done' ? 100 : 0
-    result.set(task.id, value)
-    return value
-  }
-  tasks.filter(task => task.parentId === null).forEach(calculate)
-  return result
-}
 function download(name: string, content: string, mime: string): void {
   const url = URL.createObjectURL(new Blob([content], { type: mime }))
   const link = document.createElement('a'); link.href = url; link.download = name; link.click()
@@ -94,7 +84,7 @@ export default function DesktopTaskTreePage() {
   const treeRef = useRef<HTMLDivElement>(null)
   const sections = useMemo(() => sectionList(tree), [tree])
   const children = useMemo(() => { const map = new Map<string | null, TaskRecord[]>(); for (const task of tasks) map.set(task.parentId, [...(map.get(task.parentId) ?? []), task]); return map }, [tasks])
-  const progress = useMemo(() => progressMap(tasks, children), [tasks, children])
+  const progress = useMemo(() => calculateTaskProgress(tasks), [tasks])
   const statusLabels = labels.statuses
   const attachmentTask = attachmentTaskId ? tasks.find(task => task.id === attachmentTaskId) : undefined
 

@@ -1,5 +1,6 @@
 import { dbGetAll, dbGetNote } from '../db'
 import { getTaskTree } from '../modes/desktop/taskStore'
+import { serializeLibraryBackup } from './libraryBackup'
 
 function readTree(): unknown {
   try {
@@ -49,7 +50,7 @@ export async function exportEmergencyBackup(): Promise<void> {
     data: await toBase64(record.file),
   })))
   const payload = {
-    format: 'vexale-library',
+    format: 'vexale-library' as const,
     version: 2,
     exportedAt: new Date().toISOString(),
     tree,
@@ -57,5 +58,5 @@ export async function exportEmergencyBackup(): Promise<void> {
     files,
     tasks: getTaskTree(),
   }
-  download('vexale-emergency-backup.json', new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }))
+  download('vexale-emergency-backup.json', new Blob([serializeLibraryBackup(payload)], { type: 'application/json' }))
 }

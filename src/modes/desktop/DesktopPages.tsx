@@ -4,6 +4,7 @@ import { AlertTriangle, Bug, Check, CheckCircle2, Download, FileText, Lightbulb,
 import { dbGetAll, dbGetNote, dbPutNote } from '../../db'
 import { content as legalContent, LAST_UPDATED } from '../../lib/legalContent'
 import { createSharedWorkspace } from '../../lib/libraryApi'
+import { parseLibraryBackup, serializeLibraryBackup } from '../../lib/libraryBackup'
 import { activateWorkspace, createWorkspaceInvite, leaveSharedWorkspace, useSharedWorkspace } from '../../lib/sharedWorkspace'
 import { useGoogleAuth, getGoogleIdToken, renderGoogleButton, signOutGoogle } from '../../lib/googleAuth'
 import { submitSupportRequest } from '../../lib/libraryApi'
@@ -130,8 +131,8 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
         download('vexale-library.md', new Blob([body], { type: 'text/markdown;charset=utf-8' }))
       } else {
         const blobs = await Promise.all(records.map(async record => ({ ...record, file: undefined, mimeType: record.file.type, data: await toBase64(record.file) })))
-        const payload = { format: 'vexale-library', version: 2, exportedAt: new Date().toISOString(), tree, notes: Object.fromEntries(notes), files: blobs, tasks: getTaskTree() }
-        download(format === 'backup' ? 'vexale-backup.json' : 'vexale-library.json', new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }))
+        const payload = { format: 'vexale-library' as const, version: 2, exportedAt: new Date().toISOString(), tree, notes: Object.fromEntries(notes), files: blobs, tasks: getTaskTree() }
+        download(format === 'backup' ? 'vexale-backup.json' : 'vexale-library.json', new Blob([serializeLibraryBackup(payload)], { type: 'application/json' }))
       }
       if (format === 'backup') localStorage.setItem('vexale-last-backup-v1', String(Date.now()))
       setStatus(t.exportDone)
@@ -144,11 +145,7 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
     if (!file) return
     setBusy(true); setStatus('')
     try {
-      const parsed: unknown = JSON.parse(await file.text())
-      if (!parsed || typeof parsed !== 'object') throw new Error('notObject')
-      if ((parsed as { format?: string }).format !== 'vexale-library') throw new Error('format')
-      if (!Number.isInteger((parsed as { version?: number }).version) || Number((parsed as { version?: number }).version) < 1) throw new Error('version')
-      const pack = parsed as { tree?: Array<{ id?: string; title?: string; children?: unknown[] }>; notes?: Record<string, { html?: string; updatedAt?: number } | null>; files?: Array<{ nodeId: string; name: string; kind: 'image' | 'audio' | 'doc' | 'drawing'; data: string; mimeType?: string }>; tasks?: unknown }
+      const pack = parseLibraryBackup(await file.text()) as { tree?: Array<{ id?: string; title?: string; children?: unknown[] }>; notes?: Record<string, { html?: string; updatedAt?: number } | null>; files?: Array<{ nodeId: string; name: string; kind: 'image' | 'audio' | 'doc' | 'drawing'; data: string; mimeType?: string }>; tasks?: unknown }
       if (!Array.isArray(pack.tree) || !pack.tree.every(validImportNode)) throw new Error('tree')
       const importedTasks = parseImportedTasks(pack.tasks)
       if (importedTasks) replaceTaskTree(importedTasks)
