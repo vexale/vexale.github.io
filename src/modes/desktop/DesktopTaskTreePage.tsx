@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
-import { CalendarDays, Check, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Download, FilePlus2, ListTree, Map as MapIcon, Pencil, Plus, Redo2, Trash2, Undo2, X } from 'lucide-react'
+import { CalendarDays, Check, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Download, FilePlus2, ListTree, Map as MapIcon, Pencil, Plus, Redo2, Timer, Trash2, Undo2, X } from 'lucide-react'
 import { dbGetNote } from '../../db'
 import { useLibrary, useTree } from '../../shared'
 import type { Item, TNode } from '../../shared'
@@ -8,6 +8,7 @@ import { useDesktopMessages } from './i18n'
 import { createTask, MAX_TASK_COUNT, redoTaskTree, removeTask, reorderSiblingTasks, undoTaskTree, updateTask, useTaskTreeHistory, useTaskTreeStore } from './taskStore'
 import type { TaskRecord, TaskStatus } from './taskStore'
 import TaskMap from './TaskMap'
+import { requestFocusTimer } from './focusTimerEvents'
 
 interface NoteOption { id: string; title: string }
 interface CreateTarget { parentId: string | null; afterId?: string }
@@ -41,6 +42,7 @@ function TaskBranch({ parentId, tasks, children, progress, collapsed, setCollaps
   labels: Labels; statusLabels: Record<TaskStatus, string>; editingId: string | null; editValue: string; setEditValue: (value: string) => void; beginEdit: (task: TaskRecord) => void; saveEdit: () => void; cancelEdit: () => void
   onStatus: (id: string, status: TaskStatus) => void; onDueDate: (id: string, dueDate: string) => void; onAddChild: (id: string) => void; onAddSibling: (task: TaskRecord) => void; onDelete: (id: string) => void; onAttach: (id: string) => void; dragId: string | null; setDragId: (id: string | null) => void
 }) {
+  const focusLabel = useDesktopMessages().focusTimer.startForTask
   const siblings = (children.get(parentId) ?? []).slice().sort((a, b) => a.order - b.order)
   return <ul className="desk-task-list" role={parentId === null ? 'tree' : 'group'} aria-label={parentId === null ? labels.tree : undefined} aria-describedby={parentId === null ? 'desk-task-keyboard-help' : undefined}>{siblings.map(task => {
     const kids = children.get(task.id) ?? []
@@ -50,6 +52,7 @@ function TaskBranch({ parentId, tasks, children, progress, collapsed, setCollaps
       <div className={`desk-task-row ${dragId === task.id ? 'is-dragging' : ''}`} data-status={task.status}>
         {editingId === task.id ? <div className="desk-task-title desk-task-title-edit"><span aria-hidden="true">{kids.length ? (isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />) : <span className="desk-task-leaf" />}</span><input autoFocus value={editValue} aria-label={labels.editTask} onChange={event => setEditValue(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); saveEdit() } if (event.key === 'Escape') cancelEdit() }} /></div> : <button type="button" className="desk-task-title" data-task-focus="true" aria-expanded={kids.length ? !isCollapsed : undefined} onClick={() => kids.length && setCollapsed(task.id)} onDoubleClick={() => beginEdit(task)} title={labels.editHint}>{kids.length ? (isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />) : <span className="desk-task-leaf" aria-hidden="true" />}<span>{task.title}</span></button>}
         {editingId === task.id ? <button type="button" className="desk-task-icon" aria-label={labels.save} onClick={saveEdit}><Check size={15} /></button> : <button type="button" className="desk-task-icon" aria-label={labels.editTask} onClick={() => beginEdit(task)}><Pencil size={14} /></button>}
+        {editingId !== task.id && <button type="button" className="desk-task-icon desk-task-focus" aria-label={`${focusLabel}: ${task.title}`} title={focusLabel} onClick={() => requestFocusTimer({ type: 'task', id: task.id, title: task.title })}><Timer size={15} aria-hidden="true" /></button>}
         <span className="desk-task-progress" aria-label={`${labels.progress}: ${pct}%`}>{pct}%</span>
         <select aria-label={`${labels.status}: ${task.title}`} value={task.status} onChange={event => onStatus(task.id, event.target.value as TaskStatus)}>{(['todo', 'doing', 'done', 'late'] as const).map(status => <option key={status} value={status}>{statusLabels[status]}</option>)}</select>
         <label className="desk-task-date"><CalendarDays size={14} aria-hidden="true" /><span className="desk-task-sr-only">{labels.dueDate}</span><input type="date" aria-label={`${labels.dueDate}: ${task.title}`} value={task.dueDate ?? ''} onChange={event => onDueDate(task.id, event.target.value)} /></label>

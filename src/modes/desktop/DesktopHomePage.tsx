@@ -6,6 +6,8 @@ import { findNode, useLibrary, useTree } from '../../shared'
 import { useLocale } from '../../lib/i18n'
 import { useDesktopMessages } from './i18n'
 import { useDesktopPreferences } from './preferences'
+import { useFocusSessions } from './focusStore'
+import type { FocusSession } from './focusStore'
 import { createTask, MAX_TASK_COUNT, updateTask, useTaskTreeStore } from './taskStore'
 import type { DesktopPage } from './types'
 
@@ -13,30 +15,36 @@ interface HomeProps { onNavigate: (page: DesktopPage) => void }
 interface SectionRef { id: string; title: string; path: string[] }
 interface RecentNote extends SectionRef { excerpt: string; updatedAt: number }
 
-const ACTIVITY_KEY = 'vexale-office-activity-days-v1'
-
 function dateKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-function recordDailyVisit(): number {
-  const today = dateKey(new Date())
-  let days: string[] = []
-  try {
-    const saved: unknown = JSON.parse(localStorage.getItem(ACTIVITY_KEY) ?? '[]')
-    if (Array.isArray(saved)) days = saved.filter((value): value is string => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value))
-    days = [...new Set([...days, today])].sort().slice(-365)
-    localStorage.setItem(ACTIVITY_KEY, JSON.stringify(days))
-  } catch { days = [today] }
-
-  const activeDays = new Set(days)
-  const cursor = new Date()
-  let streak = 0
-  while (activeDays.has(dateKey(cursor))) {
-    streak += 1
-    cursor.setDate(cursor.getDate() - 1)
+function getFocusSummary(sessions: FocusSession[], locale: string) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const weekStart = new Date(today)
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7))
+  const weekSessions = sessions.filter(session => session.endedAt >= weekStart.getTime() && session.endedAt < tomorrow.getTime())
+  const secondsByDay = new Map<string, number>()
+  for (const session of weekSessions) {
+    const key = dateKey(new Date(session.endedAt))
+    secondsByDay.set(key, (secondsByDay.get(key) ?? 0) + session.durationSeconds)
   }
-  return streak
+  const weekday = new Intl.DateTimeFormat(locale === 'ar' ? 'ar-IQ' : 'en', { weekday: 'short' })
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(weekStart)
+    date.setDate(date.getDate() + index)
+    const seconds = secondsByDay.get(dateKey(date)) ?? 0
+    return { key: dateKey(date), label: weekday.format(date), seconds, minutes: Math.round(seconds / 60) }
+  })
+  const activeDays = new Set(sessions.map(session => dateKey(new Date(session.endedAt))))
+  const cursor = new Date(today)
+  if (!activeDays.has(dateKey(cursor))) cursor.setDate(cursor.getDate() - 1)
+  let streak = 0
+  while (activeDays.has(dateKey(cursor))) { streak += 1; cursor.setDate(cursor.getDate() - 1) }
+  return { days, minutes: Math.round(weekSessions.reduce((total, session) => total + session.durationSeconds, 0) / 60), sessions: weekSessions.length, streak }
 }
 
 function flattenSections(nodes: ReturnType<typeof useTree>['tree'], parent: string[] = []): SectionRef[] {
@@ -54,15 +62,17 @@ export default function DesktopHomePage({ onNavigate }: HomeProps) {
   const messages = useDesktopMessages()
   const locale = useLocale()
   const labels = messages.homeDashboard
+  const focusSessions = useFocusSessions()
   const preferences = useDesktopPreferences()
   const { tree, path, setPath } = useTree()
   const { items } = useLibrary()
   const tasks = useTaskTreeStore()
   const [quickTitle, setQuickTitle] = useState('')
   const [taskLimitReached, setTaskLimitReached] = useState(false)
-  const [streak, setStreak] = useState(0)
   const [recentNotes, setRecentNotes] = useState<RecentNote[]>([])
   const sections = useMemo(() => flattenSections(tree), [tree])
+  const focusSummary = useMemo(() => getFocusSummary(focusSessions, locale), [focusSessions, locale])
+  const focusMaxSeconds = Math.max(...focusSummary.days.map(day => day.seconds), 1)
   const today = dateKey(new Date())
   const dateLabel = new Intl.DateTimeFormat(locale === 'ar' ? 'ar-IQ' : 'en', { weekday: 'long', month: 'long', day: 'numeric' }).format(new Date())
   const todayTasks = tasks.filter(task => task.status !== 'done' && task.status !== 'late' && task.dueDate === today)
@@ -73,7 +83,6 @@ export default function DesktopHomePage({ onNavigate }: HomeProps) {
   const continueSection = currentSection ? sections.find(section => section.id === currentSection.id) : sections.find(section => section.id === preferences.recentItems.find(id => id.startsWith('section:'))?.slice('section:'.length))
   const recentFiles = items.slice().reverse().slice(0, 4)
 
-  useEffect(() => { setStreak(recordDailyVisit()) }, [])
   useEffect(() => {
     let cancelled = false
     void Promise.all(sections.map(async section => {
@@ -135,9 +144,16 @@ export default function DesktopHomePage({ onNavigate }: HomeProps) {
         </div>
       </section>
 
+      <section className="desk-home-panel desk-home-weekly" aria-labelledby="desk-home-weekly-title">
+        <header className="desk-home-panel-heading"><div><h3 id="desk-home-weekly-title">{labels.focusWeek}</h3><p>{labels.focusWeekDescription}</p></div></header>
+        <div className="desk-home-weekly-totals"><div><strong>{focusSummary.minutes}</strong><span>{labels.focusMinutes}</span></div><div><strong>{focusSummary.sessions}</strong><span>{labels.focusSessionCount}</span></div></div>
+        <div className="desk-home-weekly-chart" role="list" aria-label={labels.focusWeek}>{focusSummary.days.map(day => { const height = focusSummary.minutes ? Math.round((day.seconds / focusMaxSeconds) * 100) : 0; return <div className="desk-home-weekday" role="listitem" aria-label={`${day.label}: ${day.minutes} ${labels.focusMinutesShort}`} key={day.key} title={`${day.label}: ${day.minutes} ${labels.focusMinutesShort}`}><div className="desk-home-weekday-track"><span style={{ height: `${height}%` }} /></div><small>{day.label}</small></div> })}</div>
+        {focusSummary.sessions === 0 && <p className="desk-home-empty">{labels.focusNoSessions}</p>}
+      </section>
+
       <aside className="desk-home-side">
         <section className="desk-home-panel desk-home-continue" aria-labelledby="desk-home-continue-title"><header className="desk-home-panel-heading"><h3 id="desk-home-continue-title">{labels.continueTitle}</h3></header>{continueSection ? <button type="button" className="desk-home-continue-link" onClick={() => openSection(continueSection.path)}><span className="desk-home-continue-icon"><Folder size={18} aria-hidden="true" /></span><span><strong>{continueSection.title}</strong><small>{labels.openSection}</small></span><ArrowUpRight size={16} aria-hidden="true" /></button> : <p className="desk-home-empty">{labels.noContinue}</p>}</section>
-        <section className="desk-home-panel desk-home-streak" aria-label={labels.streak}><div className="desk-home-streak-icon"><Flame size={19} aria-hidden="true" /></div><div><strong>{streak}</strong><span>{labels.dayStreak}</span></div><p>{labels.streakHint}</p></section>
+        <section className="desk-home-panel desk-home-streak" aria-label={labels.streak}><div className="desk-home-streak-icon"><Flame size={19} aria-hidden="true" /></div><div><strong>{focusSummary.streak}</strong><span>{labels.dayStreak}</span></div><p>{labels.streakHint}</p></section>
         <section className="desk-home-panel desk-home-favorites" aria-labelledby="desk-home-favorites-title"><header className="desk-home-panel-heading"><h3 id="desk-home-favorites-title"><Star size={15} aria-hidden="true" />{labels.favorites}</h3></header>{favoriteSections.length ? <ul>{favoriteSections.slice(0, 5).map(section => <li key={section.id}><button type="button" onClick={() => openSection(section.path)}><Star size={14} aria-hidden="true" /><span>{section.title}</span></button></li>)}</ul> : <p className="desk-home-empty">{labels.noFavorites}</p>}</section>
       </aside>
     </div>

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Eye, FileAudio, FileImage, FileText, FileX2, FolderOpen, Plus, Trash2, X } from 'lucide-react'
+import { Eye, FileAudio, FileImage, FileText, FileX2, FolderOpen, Plus, Timer, Trash2, X } from 'lucide-react'
 import { findNode, useLibrary, useTree } from '../../shared'
 import type { Item, TNode } from '../../shared'
 import { useLocale } from '../../lib/i18n'
@@ -8,6 +8,7 @@ import { TOOL_CATALOG } from '../../lib/settings'
 import { useDesktopPreferences } from './preferences'
 import DesktopToolPanel from './DesktopToolsPage'
 import DesktopNoteEditor from './DesktopNoteEditor'
+import { requestFocusTimer } from './focusTimerEvents'
 
 function kindOf(file: File): Item['kind'] {
   if (file.type.startsWith('image/')) return 'image'
@@ -84,6 +85,10 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
           <h2>{node.title}</h2>
           <p>{messages.sections.sectionDescription}</p>
         </div>
+        <button type="button" className="desk-button" onClick={() => requestFocusTimer({ type: 'section', id: node.id, title: node.title })}>
+          <Timer size={16} aria-hidden="true" />
+          <span>{messages.focusTimer.startForSection}</span>
+        </button>
         <button type="button" className="desk-button desk-button-primary" onClick={() => inputRef.current?.click()}>
           <Plus size={17} aria-hidden="true" />
           <span>{messages.files.add}</span>
