@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { AlertCircle, CheckCircle2, Circle, Clock3, FileText, FolderTree } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { AlertCircle, CheckCircle2, ChevronDown, ChevronRight, Circle, Clock3, FileText, FolderTree } from 'lucide-react'
 import type { Item } from '../../shared'
 import type { TaskRecord, TaskStatus } from './taskStore'
 
@@ -15,6 +15,8 @@ interface TaskMapProps {
   tasks: TaskRecord[]
   children: Map<string | null, TaskRecord[]>
   progress: Map<string, number>
+  collapsed: Set<string>
+  onToggleCollapsed: (id: string) => void
   files: Item[]
   notes: NoteOption[]
   statusLabels: Record<TaskStatus, string>
@@ -28,40 +30,57 @@ function statusIcon(status: TaskStatus) {
   return <Circle size={16} aria-hidden="true" />
 }
 
-export default function TaskMap({ tasks, children, progress, files, notes, statusLabels, progressLabel }: TaskMapProps) {
+export default function TaskMap({ tasks, children, progress, collapsed, onToggleCollapsed, files, notes, statusLabels, progressLabel }: TaskMapProps) {
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null)
   const layout = useMemo(() => {
     const positions: PositionedTask[] = []
     const edges: Array<{ parent: PositionedTask; child: PositionedTask }> = []
+    const counts = new Map<string, { done: number; total: number }>()
     let leafIndex = 0
     let maxDepth = 0
+    const countTree = (task: TaskRecord): { done: number; total: number } => {
+      const descendants = (children.get(task.id) ?? []).map(countTree)
+      const count = { done: (task.status === 'done' ? 1 : 0) + descendants.reduce((sum, child) => sum + child.done, 0), total: 1 + descendants.reduce((sum, child) => sum + child.total, 0) }
+      counts.set(task.id, count)
+      return count
+    }
+    const roots = (children.get(null) ?? []).slice().sort((a, b) => a.order - b.order)
+    roots.forEach(countTree)
     const place = (task: TaskRecord, depth: number): PositionedTask => {
       maxDepth = Math.max(maxDepth, depth)
-      const kids = (children.get(task.id) ?? []).slice().sort((a, b) => a.order - b.order)
+      const kids = collapsed.has(task.id) ? [] : (children.get(task.id) ?? []).slice().sort((a, b) => a.order - b.order)
       const childPositions = kids.map(child => place(child, depth + 1))
       const y = childPositions.length
         ? childPositions.reduce((sum, child) => sum + child.y, 0) / childPositions.length
         : EDGE + NODE_HEIGHT / 2 + leafIndex++ * LEAF_GAP
-      const descendants = childPositions.reduce((acc, child) => ({ done: acc.done + child.done, total: acc.total + child.total }), { done: 0, total: 0 })
+      const totals = counts.get(task.id) ?? { done: 0, total: 1 }
       const node: PositionedTask = {
         task,
         x: EDGE + depth * COLUMN_GAP,
         y,
         depth,
-        done: task.status === 'done' ? descendants.done + 1 : descendants.done,
-        total: descendants.total + 1,
+        done: totals.done,
+        total: totals.total,
       }
       positions.push(node)
       childPositions.forEach(child => edges.push({ parent: node, child }))
       return node
     }
-    ;(children.get(null) ?? []).slice().sort((a, b) => a.order - b.order).forEach(task => place(task, 0))
+    roots.forEach(task => place(task, 0))
     const leafCount = Math.max(1, leafIndex)
     const width = EDGE * 2 + (maxDepth + 1) * COLUMN_GAP - (COLUMN_GAP - NODE_WIDTH)
     const height = EDGE * 2 + NODE_HEIGHT + (leafCount - 1) * LEAF_GAP
     return { positions, edges, width, height }
-  }, [children])
+  }, [children, collapsed])
 
   const rtl = typeof document !== 'undefined' && document.documentElement.dir === 'rtl'
+  const highlightedIds = useMemo(() => {
+    const ids = new Set<string>()
+    const byId = new Map(tasks.map(task => [task.id, task]))
+    let current = activeTaskId ? byId.get(activeTaskId) : undefined
+    while (current && !ids.has(current.id)) { ids.add(current.id); current = current.parentId ? byId.get(current.parentId) : undefined }
+    return ids
+  }, [activeTaskId, tasks])
   const fileById = new Map(files.map(file => [file.id, file.name]))
   const noteById = new Map(notes.map(note => [note.id, note.title]))
 
@@ -76,7 +95,10 @@ export default function TaskMap({ tasks, children, progress, files, notes, statu
           const d = `M ${startX} ${parent.y} C ${startX + control} ${parent.y}, ${endX - control} ${child.y}, ${endX} ${child.y}`
           const dotX = (startX + endX) / 2
           const dotY = (parent.y + child.y) / 2
-          return <g key={`${parent.task.id}-${child.task.id}`}><path d={d} /><circle cx={dotX} cy={dotY} r="3.5" /></g>
+          return <g key={`${parent.task.id}-${child.task.id}-${d}`} className={highlightedIds.has(child.task.id) ? 'is-path-active' : ''}>
+            <path d={d} pathLength={1} style={{ animationDelay: `${child.depth * 65}ms` }} />
+            <circle cx={dotX} cy={dotY} r="3.5" />
+          </g>
         })}
       </svg>
       {layout.positions.map(node => {
@@ -88,9 +110,13 @@ export default function TaskMap({ tasks, children, progress, files, notes, statu
         const fileChips = task.attachedFileIds.map(id => ({ id, title: fileById.get(id) })).filter((chip): chip is { id: string; title: string } => Boolean(chip.title))
         const noteChips = task.attachedNoteIds.map(id => ({ id, title: noteById.get(id) })).filter((chip): chip is { id: string; title: string } => Boolean(chip.title))
         const leaf = (children.get(task.id) ?? []).length === 0
-        return <article key={task.id} className={`desk-task-map-node is-${task.status}${leaf && (fileChips.length + noteChips.length) ? ' has-attachments' : ''}`} style={{ left: x, top: node.y - NODE_HEIGHT / 2 }} aria-label={`${task.title}, ${statusLabels[task.status]}, ${progressLabel}: ${node.done}/${node.total}`}>
+        const hasChildren = !leaf
+        const isCollapsed = collapsed.has(task.id)
+        const inActivePath = highlightedIds.has(task.id)
+        return <article key={task.id} className={`desk-task-map-node is-${task.status}${leaf && (fileChips.length + noteChips.length) ? ' has-attachments' : ''}${inActivePath ? ' is-path-active' : ''}`} style={{ left: x, top: node.y - NODE_HEIGHT / 2, animationDelay: `${node.depth * 65}ms` }} aria-label={`${task.title}, ${statusLabels[task.status]}, ${progressLabel}: ${node.done}/${node.total}`} aria-expanded={hasChildren ? !isCollapsed : undefined} role={hasChildren ? 'button' : undefined} tabIndex={0} onPointerEnter={() => setActiveTaskId(task.id)} onPointerLeave={() => setActiveTaskId(null)} onFocus={() => setActiveTaskId(task.id)} onBlur={() => setActiveTaskId(null)} onClick={() => hasChildren && onToggleCollapsed(task.id)} onKeyDown={event => { if (hasChildren && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); onToggleCollapsed(task.id) } }}>
           <div className="desk-task-map-node-main">
             <span className="desk-task-map-status-icon">{statusIcon(task.status)}</span>
+            {hasChildren && <span className="desk-task-map-branch-icon" aria-hidden="true">{isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}</span>}
             {node.depth === 0 && <FolderTree size={15} aria-hidden="true" className="desk-task-map-root-icon" />}
             <strong title={task.title}>{task.title}</strong>
             <span className="desk-task-map-progress" title={`${progressLabel}: ${pct}%`}>

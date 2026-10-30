@@ -1235,3 +1235,30 @@ html[data-mode='desktop'] .desk-task-map-chips { display: flex; min-width: 0; ga
 html[data-mode='desktop'] .desk-task-map-chip { display: inline-flex; min-width: 0; max-width: 108px; align-items: center; gap: 4px; padding: 3px 6px; overflow: hidden; border: 1px solid #47375f; border-radius: 999px; background: #211a30; color: #ddd2f3; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 html[data-mode='desktop'] .desk-task-map-chip.is-note { border-color: #57406f; color: #e7d4fa; }
 html[data-mode='desktop'] .desk-task-map-chip svg { flex: 0 0 auto; }
+
+html[data-mode='desktop'] .desk-task-map-canvas { transition: width 420ms cubic-bezier(.22, .8, .28, 1), height 420ms cubic-bezier(.22, .8, .28, 1); }
+html[data-mode='desktop'] .desk-task-map-node { transform-origin: center; animation: desk-task-map-enter 420ms cubic-bezier(.2, .75, .25, 1) backwards; transition: top 420ms cubic-bezier(.22, .8, .28, 1), left 420ms cubic-bezier(.22, .8, .28, 1), transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease; }
+html[data-mode='desktop'] .desk-task-map-node[role='button'] { cursor: pointer; }
+html[data-mode='desktop'] .desk-task-map-node:hover, html[data-mode='desktop'] .desk-task-map-node:focus-visible { z-index: 3; transform: translateY(-4px) scale(1.015); box-shadow: 0 14px 30px #0008, 0 0 0 1px #a78bfa; }
+html[data-mode='desktop'] .desk-task-map-node:focus-visible { outline: 2px solid #c4b5fd; outline-offset: 3px; }
+html[data-mode='desktop'] .desk-task-map-node.is-path-active:not(:hover):not(:focus-visible) { box-shadow: 0 0 0 1px #a78bfa, 0 7px 20px #0006; }
+html[data-mode='desktop'] .desk-task-map-branch-icon { display: grid; flex: 0 0 auto; place-items: center; color: #b9a6dc; }
+html[data-mode='desktop'] [dir='rtl'] .desk-task-map-branch-icon svg { transform: scaleX(-1); }
+html[data-mode='desktop'] .desk-task-map-connectors path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: desk-task-map-draw 680ms cubic-bezier(.22, .8, .28, 1) forwards; transition: stroke 180ms ease, stroke-width 180ms ease, filter 180ms ease; }
+html[data-mode='desktop'] .desk-task-map-connectors g.is-path-active path { stroke: #c4b5fd; stroke-width: 2.6; filter: drop-shadow(0 0 3px #8b5cf6aa); }
+html[data-mode='desktop'] .desk-task-map-connectors circle { transform-box: fill-box; transform-origin: center; animation: desk-task-map-junction 320ms ease-out backwards; transition: fill 180ms ease, filter 180ms ease; }
+html[data-mode='desktop'] .desk-task-map-connectors g.is-path-active circle { fill: #e9ddff; filter: drop-shadow(0 0 4px #a78bfa); }
+html[data-mode='desktop'] .desk-task-map-ring-value { transition: stroke-dashoffset 680ms cubic-bezier(.22, .8, .28, 1); }
+html[data-mode='desktop'] .desk-task-map-node.is-done .desk-task-map-status-icon svg { animation: desk-task-map-check-pop 440ms cubic-bezier(.2, .9, .25, 1.3) both; }
+@keyframes desk-task-map-enter { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: scale(1); } }
+@keyframes desk-task-map-draw { to { stroke-dashoffset: 0; } }
+@keyframes desk-task-map-junction { from { opacity: 0; scale: .45; } to { opacity: 1; scale: 1; } }
+@keyframes desk-task-map-check-pop { 0% { opacity: .4; scale: .55; } 68% { opacity: 1; scale: 1.22; } 100% { scale: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  html[data-mode='desktop'] .desk-task-map-canvas,
+  html[data-mode='desktop'] .desk-task-map-node,
+  html[data-mode='desktop'] .desk-task-map-connectors path,
+  html[data-mode='desktop'] .desk-task-map-connectors circle,
+  html[data-mode='desktop'] .desk-task-map-ring-value { animation: none !important; transition: none !important; }
+  html[data-mode='desktop'] .desk-task-map-node:hover, html[data-mode='desktop'] .desk-task-map-node:focus-visible { transform: none; }
+}

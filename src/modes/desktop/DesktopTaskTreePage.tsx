@@ -144,7 +144,7 @@ export default function DesktopTaskTreePage() {
     {tasks.length === 0 && <div className="desk-task-empty"><ListTree size={24} /><strong>{labels.emptyTitle}</strong><p>{labels.emptyText}</p></div>}
     {activeView === 'outline' ? <div className="desk-task-tree-wrap" ref={treeRef} onKeyDown={handleTreeKeyDown}>
       <TaskBranch parentId={null} tasks={tasks} children={children} progress={progress} collapsed={collapsed} setCollapsed={setTaskCollapsed} createTarget={createTarget} draft={draft} setDraft={setDraft} submitCreate={submitCreate} cancelCreate={() => setCreateTarget(null)} labels={labels} statusLabels={statusLabels} editingId={editingId} editValue={editValue} setEditValue={setEditValue} beginEdit={beginEdit} saveEdit={saveEdit} cancelEdit={cancelEdit} onStatus={(id, status) => updateTask(id, { status })} onDueDate={(id, dueDate) => updateTask(id, { dueDate: dueDate || null })} onAddChild={id => startCreate({ parentId: id })} onAddSibling={task => startCreate({ parentId: task.parentId, afterId: task.id })} onDelete={handleDelete} onAttach={setAttachmentTaskId} dragId={dragId} setDragId={setDragId} />
-    </div> : tasks.length > 0 && <TaskMap tasks={tasks} children={children} progress={progress} files={items} notes={notes} statusLabels={statusLabels} progressLabel={labels.progress} />}
+    </div> : tasks.length > 0 && <TaskMap tasks={tasks} children={children} progress={progress} collapsed={collapsed} onToggleCollapsed={setTaskCollapsed} files={items} notes={notes} statusLabels={statusLabels} progressLabel={labels.progress} />}
     {attachmentTask && <AttachmentPicker task={attachmentTask} files={items} notes={notes} labels={labels} onClose={() => setAttachmentTaskId(null)} />}
   </section>
 }
