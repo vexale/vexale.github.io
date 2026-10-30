@@ -85,8 +85,8 @@ export default function DesktopCommandPalette({ open, onClose, onNavigate, onSwi
       const section = sections.find(candidate => candidate.id === item.nodeId)
       return { id: 'file:' + item.id, group: 'files', label: item.name, detail: section?.title ?? '', run: () => { if (section) { onNavigate('library'); setPath(section.path); window.setTimeout(() => Array.from(document.querySelectorAll<HTMLElement>('[data-file-id]')).find(row => row.dataset.fileId === item.id)?.scrollIntoView({ block: 'center' }), 140) } } }
     })
-    const pageIds: DesktopPage[] = ['library', 'tasks', 'tools', 'themes', 'settings', 'account', 'support', 'privacy']
-    const pages: PaletteResult[] = pageIds.map(page => ({ id: 'page:' + page, group: 'pages', label: messages.pages[page].title, detail: messages.pages[page].description, run: () => onNavigate(page) }))
+    const pageIds: DesktopPage[] = ['home', 'library', 'tasks', 'tools', 'themes', 'settings', 'account', 'support', 'privacy']
+    const pages: PaletteResult[] = pageIds.map(page => ({ id: 'page:' + page, group: 'pages', label: page === 'home' ? messages.homeDashboard.pageTitle : messages.pages[page].title, detail: page === 'home' ? messages.homeDashboard.intro : messages.pages[page].description, run: () => onNavigate(page) }))
     const actions: PaletteResult[] = [
       { id: 'action:add-section', group: 'actions', label: p.addSection, detail: p.actionHint, run: () => { updateDesktopPreferences({ railCollapsed: false, sectionsCollapsed: false }); onNavigate('library'); window.setTimeout(() => document.getElementById('desk-new-section')?.focus(), 120) } },
       { id: 'action:switch-space', group: 'actions', label: p.switchSpace, detail: p.actionHint, run: onSwitchToSpace },
