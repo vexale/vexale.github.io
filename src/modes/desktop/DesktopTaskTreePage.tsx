@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
-import { CalendarDays, Check, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Download, FilePlus2, ListTree, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { CalendarDays, Check, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Download, FilePlus2, ListTree, Map as MapIcon, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { dbGetNote } from '../../db'
 import { useLibrary, useTree } from '../../shared'
 import type { Item, TNode } from '../../shared'
 import { useDesktopMessages } from './i18n'
 import { createTask, removeTask, reorderSiblingTasks, updateTask, useTaskTreeStore } from './taskStore'
 import type { TaskRecord, TaskStatus } from './taskStore'
+import TaskMap from './TaskMap'
 
 interface NoteOption { id: string; title: string }
 interface CreateTarget { parentId: string | null; afterId?: string }
@@ -84,6 +85,7 @@ export default function DesktopTaskTreePage() {
   const [editValue, setEditValue] = useState('')
   const [attachmentTaskId, setAttachmentTaskId] = useState<string | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
+  const [activeView, setActiveView] = useState<'outline' | 'map'>('outline')
   const treeRef = useRef<HTMLDivElement>(null)
   const sections = useMemo(() => sectionList(tree), [tree])
   const children = useMemo(() => { const map = new Map<string | null, TaskRecord[]>(); for (const task of tasks) map.set(task.parentId, [...(map.get(task.parentId) ?? []), task]); return map }, [tasks])
@@ -134,11 +136,15 @@ export default function DesktopTaskTreePage() {
 
   return <section className="desk-task-page" aria-label={messages.pages.tasks.title}>
     <div className="desk-task-toolbar"><form className="desk-task-root-form" onSubmit={submitRoot}><input value={rootDraft} onChange={event => setRootDraft(event.target.value)} placeholder={labels.placeholder} aria-label={labels.newTask} maxLength={180} /><button type="submit" className="desk-button desk-button-primary" disabled={!rootDraft.trim()}><Plus size={16} />{labels.addTask}</button></form><div className="desk-task-toolbar-actions"><button type="button" className="desk-button" onClick={() => expandAll(true)}><ChevronsUpDown size={15} />{labels.expandAll}</button><button type="button" className="desk-button" onClick={() => expandAll(false)}><ChevronsDownUp size={15} />{labels.collapseAll}</button><button type="button" className="desk-button" onClick={exportJson}><Download size={15} />{labels.exportJson}</button><button type="button" className="desk-button" onClick={exportMarkdown}><Download size={15} />{labels.exportMarkdown}</button></div></div>
-    <p id="desk-task-keyboard-help" className="desk-task-keyboard-hint">{labels.keyboardHelp}</p>
-    {tasks.length === 0 && <div className="desk-task-empty"><ListTree size={24} /><strong>{labels.emptyTitle}</strong><p>{labels.emptyText}</p></div>}
-    <div className="desk-task-tree-wrap" ref={treeRef} onKeyDown={handleTreeKeyDown}>
-      <TaskBranch parentId={null} tasks={tasks} children={children} progress={progress} collapsed={collapsed} setCollapsed={setTaskCollapsed} createTarget={createTarget} draft={draft} setDraft={setDraft} submitCreate={submitCreate} cancelCreate={() => setCreateTarget(null)} labels={labels} statusLabels={statusLabels} editingId={editingId} editValue={editValue} setEditValue={setEditValue} beginEdit={beginEdit} saveEdit={saveEdit} cancelEdit={cancelEdit} onStatus={(id, status) => updateTask(id, { status })} onDueDate={(id, dueDate) => updateTask(id, { dueDate: dueDate || null })} onAddChild={id => startCreate({ parentId: id })} onAddSibling={task => startCreate({ parentId: task.parentId, afterId: task.id })} onDelete={handleDelete} onAttach={setAttachmentTaskId} dragId={dragId} setDragId={setDragId} />
+    <div className="desk-task-views" role="tablist" aria-label={labels.views}>
+      <button type="button" role="tab" aria-selected={activeView === 'outline'} className={activeView === 'outline' ? 'is-active' : ''} onClick={() => setActiveView('outline')}><ListTree size={15} />{labels.outlineView}</button>
+      <button type="button" role="tab" aria-selected={activeView === 'map'} className={activeView === 'map' ? 'is-active' : ''} onClick={() => setActiveView('map')}><MapIcon size={15} />{labels.mapView}</button>
     </div>
+    {activeView === 'outline' && <p id="desk-task-keyboard-help" className="desk-task-keyboard-hint">{labels.keyboardHelp}</p>}
+    {tasks.length === 0 && <div className="desk-task-empty"><ListTree size={24} /><strong>{labels.emptyTitle}</strong><p>{labels.emptyText}</p></div>}
+    {activeView === 'outline' ? <div className="desk-task-tree-wrap" ref={treeRef} onKeyDown={handleTreeKeyDown}>
+      <TaskBranch parentId={null} tasks={tasks} children={children} progress={progress} collapsed={collapsed} setCollapsed={setTaskCollapsed} createTarget={createTarget} draft={draft} setDraft={setDraft} submitCreate={submitCreate} cancelCreate={() => setCreateTarget(null)} labels={labels} statusLabels={statusLabels} editingId={editingId} editValue={editValue} setEditValue={setEditValue} beginEdit={beginEdit} saveEdit={saveEdit} cancelEdit={cancelEdit} onStatus={(id, status) => updateTask(id, { status })} onDueDate={(id, dueDate) => updateTask(id, { dueDate: dueDate || null })} onAddChild={id => startCreate({ parentId: id })} onAddSibling={task => startCreate({ parentId: task.parentId, afterId: task.id })} onDelete={handleDelete} onAttach={setAttachmentTaskId} dragId={dragId} setDragId={setDragId} />
+    </div> : tasks.length > 0 && <TaskMap tasks={tasks} children={children} progress={progress} files={items} notes={notes} statusLabels={statusLabels} progressLabel={labels.progress} />}
     {attachmentTask && <AttachmentPicker task={attachmentTask} files={items} notes={notes} labels={labels} onClose={() => setAttachmentTaskId(null)} />}
   </section>
 }
