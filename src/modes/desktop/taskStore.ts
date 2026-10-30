@@ -51,6 +51,12 @@ function commit(next: TaskRecord[]): void {
 if (typeof window !== 'undefined') window.addEventListener('storage', event => { if (event.key === TASK_TREE_KEY) { tasks = load(); undoStack.length = 0; redoStack.length = 0; publish() } })
 export function useTaskTreeStore(): TaskRecord[] { return useSyncExternalStore(subscribe, snapshot, () => EMPTY_TASKS) }
 export function useTaskTreeHistory(): TaskHistoryState { return useSyncExternalStore(subscribe, () => historySnapshot, () => EMPTY_HISTORY) }
+export function getTaskTree(): TaskRecord[] { return tasks.map(task => ({ ...task, attachedFileIds: [...task.attachedFileIds], attachedNoteIds: [...task.attachedNoteIds] })) }
+export function replaceTaskTree(next: TaskRecord[]): boolean {
+  if (next.length > MAX_TASK_COUNT) return false
+  commit(next.map(task => ({ ...task, attachedFileIds: [...task.attachedFileIds], attachedNoteIds: [...task.attachedNoteIds] })))
+  return true
+}
 export function undoTaskTree(): void {
   const previous = undoStack.pop()
   if (!previous) return

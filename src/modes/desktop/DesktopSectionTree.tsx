@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import DesktopSectionAddControl from './DesktopSectionAddControl'
 import type { CSSProperties, FormEvent } from 'react'
-import { Check, ChevronDown, ChevronRight, Folder, Pencil, Plus, Star, X } from 'lucide-react'
-import { useLibrary, useTree } from '../../shared'
+import { Check, ChevronDown, ChevronRight, Folder, Pencil, Plus, Star, Trash2, X } from 'lucide-react'
+import { findNode, useLibrary, useTree } from '../../shared'
 import { updateDesktopPreferences, useDesktopPreferences } from './preferences'
 import type { TNode } from '../../shared'
 import { useDesktopMessages } from './i18n'
+import { moveToTrash } from '../../lib/trash'
 
 interface TreeBranchProps {
   nodes: TNode[]
@@ -25,9 +26,10 @@ interface TreeBranchProps {
   onRenameTitle: (title: string) => void
   onCommitRename: (event: FormEvent<HTMLFormElement>, nodeId: string) => void
   onCancelRename: () => void
+  onDelete: (node: TNode) => void
 }
 
-function TreeBranch({ nodes, parentPath, activePath, depth, onSelect, onToggle, fileCountFor, labels, fileLabel, favoriteSectionIds, onToggleFavorite, editingId, editingTitle, onStartRename, onRenameTitle, onCommitRename, onCancelRename }: TreeBranchProps) {
+function TreeBranch({ nodes, parentPath, activePath, depth, onSelect, onToggle, fileCountFor, labels, fileLabel, favoriteSectionIds, onToggleFavorite, editingId, editingTitle, onStartRename, onRenameTitle, onCommitRename, onCancelRename, onDelete }: TreeBranchProps) {
   return (
     <ul className="desk-tree-list">
       {nodes.map(node => {
@@ -68,6 +70,7 @@ function TreeBranch({ nodes, parentPath, activePath, depth, onSelect, onToggle, 
               )}
               <button type="button" className={`desk-tree-favorite ${favoriteSectionIds.includes(node.id) ? 'is-favorite' : ''}`} aria-pressed={favoriteSectionIds.includes(node.id)} aria-label={`${favoriteSectionIds.includes(node.id) ? labels.unfavorite : labels.favorite}: ${node.title}`} title={`${favoriteSectionIds.includes(node.id) ? labels.unfavorite : labels.favorite}: ${node.title}`} onClick={() => onToggleFavorite(node)}><Star size={15} fill={favoriteSectionIds.includes(node.id) ? 'currentColor' : 'none'} aria-hidden="true" /></button>
               <button type="button" className="desk-icon-button desk-tree-action" aria-label={`${labels.rename}: ${node.title}`} title={`${labels.rename}: ${node.title}`} onClick={() => onStartRename(node)}><Pencil size={15} aria-hidden="true" /></button>
+              <button type="button" className="desk-icon-button desk-tree-action desk-danger-button" aria-label={`${labels.delete}: ${node.title}`} title={`${labels.delete}: ${node.title}`} onClick={() => onDelete(node)}><Trash2 size={15} aria-hidden="true" /></button>
               <DesktopSectionAddControl parentId={node.id} parentPath={nodePath} targetTitle={node.title} />
             </div>
             {hasChildren && expanded && (
@@ -89,6 +92,7 @@ function TreeBranch({ nodes, parentPath, activePath, depth, onSelect, onToggle, 
                 onRenameTitle={onRenameTitle}
                 onCommitRename={onCommitRename}
                 onCancelRename={onCancelRename}
+                onDelete={onDelete}
               />
             )}
           </li>
@@ -100,7 +104,7 @@ function TreeBranch({ nodes, parentPath, activePath, depth, onSelect, onToggle, 
 
 export default function DesktopSectionTree() {
   const messages = useDesktopMessages()
-  const { tree, path, setPath, addNode, renameNode } = useTree()
+  const { tree, path, setPath, addNode, renameNode, removeNode } = useTree()
   const preferences = useDesktopPreferences()
   const { items } = useLibrary()
   const [sectionName, setSectionName] = useState('')
@@ -114,6 +118,21 @@ export default function DesktopSectionTree() {
   const startRename = (node: TNode): void => { setEditingId(node.id); setEditingTitle(node.title) }
   const cancelRename = (): void => { setEditingId(''); setEditingTitle('') }
   const commitRename = (event: FormEvent<HTMLFormElement>, nodeId: string): void => { event.preventDefault(); if (editingTitle.trim()) renameNode(nodeId, editingTitle); cancelRename() }
+  const deleteSection = async (node: TNode): Promise<void> => {
+    if (!window.confirm(labels.deleteConfirm)) return
+    const current = allSections(tree).find(entry => entry.node.id === node.id)
+    if (!current) return
+    const parentId = current.path.length > 1 ? current.path[current.path.length - 2]! : null
+    const siblings = parentId ? (findNode(tree, parentId)?.children ?? []) : tree
+    const index = siblings.findIndex(item => item.id === node.id)
+    const ids = new Set<string>()
+    const collect = (item: TNode): void => { ids.add(item.id); item.children.forEach(collect) }
+    collect(node)
+    const files = items.filter(item => ids.has(item.nodeId) && item.file).map(item => ({ nodeId: item.nodeId, name: item.name, kind: item.kind, size: item.size, file: item.file! }))
+    if (!(await moveToTrash({ node, parentId, index, files }))) return
+    removeNode(node.id)
+    if (path.some(id => ids.has(id))) setPath(parentId ? current.path.slice(0, -1) : [])
+  }
 
   const fileCountFor = (nodeId: string): number => items.reduce((count, item) => count + Number(item.nodeId === nodeId), 0)
   const addSection = (event: FormEvent<HTMLFormElement>): void => {
@@ -166,6 +185,7 @@ export default function DesktopSectionTree() {
                 onRenameTitle={setEditingTitle}
                 onCommitRename={commitRename}
                 onCancelRename={cancelRename}
+                onDelete={node => void deleteSection(node)}
               />
         ) : <p className="desk-tree-empty">{labels.empty}</p>}
       </nav>

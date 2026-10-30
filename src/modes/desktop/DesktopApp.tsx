@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
-import { BookOpen, Building2, Ellipsis, House, LifeBuoy, ListTodo, Monitor, Palette, Settings, ShieldCheck, UserRound, Wrench, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize2, Minimize2, Search } from 'lucide-react'
+import { BookOpen, Building2, Ellipsis, House, LifeBuoy, ListTodo, Monitor, Palette, Settings, ShieldCheck, Trash2, UserRound, Wrench, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize2, Minimize2, Search } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { setLocale, useLocale } from '../../lib/i18n'
 import { useSettings } from '../../lib/settings'
@@ -17,12 +17,12 @@ import './desktop.css'
 interface DesktopAppProps { onSwitchToSpace: () => void }
 const NAV_ITEMS: readonly { id: DesktopPage; Icon: LucideIcon }[] = [
   { id: 'home', Icon: House }, { id: 'library', Icon: BookOpen }, { id: 'tasks', Icon: ListTodo }, { id: 'tools', Icon: Wrench }, { id: 'themes', Icon: Palette },
-  { id: 'settings', Icon: Settings }, { id: 'account', Icon: UserRound }, { id: 'support', Icon: LifeBuoy }, { id: 'privacy', Icon: ShieldCheck },
+  { id: 'settings', Icon: Settings }, { id: 'account', Icon: UserRound }, { id: 'trash', Icon: Trash2 }, { id: 'support', Icon: LifeBuoy }, { id: 'privacy', Icon: ShieldCheck },
 ]
 const CONTENT_WIDTHS = { narrow: '760px', comfortable: '1040px', wide: '1440px' } as const
 const DENSITY_GAPS = { compact: '8px', comfortable: '14px', spacious: '22px' } as const
 const FONT_FAMILIES = { instrument: "'Instrument Sans', 'Noto Kufi Arabic', system-ui, sans-serif", noto: "'Noto Kufi Arabic', 'Instrument Sans', system-ui, sans-serif", system: "system-ui, 'Noto Kufi Arabic', sans-serif" } as const
-const PAGE_IDS = new Set<DesktopPage>(['home', 'library', 'tasks', 'tools', 'themes', 'settings', 'account', 'support', 'privacy'])
+  const PAGE_IDS = new Set<DesktopPage>(['home', 'library', 'tasks', 'tools', 'themes', 'settings', 'account', 'trash', 'support', 'privacy'])
 function pageFromHash(): DesktopPage {
   const key = window.location.hash.split('/').filter(Boolean).at(-1) as DesktopPage | undefined
   return key && PAGE_IDS.has(key) ? key : 'home'

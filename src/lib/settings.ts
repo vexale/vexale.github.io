@@ -23,7 +23,7 @@ export interface Settings {
 
 export const SETTINGS_KEY = 'atelier-settings-v1'
 const LEGACY_APPEARANCE_KEY = 'atelier-appearance-v1'
-export const TRASH_RETENTION_DAYS = 60
+export const TRASH_RETENTION_DAYS = 30
 
 const THEME_IDS: readonly ThemeId[] = ['space-live', 'wave-field', 'orbit-drift', 'liquid-velvet', 'pastel-waves', 'botanical-flow', 'rose-nebula', 'moonlit-bloom', 'cyber-grid', 'geometric-matrix', 'tech-pulse', 'nova-drive', 'star-forge', 'space-static', 'solid', 'cats', 'floral', 'butterflies', 'dark-vintage', 'pastel-ai']
 const WINDOW_STYLES: readonly WindowStyle[] = ['glass', 'solid']

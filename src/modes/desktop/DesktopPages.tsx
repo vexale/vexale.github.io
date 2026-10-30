@@ -15,7 +15,10 @@ import { updateDesktopPreferences, useDesktopPreferences } from './preferences'
 import type { DesktopPage } from './types'
 import DesktopToolsPage from './DesktopToolsPage'
 import DesktopTaskTreePage from './DesktopTaskTreePage'
+import TrashPage from './TrashPage'
 import { DESKTOP_THEME_COLORS as THEME_COLORS } from './themeCatalog'
+import { getTaskTree, replaceTaskTree } from './taskStore'
+import type { TaskRecord } from './taskStore'
 
 function download(name: string, data: Blob): void {
   const url = URL.createObjectURL(data)
@@ -46,6 +49,32 @@ function nodeDepth(nodes: ReturnType<typeof useTree>['tree'], targetId: string, 
     if (childDepth !== undefined) return childDepth
   }
   return undefined
+}
+
+function validImportNode(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const node = value as { id?: unknown; title?: unknown; children?: unknown }
+  return typeof node.id === 'string' && typeof node.title === 'string' && Array.isArray(node.children) && node.children.every(validImportNode)
+}
+
+function parseImportedTasks(value: unknown): TaskRecord[] | null {
+  if (value === undefined) return null
+  if (!Array.isArray(value) || value.length > 200) throw new Error('tasks')
+  const valid = value.every(item => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) return false
+    const task = item as Partial<TaskRecord>
+    return typeof task.id === 'string' && (task.parentId === null || typeof task.parentId === 'string') && typeof task.title === 'string' && ['todo', 'doing', 'done', 'late'].includes(String(task.status)) && (task.dueDate === null || typeof task.dueDate === 'string') && typeof task.order === 'number' && Array.isArray(task.attachedFileIds) && task.attachedFileIds.every(id => typeof id === 'string') && Array.isArray(task.attachedNoteIds) && task.attachedNoteIds.every(id => typeof id === 'string')
+  })
+  if (!valid) throw new Error('tasks')
+  return value as TaskRecord[]
+}
+
+function importErrorMessage(error: unknown, fallback: string, locale: 'en' | 'ar'): string {
+  const code = error instanceof Error ? error.message : ''
+  const errors = locale === 'ar'
+    ? { notObject: 'الملف ليس كائن JSON صالحاً.', format: 'هذه ليست نسخة Vexale احتياطية.', version: 'إصدار هذه النسخة الاحتياطية غير مدعوم.', tree: 'بنية شجرة الأقسام غير صالحة.', tasks: 'تحتوي شجرة المهام على سجلات غير صالحة.' }
+    : { notObject: 'The file is not a JSON object.', format: 'This is not a Vexale backup.', version: 'This backup version is not supported.', tree: 'The section tree is invalid.', tasks: 'The task tree contains invalid records.' }
+  return errors[code as keyof typeof errors] ?? fallback
 }
 
 export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { page: DesktopPage; onSwitchToSpace: () => void; onOpenPrivacy: () => void }) {
@@ -100,9 +129,10 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
         download('vexale-library.md', new Blob([body], { type: 'text/markdown;charset=utf-8' }))
       } else {
         const blobs = await Promise.all(records.map(async record => ({ ...record, file: undefined, mimeType: record.file.type, data: await toBase64(record.file) })))
-        const payload = { format: 'vexale-library', version: 1, exportedAt: new Date().toISOString(), tree, notes: Object.fromEntries(notes), files: blobs }
+        const payload = { format: 'vexale-library', version: 2, exportedAt: new Date().toISOString(), tree, notes: Object.fromEntries(notes), files: blobs, tasks: getTaskTree() }
         download(format === 'backup' ? 'vexale-backup.json' : 'vexale-library.json', new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }))
       }
+      if (format === 'backup') localStorage.setItem('vexale-last-backup-v1', String(Date.now()))
       setStatus(t.exportDone)
     } catch { setStatus(t.exportFailed) } finally { setBusy(false) }
   }
@@ -114,8 +144,13 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
     setBusy(true); setStatus('')
     try {
       const parsed: unknown = JSON.parse(await file.text())
-      if (!parsed || typeof parsed !== 'object' || (parsed as { format?: string }).format !== 'vexale-library') throw new Error('invalid')
-      const pack = parsed as { tree?: Array<{ id?: string; title?: string; children?: Array<{ id?: string; title?: string; children?: unknown[] }> }>; notes?: Record<string, { html?: string; updatedAt?: number } | null>; files?: Array<{ nodeId: string; name: string; kind: 'image' | 'audio' | 'doc' | 'drawing'; data: string; mimeType?: string }> }
+      if (!parsed || typeof parsed !== 'object') throw new Error('notObject')
+      if ((parsed as { format?: string }).format !== 'vexale-library') throw new Error('format')
+      if (!Number.isInteger((parsed as { version?: number }).version) || Number((parsed as { version?: number }).version) < 1) throw new Error('version')
+      const pack = parsed as { tree?: Array<{ id?: string; title?: string; children?: unknown[] }>; notes?: Record<string, { html?: string; updatedAt?: number } | null>; files?: Array<{ nodeId: string; name: string; kind: 'image' | 'audio' | 'doc' | 'drawing'; data: string; mimeType?: string }>; tasks?: unknown }
+      if (!Array.isArray(pack.tree) || !pack.tree.every(validImportNode)) throw new Error('tree')
+      const importedTasks = parseImportedTasks(pack.tasks)
+      if (importedTasks) replaceTaskTree(importedTasks)
       const idMap = new Map<string, string>()
       const copyNodes = (nodes: typeof pack.tree, parentId: string | null): void => {
         for (const node of nodes ?? []) {
@@ -136,7 +171,7 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
         add({ nodeId: idMap.get(fileRecord.nodeId) ?? fileRecord.nodeId, name: imported.name, kind, url: URL.createObjectURL(imported), size: imported.size, file: imported })
       }
       setStatus(t.importDone)
-    } catch { setStatus(t.importFailed) } finally { setBusy(false) }
+    } catch (error) { setStatus(`${t.importErrorPrefix} ${importErrorMessage(error, t.importFailed, locale)}`) } finally { setBusy(false) }
   }
 
   if (page === 'themes') return <section className="desk-theme-grid" aria-label={m.pages.themes.title}>{Object.keys(THEME_COLORS).map(id => {
@@ -168,18 +203,44 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
       <button type="button" className="desk-button" disabled={busy} onClick={() => void exportLibrary('backup')}><Download size={16} />{t.downloadBackup}</button>
       <button type="button" className="desk-button" disabled={busy} onClick={() => fileRef.current?.click()}><Upload size={16} />{t.import}</button>
       <button type="button" className="desk-button" disabled={shareBusy} onClick={() => void createOrCopyShareLink()}>{shareBusy ? t.sharing : t.shareLink}</button>
-      <input ref={fileRef} hidden type="file" accept="application/json,.json" onChange={e => void importLibrary(e)} />
+    <input ref={fileRef} hidden type="file" accept="application/json,.json" onChange={e => void importLibrary(e)} />
     </div>
     {shareLink && <p className="desk-share-link" dir="ltr"><a href={shareLink}>{shareLink}</a></p>}
+    <StorageSafety t={t} onBackup={() => void exportLibrary('backup')} />
     <DeleteLocalData t={t} />
     {status && <p className="desk-inline-status" role="status">{status}</p>}
   </section>
 
   if (page === 'tasks') return <DesktopTaskTreePage />
+  if (page === 'trash') return <TrashPage />
   if (page === 'tools') return <DesktopToolsPage />
   if (page === 'support') return <SupportPage onOpenPrivacy={onOpenPrivacy} />
   if (page === 'privacy') return <PrivacyPage />
   return <section className="desk-tools-page"><p>{t.toolsDescription}</p><button type="button" className="desk-button desk-button-primary" onClick={onSwitchToSpace}>{t.openTools}</button></section>
+}
+
+function StorageSafety({ t, onBackup }: { t: ReturnType<typeof useDesktopMessages>['workspacePages']; onBackup: () => void }) {
+  const [usage, setUsage] = useState<{ used: number; quota: number } | null>(null)
+  const [lastBackup, setLastBackup] = useState(() => Number(localStorage.getItem('vexale-last-backup-v1') ?? 0))
+  useEffect(() => {
+    let active = true
+    navigator.storage?.estimate?.().then(result => { if (active && result.usage !== undefined && result.quota) setUsage({ used: result.usage, quota: result.quota }) }).catch(() => undefined)
+    return () => { active = false }
+  }, [])
+  const stale = !lastBackup || Date.now() - lastBackup > 7 * 86_400_000
+  const markBackup = (): void => { onBackup(); const next = Date.now(); localStorage.setItem('vexale-last-backup-v1', String(next)); setLastBackup(next) }
+  return <section className="desk-data-safety" aria-label={t.storageUsage}>
+    {stale && <div className="desk-backup-reminder"><span>{t.backupReminder}</span><button type="button" className="desk-button desk-button-primary" onClick={markBackup}>{t.backupNow}</button></div>}
+    <div className="desk-storage-heading"><strong>{t.storageUsage}</strong>{usage ? <span>{formatBytes(usage.used)} / {formatBytes(usage.quota)} ({Math.round((usage.used / usage.quota) * 100)}% {t.storageUsed})</span> : <span>{t.storageUnavailable}</span>}</div>
+    {usage && <progress value={usage.used} max={usage.quota} aria-label={t.storageUsage} />}
+  </section>
+}
+
+function formatBytes(value: number): string {
+  if (value < 1024) return `${Math.round(value)} B`
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`
+  if (value < 1024 * 1024 * 1024) return `${(value / (1024 * 1024)).toFixed(1)} MB`
+  return `${(value / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
 function DeleteLocalData({ t }: { t: ReturnType<typeof useDesktopMessages>['workspacePages'] }) {
@@ -188,10 +249,11 @@ function DeleteLocalData({ t }: { t: ReturnType<typeof useDesktopMessages>['work
   const phrase = t.deletePhrase
   const erase = (): void => {
     if (typed !== phrase) return
-    for (const key of ['atelier-tree-v1', 'atelier-path-v1', 'vexale-office-preferences-v1', 'vexale-task-tree-v1', 'atelier-google-auth-v1', 'vexale-anonymous-analytics']) localStorage.removeItem(key)
+    for (const key of ['atelier-tree-v1', 'atelier-path-v1', 'vexale-office-preferences-v1', 'vexale-task-tree-v1', 'atelier-google-auth-v1', 'vexale-anonymous-analytics', 'vexale-last-backup-v1']) localStorage.removeItem(key)
     leaveSharedWorkspace()
     signOutGoogle()
     const request = indexedDB.deleteDatabase('atelier-library')
+    indexedDB.deleteDatabase('atelier-trash')
     request.onsuccess = request.onerror = request.onblocked = () => window.location.reload()
   }
   return <section className="desk-danger-zone"><h2><AlertTriangle size={18} />{t.dangerZone}</h2><p>{t.deleteWarning}</p>
