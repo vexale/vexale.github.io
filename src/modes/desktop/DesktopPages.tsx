@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { AlertTriangle, Bug, Check, CheckCircle2, Download, FileText, Lightbulb, Moon, Send, Upload, UserRound } from 'lucide-react'
 import { dbGetAll, dbGetNote, dbPutNote } from '../../db'
@@ -13,12 +13,13 @@ import { useLibrary, useTree } from '../../shared'
 import { useDesktopMessages } from './i18n'
 import { updateDesktopPreferences, useDesktopPreferences } from './preferences'
 import type { DesktopPage } from './types'
-import DesktopToolsPage from './DesktopToolsPage'
-import DesktopTaskTreePage from './DesktopTaskTreePage'
 import TrashPage from './TrashPage'
 import { DESKTOP_THEME_COLORS as THEME_COLORS } from './themeCatalog'
 import { getTaskTree, replaceTaskTree } from './taskStore'
 import type { TaskRecord } from './taskStore'
+
+const DesktopToolsPage = lazy(() => import('./DesktopToolsPage'))
+const DesktopTaskTreePage = lazy(() => import('./DesktopTaskTreePage'))
 
 function download(name: string, data: Blob): void {
   const url = URL.createObjectURL(data)
@@ -211,12 +212,16 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
     {status && <p className="desk-inline-status" role="status">{status}</p>}
   </section>
 
-  if (page === 'tasks') return <DesktopTaskTreePage />
+  if (page === 'tasks') return <Suspense fallback={<RouteSkeleton label={m.pages.tasks.title} />}><DesktopTaskTreePage /></Suspense>
   if (page === 'trash') return <TrashPage />
-  if (page === 'tools') return <DesktopToolsPage />
+  if (page === 'tools') return <Suspense fallback={<RouteSkeleton label={m.pages.tools.title} />}><DesktopToolsPage /></Suspense>
   if (page === 'support') return <SupportPage onOpenPrivacy={onOpenPrivacy} />
   if (page === 'privacy') return <PrivacyPage />
   return <section className="desk-tools-page"><p>{t.toolsDescription}</p><button type="button" className="desk-button desk-button-primary" onClick={onSwitchToSpace}>{t.openTools}</button></section>
+}
+
+function RouteSkeleton({ label }: { label: string }) {
+  return <section className="desk-route-skeleton" aria-busy="true" aria-label={label}><span className="desk-route-skeleton-line is-title" /><span className="desk-route-skeleton-line is-copy" /><span className="desk-route-skeleton-panel" /></section>
 }
 
 function StorageSafety({ t, onBackup }: { t: ReturnType<typeof useDesktopMessages>['workspacePages']; onBackup: () => void }) {

@@ -1,0 +1,41 @@
+html[data-mode='desktop'] .desk-offline-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 24px 0;
+  padding: 8px 12px;
+  border: 1px solid var(--desk-warning);
+  border-radius: 8px;
+  background: var(--desk-accent-soft);
+  color: var(--desk-text);
+  font-size: 13px;
+}
+
+html[data-mode='desktop'] .desk-route-skeleton {
+  display: grid;
+  gap: 14px;
+  min-height: 260px;
+  padding: 24px;
+  border: 1px solid var(--desk-border);
+  border-radius: 12px;
+  background: var(--desk-surface);
+}
+
+html[data-mode='desktop'] .desk-route-skeleton-line,
+html[data-mode='desktop'] .desk-route-skeleton-panel,
+html[data-mode='desktop'] .desk-lazy-placeholder {
+  display: block;
+  border-radius: 8px;
+  background: var(--desk-elevated);
+}
+
+html[data-mode='desktop'] .desk-route-skeleton-line { height: 14px; }
+html[data-mode='desktop'] .desk-route-skeleton-line.is-title { width: min(260px, 70%); height: 24px; }
+html[data-mode='desktop'] .desk-route-skeleton-line.is-copy { width: min(520px, 90%); }
+html[data-mode='desktop'] .desk-route-skeleton-panel { min-height: 180px; }
+html[data-mode='desktop'] .desk-lazy-placeholder { min-height: 260px; border: 1px solid var(--desk-border); }
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-mode='desktop'] .desk-route-skeleton,
+  html[data-mode='desktop'] .desk-route-skeleton * { animation: none !important; transition: none !important; }
+}

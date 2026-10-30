@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react'
 import { BookOpen, Building2, Download, Ellipsis, House, LifeBuoy, ListTodo, Menu, Monitor, Palette, Search, Settings, ShieldCheck, Trash2, UserRound, Wrench, X, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize2, Minimize2 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { setLocale, useLocale } from '../../lib/i18n'
@@ -6,13 +6,14 @@ import { useSettings } from '../../lib/settings'
 import { useDesktopMessages } from './i18n'
 import { updateDesktopPreferences, useDesktopPreferences } from './preferences'
 import type { DesktopPage } from './types'
-import DesktopLibraryPage from './DesktopLibraryPage'
 import DesktopSectionTree from './DesktopSectionTree'
-import { DesktopPageContent } from './DesktopPages'
 import DesktopCommandPalette from './DesktopCommandPalette'
 import DesktopHomePage from './DesktopHomePage'
 import DesktopFocusTimer from './DesktopFocusTimer'
+import DesktopSkeleton from './DesktopSkeleton'
+import OfflineNotice from './OfflineNotice'
 import './desktop.css'
+import './performance.css'
 
 interface DesktopAppProps { onSwitchToSpace: () => void }
 interface PwaInstallPromptEvent extends Event {
@@ -23,6 +24,11 @@ const NAV_ITEMS: readonly { id: DesktopPage; Icon: LucideIcon }[] = [
   { id: 'home', Icon: House }, { id: 'library', Icon: BookOpen }, { id: 'tasks', Icon: ListTodo }, { id: 'tools', Icon: Wrench }, { id: 'themes', Icon: Palette },
   { id: 'settings', Icon: Settings }, { id: 'account', Icon: UserRound }, { id: 'trash', Icon: Trash2 }, { id: 'support', Icon: LifeBuoy }, { id: 'privacy', Icon: ShieldCheck },
 ]
+const DesktopLibraryPage = lazy(() => import('./DesktopLibraryPage'))
+const DesktopPageContent = lazy(async () => {
+  const module = await import('./DesktopPages')
+  return { default: module.DesktopPageContent }
+})
 const CONTENT_WIDTHS = { narrow: '760px', comfortable: '1040px', wide: '1440px' } as const
 const DENSITY_GAPS = { compact: '8px', comfortable: '14px', spacious: '22px' } as const
 const FONT_FAMILIES = { instrument: "'Instrument Sans', 'Noto Kufi Arabic', system-ui, sans-serif", noto: "'Noto Kufi Arabic', 'Instrument Sans', system-ui, sans-serif", system: "system-ui, 'Noto Kufi Arabic', sans-serif" } as const
@@ -146,6 +152,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
           <DesktopFocusTimer />
         </div>
       </header>
+      <OfflineNotice />
       {mobileNavOpen && <button type="button" className="desk-mobile-nav-backdrop" aria-label={messages.shell.closeNavigation} onClick={() => setMobileNavOpen(false)} />}
       <aside id="desk-sidebar" className={`desk-sidebar${mobileNavOpen ? ' is-mobile-open' : ''}`} inert={isMobile ? !mobileNavOpen : preferences.railCollapsed} aria-label={messages.navigation.primary}>
         <div className="desk-sidebar-heading"><Building2 size={16} aria-hidden="true" /><span>{messages.navigation.workspace}</span></div>
@@ -155,7 +162,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
       {page === 'library' && <aside id="desk-section-pane" className="desk-section-pane" inert={preferences.sectionsCollapsed && !isMobile} aria-label={messages.sections.title}><DesktopSectionTree /></aside>}
       <main className={`desk-main ${page === 'library' ? 'desk-main-with-sections' : 'desk-main-full'}`} id="main-content">
         <div className="desk-page"><header className="desk-page-header"><h1 className="desk-page-title">{page === 'home' ? messages.homeDashboard.pageTitle : messages.pages[page].title}</h1><p className="desk-page-description">{page === 'home' ? messages.homeDashboard.intro : messages.pages[page].description}</p></header>
-          {page === 'home' ? <DesktopHomePage onNavigate={navigate} /> : page === 'library' ? <DesktopLibraryPage /> : <DesktopPageContent page={page} onSwitchToSpace={onSwitchToSpace} onOpenPrivacy={() => navigate('privacy')} />}
+          {page === 'home' ? <DesktopHomePage onNavigate={navigate} /> : page === 'library' ? <Suspense fallback={<DesktopSkeleton />}><DesktopLibraryPage /></Suspense> : <Suspense fallback={<DesktopSkeleton />}><DesktopPageContent page={page} onSwitchToSpace={onSwitchToSpace} onOpenPrivacy={() => navigate('privacy')} /></Suspense>}
         </div>
       </main>
       <DesktopCommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onNavigate={navigate} onSwitchToSpace={onSwitchToSpace} />

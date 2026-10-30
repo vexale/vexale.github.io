@@ -1,0 +1,29 @@
+.global-error-screen {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  background: #080a12;
+  color: #f3f2fb;
+  font-family: 'Instrument Sans', 'Noto Kufi Arabic', system-ui, sans-serif;
+}
+
+.global-error-card {
+  display: grid;
+  width: min(560px, 100%);
+  gap: 14px;
+  padding: 28px;
+  border: 1px solid #403b66;
+  border-radius: 16px;
+  background: #17182a;
+  box-shadow: 0 20px 60px #0008;
+}
+
+.global-error-card > svg { color: #b9b0ff; }
+.global-error-card h1,
+.global-error-card p { margin: 0; }
+.global-error-card h1 { font-size: 24px; }
+.global-error-card p { color: #d5d2e3; line-height: 1.7; }
+.global-error-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.global-error-actions button { min-height: 44px; }
+.global-error-status { font-size: 13px; }
