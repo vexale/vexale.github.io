@@ -1550,3 +1550,76 @@ html[data-mode='desktop'] .desk-task-map-bottom-sheet { display: none; }
   html[data-mode='desktop'] .desk-topbar-actions { gap: 4px; }
   html[data-mode='desktop'] .desk-language-toggle { min-width: 44px; padding-inline: 8px; }
 }
+
+/* Accessibility overrides: token-driven contrast, focus, reduced motion, and RTL direction. */
+html[data-mode='desktop'] .desk-topbar-menu button:focus-visible,
+html[data-mode='desktop'] .desk-task-map-context-menu button:focus-visible,
+html[data-mode='desktop'] .desk-task-map-control:focus-visible,
+html[data-mode='desktop'] .desk-task-map-search button:focus-visible,
+html[data-mode='desktop'] .desk-task-map-node:focus-visible {
+  outline: 3px solid var(--desk-focus);
+  outline-offset: 3px;
+}
+html[data-mode='desktop'] .desk-task-map-scroll { border-color: var(--desk-border); background: var(--desk-bg); }
+html[data-mode='desktop'] .desk-task-map-canvas { background: var(--desk-bg); }
+html[data-mode='desktop'] .desk-task-map-connectors path { stroke: var(--desk-muted); }
+html[data-mode='desktop'] .desk-task-map-connectors circle { fill: var(--desk-accent); stroke: var(--desk-bg); }
+html[data-mode='desktop'] .desk-task-map-node { border-color: var(--desk-accent); background: var(--desk-elevated); color: var(--desk-text); }
+html[data-mode='desktop'] .desk-task-map-status-icon { color: var(--desk-muted); }
+html[data-mode='desktop'] .desk-task-map-root-icon,
+html[data-mode='desktop'] .desk-task-map-branch-icon { color: var(--desk-accent); }
+html[data-mode='desktop'] .desk-task-map-node.is-done { border-color: var(--desk-success); }
+html[data-mode='desktop'] .desk-task-map-node.is-done .desk-task-map-status-icon,
+html[data-mode='desktop'] .desk-task-map-node.is-done .desk-task-map-ring-value { color: var(--desk-success); stroke: var(--desk-success); }
+html[data-mode='desktop'] .desk-task-map-node.is-doing { border-color: var(--desk-warning); }
+html[data-mode='desktop'] .desk-task-map-node.is-doing .desk-task-map-status-icon,
+html[data-mode='desktop'] .desk-task-map-node.is-doing .desk-task-map-ring-value { color: var(--desk-warning); stroke: var(--desk-warning); }
+html[data-mode='desktop'] .desk-task-map-node.is-late { border-color: var(--desk-danger); }
+html[data-mode='desktop'] .desk-task-map-node.is-late .desk-task-map-status-icon,
+html[data-mode='desktop'] .desk-task-map-node.is-late .desk-task-map-ring-value { color: var(--desk-danger); stroke: var(--desk-danger); }
+html[data-mode='desktop'] .desk-task-map-node.is-todo .desk-task-map-ring-value { color: var(--desk-muted); stroke: var(--desk-muted); }
+html[data-mode='desktop'] .desk-task-map-progress { color: var(--desk-text); }
+html[data-mode='desktop'] .desk-task-map-ring-track { stroke: var(--desk-border); }
+html[data-mode='desktop'] .desk-task-map-chip { border-color: var(--desk-border); background: var(--desk-accent-soft); color: var(--desk-text); }
+html[data-mode='desktop'] .desk-task-map-chip.is-note { border-color: var(--desk-accent); color: var(--desk-text); }
+html[data-mode='desktop'] .desk-task-map-node:hover,
+html[data-mode='desktop'] .desk-task-map-node:focus-visible { box-shadow: 0 14px 30px #0008, 0 0 0 1px var(--desk-accent); }
+html[data-mode='desktop'] .desk-task-map-node:focus-visible { outline-color: var(--desk-focus); }
+html[data-mode='desktop'] .desk-task-map-node.is-path-active:not(:hover):not(:focus-visible) { box-shadow: 0 0 0 1px var(--desk-accent), 0 7px 20px #0006; }
+html[data-mode='desktop'] .desk-task-map-connectors g.is-path-active path { stroke: var(--desk-accent); }
+html[data-mode='desktop'] .desk-task-map-connectors g.is-path-active circle { fill: var(--desk-text); }
+html[data-mode='desktop'] .desk-task-map-search { border-color: var(--desk-border); background: var(--desk-surface); color: var(--desk-text); }
+html[data-mode='desktop'] .desk-task-map-search:focus-within { border-color: var(--desk-accent); box-shadow: 0 0 0 3px var(--desk-accent-soft); }
+html[data-mode='desktop'] .desk-task-map-search input { color: var(--desk-text); }
+html[data-mode='desktop'] .desk-task-map-search input::placeholder,
+html[data-mode='desktop'] .desk-task-map-zoom-level,
+html[data-mode='desktop'] .desk-task-map-count,
+html[data-mode='desktop'] .desk-task-map-selection,
+html[data-mode='desktop'] .desk-task-map-help { color: var(--desk-muted); }
+html[data-mode='desktop'] .desk-task-map-search button,
+html[data-mode='desktop'] .desk-task-map-control { color: var(--desk-text); }
+html[data-mode='desktop'] .desk-task-map-control { border-color: var(--desk-border); background: var(--desk-surface); }
+html[data-mode='desktop'] .desk-task-map-control:hover,
+html[data-mode='desktop'] .desk-task-map-branch-icon:hover { border-color: var(--desk-accent); background: var(--desk-hover); color: var(--desk-text); }
+html[data-mode='desktop'] .desk-task-map-node.is-selected { border-color: var(--desk-focus); box-shadow: 0 0 0 2px var(--desk-accent-soft), 0 10px 26px #0007; }
+html[data-mode='desktop'] .desk-task-map-node.is-drop-target { border-color: var(--desk-success); outline-color: var(--desk-success); }
+html[data-mode='desktop'] .desk-task-map-rename { border-color: var(--desk-accent); background: var(--desk-bg); color: var(--desk-text); }
+html[data-mode='desktop'] .desk-task-map-selection span { color: var(--desk-text); }
+html[data-mode='desktop'] .desk-task-map-search-error { color: var(--desk-danger); }
+html[data-mode='desktop'] .desk-task-map-context-menu { border-color: var(--desk-border); background: var(--desk-surface); }
+html[data-mode='desktop'] .desk-task-map-context-menu button { color: var(--desk-text); }
+html[data-mode='desktop'] .desk-task-map-context-menu button:hover,
+html[data-mode='desktop'] .desk-task-map-context-menu button:focus-visible { background: var(--desk-hover); }
+html[data-mode='desktop'] .desk-task-map-context-menu button.is-danger { color: var(--desk-danger); }
+html[data-mode='desktop'] .desk-app[dir='rtl'] .desk-tree-toggle svg,
+html[data-mode='desktop'] .desk-app[dir='rtl'] .desk-task-map-branch-icon svg { transform: scaleX(-1); }
+@media (prefers-reduced-motion: reduce) {
+  html[data-mode='desktop'] .desk-task-map-canvas,
+  html[data-mode='desktop'] .desk-task-map-node,
+  html[data-mode='desktop'] .desk-task-map-connectors path,
+  html[data-mode='desktop'] .desk-task-map-connectors circle,
+  html[data-mode='desktop'] .desk-task-map-ring-value { animation: none !important; transition: none !important; }
+}
+html[data-mode='desktop'] .desk-command-search:focus-within { box-shadow: inset 0 -3px 0 var(--desk-focus); }
+html[data-mode='desktop'] .desk-command-search input:focus-visible,
+html[data-mode='desktop'] .desk-task-map-search input:focus-visible { outline: 3px solid var(--desk-focus) !important; outline-offset: 2px; border-radius: 4px; }

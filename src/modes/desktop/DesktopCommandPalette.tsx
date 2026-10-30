@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
+import type { KeyboardEvent, ReactNode } from 'react'
 import { dbGetNote } from '../../db'
 import { useLibrary, useTree } from '../../shared'
 import { setLocale, useLocale } from '../../lib/i18n'
@@ -68,6 +68,8 @@ export default function DesktopCommandPalette({ open, onClose, onNavigate, onSwi
   const { items } = useLibrary()
   const tasks = useTaskTreeStore()
   const inputRef = useRef<HTMLInputElement>(null)
+  const paletteRef = useRef<HTMLElement>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
   const [query, setQuery] = useState('')
   const [notes, setNotes] = useState<NoteRef[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
@@ -84,6 +86,15 @@ export default function DesktopCommandPalette({ open, onClose, onNavigate, onSwi
     })).then(rows => { if (!cancelled) setNotes(rows.filter((row): row is NoteRef => Boolean(row?.body))) })
     return () => { cancelled = true; window.clearTimeout(focus) }
   }, [open, sections])
+
+  useEffect(() => {
+    if (open) {
+      previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+      return
+    }
+    previousFocusRef.current?.focus()
+    previousFocusRef.current = null
+  }, [open])
 
   const allResults: PaletteResult[] = useMemo(() => {
     const pathLabel = (path: string[]): string => path.map(id => sections.find(section => section.id === id)?.title).filter(Boolean).join(' / ')
@@ -127,8 +138,17 @@ export default function DesktopCommandPalette({ open, onClose, onNavigate, onSwi
     onClose(); result.run()
   }
   if (!open) return null
+  const trapFocus = (event: KeyboardEvent<HTMLElement>): void => {
+    if (event.key !== 'Tab') return
+    const focusable = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not([disabled]), input, [href], [tabindex]:not([tabindex="-1"])'))
+    if (!focusable.length) return
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
+  }
   return <div className="desk-command-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}>
-    <section className="desk-command-palette" role="dialog" aria-modal="true" aria-label={p.title}>
+    <section ref={paletteRef} className="desk-command-palette" role="dialog" aria-modal="true" aria-label={p.title} onKeyDown={trapFocus}>
       <div className="desk-command-search"><Search size={19} aria-hidden="true" /><input ref={inputRef} value={query} onChange={event => { setQuery(event.target.value); setActiveIndex(0) }} onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); setActiveIndex(index => Math.min(index + 1, Math.max(0, filtered.length - 1))) } else if (event.key === 'ArrowUp') { event.preventDefault(); setActiveIndex(index => Math.max(0, index - 1)) } else if (event.key === 'Enter' && filtered[activeIndex]) { event.preventDefault(); select(filtered[activeIndex]) } else if (event.key === 'Escape') { event.preventDefault(); onClose() } }} placeholder={p.placeholder} aria-label={p.placeholder} aria-controls="desk-command-results" aria-activedescendant={filtered[activeIndex] ? 'desk-command-result-' + activeIndex : undefined} /><button type="button" className="desk-icon-button" aria-label={p.close} onClick={onClose}><X size={17} /></button></div>
       <div className="desk-command-subhead"><span>{queryText ? p.results : p.recent}</span><kbd dir="ltr">ESC</kbd></div>
       <div className="desk-command-results" id="desk-command-results" role="listbox" aria-label={p.results}>

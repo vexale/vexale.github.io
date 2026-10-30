@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import DesktopSectionAddControl from './DesktopSectionAddControl'
-import type { CSSProperties, FormEvent } from 'react'
+import type { CSSProperties, FormEvent, KeyboardEvent } from 'react'
 import { Check, ChevronDown, ChevronRight, Folder, Pencil, Plus, Star, Trash2, X } from 'lucide-react'
 import { findNode, useLibrary, useTree } from '../../shared'
 import { updateDesktopPreferences, useDesktopPreferences } from './preferences'
@@ -30,8 +30,25 @@ interface TreeBranchProps {
 }
 
 function TreeBranch({ nodes, parentPath, activePath, depth, onSelect, onToggle, fileCountFor, labels, fileLabel, favoriteSectionIds, onToggleFavorite, editingId, editingTitle, onStartRename, onRenameTitle, onCommitRename, onCancelRename, onDelete }: TreeBranchProps) {
+  const moveFocus = (event: KeyboardEvent<HTMLButtonElement>): void => {
+    const tree = event.currentTarget.closest('[role="tree"]')
+    const buttons = tree ? Array.from(tree.querySelectorAll<HTMLButtonElement>('.desk-tree-select')) : []
+    const index = buttons.indexOf(event.currentTarget)
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Home' || event.key === 'End') {
+      event.preventDefault()
+      const nextIndex = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : index + (event.key === 'ArrowDown' ? 1 : -1)
+      buttons[Math.max(0, Math.min(buttons.length - 1, nextIndex))]?.focus()
+      return
+    }
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+    const toggle = event.currentTarget.parentElement?.querySelector<HTMLButtonElement>('.desk-tree-toggle')
+    if (!toggle) return
+    const rtl = event.currentTarget.closest('[dir="rtl"]') !== null
+    const expands = rtl ? event.key === 'ArrowLeft' : event.key === 'ArrowRight'
+    if (expands !== (toggle.getAttribute('aria-expanded') === 'true')) { event.preventDefault(); toggle.click() }
+  }
   return (
-    <ul className="desk-tree-list">
+    <ul className="desk-tree-list" role={depth === 0 ? 'tree' : 'group'}>
       {nodes.map(node => {
         const nodePath = [...parentPath, node.id]
         const expanded = activePath[parentPath.length] === node.id
@@ -40,7 +57,7 @@ function TreeBranch({ nodes, parentPath, activePath, depth, onSelect, onToggle, 
         const fileCount = fileCountFor(node.id)
 
         return (
-          <li key={node.id} className="desk-tree-item">
+          <li key={node.id} className="desk-tree-item" role="treeitem" aria-level={depth + 1} aria-selected={selected} aria-expanded={hasChildren ? expanded : undefined}>
             <div className="desk-tree-row" style={{ '--desk-tree-depth': depth } as CSSProperties}>
               {editingId === node.id ? <form className="desk-tree-rename-form" onSubmit={event => onCommitRename(event, node.id)}>
                 <label className="desk-visually-hidden" htmlFor={`desk-rename-${node.id}`}>{labels.renameInput}</label>
@@ -51,6 +68,7 @@ function TreeBranch({ nodes, parentPath, activePath, depth, onSelect, onToggle, 
                 type="button"
                 className="desk-tree-select"
                 aria-current={selected ? 'page' : undefined}
+                onKeyDown={moveFocus}
                 onClick={() => onSelect(nodePath)}
               >
                 <Folder size={16} aria-hidden="true" />
