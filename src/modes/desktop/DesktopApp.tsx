@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
-import { BookOpen, Building2, Ellipsis, House, LifeBuoy, ListTodo, Menu, Monitor, Palette, Search, Settings, ShieldCheck, Trash2, UserRound, Wrench, X, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize2, Minimize2 } from 'lucide-react'
+import { BookOpen, Building2, Download, Ellipsis, House, LifeBuoy, ListTodo, Menu, Monitor, Palette, Search, Settings, ShieldCheck, Trash2, UserRound, Wrench, X, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize2, Minimize2 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { setLocale, useLocale } from '../../lib/i18n'
 import { useSettings } from '../../lib/settings'
@@ -15,6 +15,10 @@ import DesktopFocusTimer from './DesktopFocusTimer'
 import './desktop.css'
 
 interface DesktopAppProps { onSwitchToSpace: () => void }
+interface PwaInstallPromptEvent extends Event {
+  prompt: () => Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>
+}
 const NAV_ITEMS: readonly { id: DesktopPage; Icon: LucideIcon }[] = [
   { id: 'home', Icon: House }, { id: 'library', Icon: BookOpen }, { id: 'tasks', Icon: ListTodo }, { id: 'tools', Icon: Wrench }, { id: 'themes', Icon: Palette },
   { id: 'settings', Icon: Settings }, { id: 'account', Icon: UserRound }, { id: 'trash', Icon: Trash2 }, { id: 'support', Icon: LifeBuoy }, { id: 'privacy', Icon: ShieldCheck },
@@ -38,6 +42,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const [installPrompt, setInstallPrompt] = useState<PwaInstallPromptEvent | null>(null)
   const bothPanelsCollapsed = preferences.railCollapsed && preferences.sectionsCollapsed
   const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
   const railExpanded = !preferences.railCollapsed
@@ -52,6 +57,13 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
   const toggleRail = (): void => updateDesktopPreferences({ railCollapsed: !preferences.railCollapsed })
   const toggleSections = (): void => { if (page === 'library') updateDesktopPreferences({ sectionsCollapsed: !preferences.sectionsCollapsed }) }
   const toggleFocus = (): void => { const collapsed = !bothPanelsCollapsed; updateDesktopPreferences({ railCollapsed: collapsed, sectionsCollapsed: collapsed }) }
+  const installApp = async (): Promise<void> => {
+    if (!installPrompt) return
+    setMenuOpen(false)
+    await installPrompt.prompt()
+    await installPrompt.userChoice
+    setInstallPrompt(null)
+  }
 
   useLayoutEffect(() => {
     const root = document.documentElement
@@ -99,6 +111,20 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
     return () => { window.removeEventListener('hashchange', syncHash); window.removeEventListener('popstate', syncHash); window.removeEventListener('keydown', onShortcut) }
   }, [page, preferences.railCollapsed, preferences.sectionsCollapsed])
 
+  useEffect(() => {
+    const onBeforeInstallPrompt = (event: Event): void => {
+      event.preventDefault()
+      setInstallPrompt(event as PwaInstallPromptEvent)
+    }
+    const onAppInstalled = (): void => setInstallPrompt(null)
+    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt)
+    window.addEventListener('appinstalled', onAppInstalled)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt)
+      window.removeEventListener('appinstalled', onAppInstalled)
+    }
+  }, [])
+
   return (
     <div className="desk-app" data-desktop-page={page} data-rail-collapsed={preferences.railCollapsed} data-sections-collapsed={preferences.sectionsCollapsed} lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       <header className="desk-topbar">
@@ -107,6 +133,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
           <div className="desk-menu-wrap">
             <button type="button" className="desk-icon-button" aria-label={messages.shell.menu} aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}><Ellipsis size={18} aria-hidden="true" /></button>
             {menuOpen && <div className="desk-topbar-menu" role="menu">
+              {installPrompt && <button type="button" role="menuitem" onClick={() => void installApp()}><Download size={16} />{messages.shell.installApp}</button>}
               <button type="button" role="menuitem" onClick={toggleRail}>{railExpanded ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}{messages.shell.toggleRail}<kbd dir="ltr">Ctrl+Shift+B</kbd></button>
               <button type="button" role="menuitem" disabled={page !== 'library'} onClick={toggleSections}>{sectionsExpanded ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}{messages.shell.toggleSections}<kbd dir="ltr">Ctrl+B</kbd></button>
               <button type="button" role="menuitem" onClick={toggleFocus}>{bothPanelsCollapsed ? <Minimize2 size={16} /> : <Maximize2 size={16} />}{messages.shell.collapseAll}<kbd dir="ltr">Ctrl+\</kbd></button>

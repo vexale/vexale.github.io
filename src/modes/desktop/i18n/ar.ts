@@ -3,7 +3,7 @@ export const ar = {
   mode: { office: 'المكتب', space: 'الفضاء', switchToOffice: 'التبديل إلى وضع المكتب', switchToSpace: 'التبديل إلى وضع الفضاء' },
   language: { switch: 'تبديل لغة الواجهة', nextLabel: 'English', names: { en: 'English', ar: 'العربية' } },
   navigation: { library: 'المكتبة', tasks: 'المهام', tools: 'الأدوات', themes: 'السمات', settings: 'الإعدادات', account: 'الحساب', trash: 'المحذوفات', support: 'الدعم', privacy: 'الخصوصية', primary: 'التنقل الرئيسي', workspace: 'مساحة العمل' },
-  shell: { workspaceLabel: 'مساحة الدراسة', openNavigation: 'فتح التنقل', closeNavigation: 'إغلاق التنقل', selected: 'الصفحة الحالية', menu: 'قائمة مساحة العمل', toggleRail: 'طي أو توسيع التنقل', toggleSections: 'طي أو توسيع شجرة الأقسام', collapseAll: 'تبديل وضع التركيز' },
+  shell: { workspaceLabel: 'مساحة الدراسة', openNavigation: 'فتح التنقل', closeNavigation: 'إغلاق التنقل', selected: 'الصفحة الحالية', menu: 'قائمة مساحة العمل', installApp: 'تثبيت التطبيق', toggleRail: 'طي أو توسيع التنقل', toggleSections: 'طي أو توسيع شجرة الأقسام', collapseAll: 'تبديل وضع التركيز' },
   pages: {
     library: { title: 'المكتبة', description: 'أقسامك وملاحظاتك وملفات الدراسة.' },
     tools: { title: 'الأدوات', description: 'افتح أدوات الدراسة المتاحة في مساحة الفضاء.' },

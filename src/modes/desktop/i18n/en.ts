@@ -3,7 +3,7 @@ export const en = {
   mode: { office: 'Office', space: 'Space', switchToOffice: 'Switch to Office mode', switchToSpace: 'Switch to Space mode' },
   language: { switch: 'Switch interface language', nextLabel: 'العربية', names: { en: 'English', ar: 'العربية' } },
   navigation: { library: 'Library', tasks: 'Tasks', tools: 'Tools', themes: 'Themes', settings: 'Settings', account: 'Account', trash: 'Trash', support: 'Support', privacy: 'Privacy', primary: 'Main navigation', workspace: 'Workspace' },
-  shell: { workspaceLabel: 'Study workspace', openNavigation: 'Open navigation', closeNavigation: 'Close navigation', selected: 'Current page', menu: 'Workspace menu', toggleRail: 'Toggle navigation', toggleSections: 'Toggle section tree', collapseAll: 'Toggle focus layout' },
+  shell: { workspaceLabel: 'Study workspace', openNavigation: 'Open navigation', closeNavigation: 'Close navigation', selected: 'Current page', menu: 'Workspace menu', installApp: 'Install app', toggleRail: 'Toggle navigation', toggleSections: 'Toggle section tree', collapseAll: 'Toggle focus layout' },
   pages: {
     library: { title: 'Library', description: 'Your sections, notes, and study files.' },
     tools: { title: 'Tools', description: 'Open the study tools available in Space.' },
