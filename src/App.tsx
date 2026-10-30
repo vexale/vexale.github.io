@@ -6,6 +6,7 @@ import AIAssistant from './components/AIAssistant'
 import SettingsModal from './components/SettingsModal'
 import AuthModal from './components/AuthModal'
 import OnboardingTour from './components/OnboardingTour'
+import FirstRunSetup from './components/FirstRunSetup'
 import { LibraryProvider, TreeProvider, useTree } from './shared'
 import { isAnimatedTheme, resolveAccent, updateSettings, useSettings } from './lib/settings'
 import { activateWorkspaceFromInvite } from './lib/sharedWorkspace'
@@ -16,6 +17,7 @@ const DesktopApp = lazy(() => import('./modes/desktop/DesktopApp'))
 
 type WorkspaceMode = 'space' | 'office'
 const WORKSPACE_MODE_KEY = 'vexale-workspace-mode-v1'
+const SETUP_COMPLETED_KEY = 'vexale-workspace-setup-v1'
 
 function readWorkspaceMode(): WorkspaceMode {
   if (typeof window === 'undefined') return 'space'
@@ -26,8 +28,18 @@ function readWorkspaceMode(): WorkspaceMode {
   }
 }
 
+function readSetupCompleted(): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    return window.localStorage.getItem(SETUP_COMPLETED_KEY) === 'completed'
+  } catch {
+    return false
+  }
+}
+
 function WorkspaceRouter() {
   const [mode, setMode] = useState<WorkspaceMode>(readWorkspaceMode)
+  const [setupCompleted, setSetupCompleted] = useState(readSetupCompleted)
   const selectMode = useCallback((nextMode: WorkspaceMode): void => {
     setMode(nextMode)
     try {
@@ -38,7 +50,17 @@ function WorkspaceRouter() {
   }, [])
   const switchToOffice = useCallback((): void => selectMode('office'), [selectMode])
   const switchToSpace = useCallback((): void => selectMode('space'), [selectMode])
+  const finishSetup = useCallback((nextMode: WorkspaceMode): void => {
+    selectMode(nextMode)
+    try {
+      window.localStorage.setItem(SETUP_COMPLETED_KEY, 'completed')
+    } catch {
+      // يستمر الإعداد خلال الجلسة إن تعذر التخزين المحلي.
+    }
+    setSetupCompleted(true)
+  }, [selectMode])
 
+  if (!setupCompleted) return <FirstRunSetup initialMode={mode} onComplete={finishSetup} onSkip={() => finishSetup(mode)} />
   return mode === 'office'
     ? <Suspense fallback={null}><DesktopApp onSwitchToSpace={switchToSpace} /></Suspense>
     : <Layout onSwitchToOffice={switchToOffice} />
