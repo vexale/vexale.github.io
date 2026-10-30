@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
-import { BookOpen, Building2, Ellipsis, House, LifeBuoy, ListTodo, Monitor, Palette, Settings, ShieldCheck, Trash2, UserRound, Wrench, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize2, Minimize2, Search } from 'lucide-react'
+import { BookOpen, Building2, Ellipsis, House, LifeBuoy, ListTodo, Menu, Monitor, Palette, Search, Settings, ShieldCheck, Trash2, UserRound, Wrench, X, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize2, Minimize2 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { setLocale, useLocale } from '../../lib/i18n'
 import { useSettings } from '../../lib/settings'
@@ -36,6 +36,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
   const preferences = useDesktopPreferences()
   const [page, setPage] = useState<DesktopPage>(() => typeof window === 'undefined' ? 'home' : pageFromHash())
   const [menuOpen, setMenuOpen] = useState(false)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const bothPanelsCollapsed = preferences.railCollapsed && preferences.sectionsCollapsed
   const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
@@ -46,6 +47,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
     setPage(next)
     if (updateHash && window.location.hash !== pageHash(next)) window.history.pushState({ desktopPage: next }, '', pageHash(next))
     setMenuOpen(false)
+    setMobileNavOpen(false)
   }
   const toggleRail = (): void => updateDesktopPreferences({ railCollapsed: !preferences.railCollapsed })
   const toggleSections = (): void => { if (page === 'library') updateDesktopPreferences({ sectionsCollapsed: !preferences.sectionsCollapsed }) }
@@ -110,13 +112,15 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
               <button type="button" role="menuitem" onClick={toggleFocus}>{bothPanelsCollapsed ? <Minimize2 size={16} /> : <Maximize2 size={16} />}{messages.shell.collapseAll}<kbd dir="ltr">Ctrl+\</kbd></button>
             </div>}
           </div>
+          <button type="button" className="desk-mobile-nav-trigger desk-icon-button" aria-label={mobileNavOpen ? messages.shell.closeNavigation : messages.shell.openNavigation} aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen(value => !value)}>{mobileNavOpen ? <X size={19} /> : <Menu size={19} />}</button>
           <button type="button" className="desk-command-trigger" aria-label={messages.commandPalette.open} onClick={() => setPaletteOpen(true)}><Search size={16} aria-hidden="true" /><span>{messages.commandPalette.open}</span><kbd dir="ltr">Ctrl+K</kbd></button>
           <button type="button" className="desk-button desk-language-toggle" aria-label={messages.language.switch} onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}><span>{messages.language.nextLabel}</span></button>
           <button type="button" className="desk-button desk-mode-switch" aria-label={messages.mode.switchToSpace} onClick={onSwitchToSpace}><Monitor size={17} aria-hidden="true" /><span>{messages.mode.space}</span></button>
           <DesktopFocusTimer />
         </div>
       </header>
-      <aside id="desk-sidebar" className="desk-sidebar" inert={preferences.railCollapsed && !isMobile} aria-label={messages.navigation.primary}>
+      {mobileNavOpen && <button type="button" className="desk-mobile-nav-backdrop" aria-label={messages.shell.closeNavigation} onClick={() => setMobileNavOpen(false)} />}
+      <aside id="desk-sidebar" className={`desk-sidebar${mobileNavOpen ? ' is-mobile-open' : ''}`} inert={isMobile ? !mobileNavOpen : preferences.railCollapsed} aria-label={messages.navigation.primary}>
         <div className="desk-sidebar-heading"><Building2 size={16} aria-hidden="true" /><span>{messages.navigation.workspace}</span></div>
         <nav className="desk-navigation" aria-label={messages.navigation.primary}>{NAV_ITEMS.map(({ id, Icon }) => <button key={id} type="button" className="desk-navigation-link" aria-current={page === id ? 'page' : undefined} onClick={() => navigate(id)}><Icon size={18} aria-hidden="true" /><span>{id === 'home' ? messages.homeDashboard.pageTitle : messages.navigation[id]}</span></button>)}</nav>
         <div className="desk-sidebar-spacer" />

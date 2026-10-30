@@ -18,7 +18,10 @@ interface NoteOption { id: string; title: string }
 interface PositionedTask { task: TaskRecord; x: number; y: number; depth: number; done: number; total: number }
 interface TaskMapLabels {
   statuses: Record<TaskStatus, string>
+  status: string
   progress: string
+  dueDate: string
+  close: string
   newTask: string
   editTask: string
   deleteTask: string
@@ -344,6 +347,7 @@ export default function TaskMap({ tasks, children, progress, collapsed, onToggle
         <button type="button" role="menuitem" onClick={() => makeTask(menuTask.id)}>{labels.addChild}</button>
         <button type="button" role="menuitem" className="is-danger" onClick={() => { if (window.confirm(labels.deleteConfirm)) { removeTask(menuTask.id); setSelectedTaskId(null) } setContextMenu(null) }}>{labels.deleteTask}</button>
       </div>}
+      {selectedTask && <aside className="desk-task-map-bottom-sheet" aria-label={labels.selectedTask}><div><span>{labels.selectedTask}</span><strong>{selectedTask.title}</strong><small>{labels.status}: {labels.statuses[selectedTask.status]} · {labels.progress}: {progress.get(selectedTask.id) ?? 0}%{selectedTask.dueDate ? ` · ${labels.dueDate}: ${selectedTask.dueDate}` : ''}</small></div><button type="button" className="desk-task-icon" aria-label={labels.close} onClick={() => setSelectedTaskId(null)}><X size={17} /></button></aside>}
     </div>
   </section>
 }
