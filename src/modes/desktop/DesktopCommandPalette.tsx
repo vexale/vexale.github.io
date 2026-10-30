@@ -6,14 +6,15 @@ import { setLocale, useLocale } from '../../lib/i18n'
 import { updateDesktopPreferences, useDesktopPreferences } from './preferences'
 import { useDesktopMessages } from './i18n'
 import type { DesktopPage } from './types'
-import { FileText, Folder, Search, Wrench, X } from 'lucide-react'
+import { FileText, Folder, ListTodo, Search, Wrench, X } from 'lucide-react'
+import { useTaskTreeStore } from './taskStore'
 
 interface Props { open: boolean; onClose: () => void; onNavigate: (page: DesktopPage) => void; onSwitchToSpace: () => void }
 interface SectionRef { id: string; title: string; path: string[] }
 interface NoteRef extends SectionRef { body: string }
-type PaletteGroup = 'sections' | 'notes' | 'files' | 'pages' | 'actions'
+type PaletteGroup = 'sections' | 'notes' | 'tasks' | 'files' | 'pages' | 'actions'
 interface PaletteResult { id: string; group: PaletteGroup; label: string; detail: string; searchText?: string; run: () => void }
-const PALETTE_GROUPS: PaletteGroup[] = ['sections', 'notes', 'files', 'pages', 'actions']
+const PALETTE_GROUPS: PaletteGroup[] = ['sections', 'notes', 'tasks', 'files', 'pages', 'actions']
 
 function flatten(nodes: ReturnType<typeof useTree>['tree'], parent: string[] = []): SectionRef[] {
   return nodes.flatMap(node => { const path = [...parent, node.id]; return [{ id: node.id, title: node.title, path }, ...flatten(node.children, path)] })
@@ -52,6 +53,12 @@ function Highlighted({ text, query, locale }: { text: string; query: string; loc
   if (!indexes.size) return text
   return Array.from(text).map((character, index) => indexes.has(index) ? <mark key={index}>{character}</mark> : <span key={index}>{character}</span>)
 }
+function resultPreview(result: PaletteResult, query: string, locale: string): string {
+  if (!result.searchText || !query) return result.label
+  const source = result.searchText
+  const start = source.toLocaleLowerCase(locale).indexOf(query.toLocaleLowerCase(locale))
+  return start < 0 ? result.label : source.slice(Math.max(0, start - 28), Math.min(source.length, start + query.length + 56))
+}
 
 export default function DesktopCommandPalette({ open, onClose, onNavigate, onSwitchToSpace }: Props) {
   const messages = useDesktopMessages()
@@ -59,6 +66,7 @@ export default function DesktopCommandPalette({ open, onClose, onNavigate, onSwi
   const prefs = useDesktopPreferences()
   const { tree, setPath } = useTree()
   const { items } = useLibrary()
+  const tasks = useTaskTreeStore()
   const inputRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
   const [notes, setNotes] = useState<NoteRef[]>([])
@@ -81,6 +89,7 @@ export default function DesktopCommandPalette({ open, onClose, onNavigate, onSwi
     const pathLabel = (path: string[]): string => path.map(id => sections.find(section => section.id === id)?.title).filter(Boolean).join(' / ')
     const sectionResults: PaletteResult[] = sections.map(section => ({ id: 'section:' + section.id, group: 'sections', label: section.title, detail: pathLabel(section.path), run: () => { onNavigate('library'); setPath(section.path) } }))
     const noteResults: PaletteResult[] = notes.map(note => ({ id: 'note:' + note.id, group: 'notes', label: note.body.split(/[.!?]/)[0]?.slice(0, 70) || p.noteLabel, detail: note.title, searchText: note.body, run: () => { onNavigate('library'); setPath(note.path); window.setTimeout(() => document.querySelector<HTMLElement>('.desk-note-editor')?.focus(), 120) } }))
+    const taskResults: PaletteResult[] = tasks.map(task => ({ id: 'task:' + task.id, group: 'tasks', label: task.title, detail: p.tasks, run: () => onNavigate('tasks') }))
     const fileResults: PaletteResult[] = items.map(item => {
       const section = sections.find(candidate => candidate.id === item.nodeId)
       return { id: 'file:' + item.id, group: 'files', label: item.name, detail: section?.title ?? '', run: () => { if (section) { onNavigate('library'); setPath(section.path); window.setTimeout(() => Array.from(document.querySelectorAll<HTMLElement>('[data-file-id]')).find(row => row.dataset.fileId === item.id)?.scrollIntoView({ block: 'center' }), 140) } } }
@@ -93,8 +102,8 @@ export default function DesktopCommandPalette({ open, onClose, onNavigate, onSwi
       { id: 'action:english', group: 'actions', label: p.english, detail: p.languageHint, run: () => setLocale('en') },
       { id: 'action:arabic', group: 'actions', label: p.arabic, detail: p.languageHint, run: () => setLocale('ar') },
     ]
-    return [...sectionResults, ...noteResults, ...fileResults, ...pages, ...actions]
-  }, [items, messages, notes, onNavigate, onSwitchToSpace, p, sections, setPath])
+    return [...sectionResults, ...noteResults, ...taskResults, ...fileResults, ...pages, ...actions]
+  }, [items, messages, notes, onNavigate, onSwitchToSpace, p, sections, setPath, tasks])
 
   const searchLocale = locale === 'ar' ? 'ar' : 'en'
   const queryText = query.trim()
@@ -123,7 +132,7 @@ export default function DesktopCommandPalette({ open, onClose, onNavigate, onSwi
       <div className="desk-command-search"><Search size={19} aria-hidden="true" /><input ref={inputRef} value={query} onChange={event => { setQuery(event.target.value); setActiveIndex(0) }} onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); setActiveIndex(index => Math.min(index + 1, Math.max(0, filtered.length - 1))) } else if (event.key === 'ArrowUp') { event.preventDefault(); setActiveIndex(index => Math.max(0, index - 1)) } else if (event.key === 'Enter' && filtered[activeIndex]) { event.preventDefault(); select(filtered[activeIndex]) } else if (event.key === 'Escape') { event.preventDefault(); onClose() } }} placeholder={p.placeholder} aria-label={p.placeholder} aria-controls="desk-command-results" aria-activedescendant={filtered[activeIndex] ? 'desk-command-result-' + activeIndex : undefined} /><button type="button" className="desk-icon-button" aria-label={p.close} onClick={onClose}><X size={17} /></button></div>
       <div className="desk-command-subhead"><span>{queryText ? p.results : p.recent}</span><kbd dir="ltr">ESC</kbd></div>
       <div className="desk-command-results" id="desk-command-results" role="listbox" aria-label={p.results}>
-        {groupedResults.length ? groupedResults.map(({ group, results }) => <section className="desk-command-group" key={group} role="group" aria-label={p[group]}><h3>{p[group]}</h3>{results.map(({ result, index }) => <button type="button" id={'desk-command-result-' + index} role="option" aria-selected={index === activeIndex} className="desk-command-result" key={result.id} onMouseEnter={() => setActiveIndex(index)} onClick={() => select(result)}><span className="desk-command-result-icon">{result.group === 'sections' ? <Folder size={17} aria-hidden="true" /> : result.group === 'files' || result.group === 'notes' ? <FileText size={17} aria-hidden="true" /> : <Wrench size={17} aria-hidden="true" />}</span><span className="desk-command-result-copy"><b><Highlighted text={result.label} query={queryText} locale={searchLocale} /></b><small><Highlighted text={result.detail || p[group]} query={queryText} locale={searchLocale} /></small></span></button>)}</section>) : <p className="desk-command-empty">{queryText ? p.noResults : p.noRecent}</p>}
+        {groupedResults.length ? groupedResults.map(({ group, results }) => <section className="desk-command-group" key={group} role="group" aria-label={p[group]}><h3>{p[group]}</h3>{results.map(({ result, index }) => <button type="button" id={'desk-command-result-' + index} role="option" aria-selected={index === activeIndex} className="desk-command-result" key={result.id} onMouseEnter={() => setActiveIndex(index)} onClick={() => select(result)}><span className="desk-command-result-icon">{result.group === 'sections' ? <Folder size={17} aria-hidden="true" /> : result.group === 'tasks' ? <ListTodo size={17} aria-hidden="true" /> : result.group === 'files' || result.group === 'notes' ? <FileText size={17} aria-hidden="true" /> : <Wrench size={17} aria-hidden="true" />}</span><span className="desk-command-result-copy"><b><Highlighted text={resultPreview(result, queryText, searchLocale)} query={queryText} locale={searchLocale} /></b><small><Highlighted text={result.detail || p[group]} query={queryText} locale={searchLocale} /></small></span></button>)}</section>) : <p className="desk-command-empty">{queryText ? p.noResults : p.noRecent}</p>}
       </div>
       <footer><span>{p.navigateHelp}</span><span><kbd>↑</kbd> <kbd>↓</kbd> <kbd>↵</kbd></span></footer>
     </section>
