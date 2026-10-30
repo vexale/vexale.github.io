@@ -620,6 +620,54 @@ html[data-mode='desktop'] .desk-note-toolbar-button {
   background: var(--desk-elevated);
 }
 
+html[data-mode='desktop'] .desk-note-history-wrap { position: relative; }
+
+html[data-mode='desktop'] .desk-note-history-popover {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 7px);
+  z-index: 40;
+  width: min(350px, calc(100vw - 32px));
+  padding: 12px;
+  border: 1px solid var(--desk-border);
+  border-radius: 10px;
+  background: var(--desk-surface);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, .32);
+}
+
+html[data-mode='desktop'] .desk-note-history-popover > strong { display: block; margin-block-end: 8px; font-size: 13px; }
+html[data-mode='desktop'] .desk-note-history-popover > strong span,
+html[data-mode='desktop'] .desk-note-history-empty { color: var(--desk-muted); font-size: 12px; }
+html[data-mode='desktop'] .desk-note-history-list { display: grid; max-height: 290px; gap: 7px; overflow-y: auto; }
+html[data-mode='desktop'] .desk-note-history-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; padding: 8px; border: 1px solid var(--desk-border); border-radius: 8px; }
+html[data-mode='desktop'] .desk-note-history-item time { grid-column: 1 / -1; color: var(--desk-muted); font-size: 11px; }
+html[data-mode='desktop'] .desk-note-history-item p { min-width: 0; overflow: hidden; color: var(--desk-text); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+html[data-mode='desktop'] .desk-note-history-restore { padding: 3px 7px; border-radius: 6px; background: var(--desk-accent-soft); color: var(--desk-text); font-size: 11px; }
+
+html[data-mode='desktop'] .desk-note-editor-shell { position: relative; }
+
+html[data-mode='desktop'] .desk-note-slash-menu {
+  position: absolute;
+  z-index: 30;
+  display: grid;
+  width: min(250px, calc(100% - 16px));
+  max-height: min(300px, 60vh);
+  gap: 2px;
+  overflow-y: auto;
+  padding: 5px;
+  border: 1px solid var(--desk-border);
+  border-radius: 9px;
+  background: var(--desk-surface);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .3);
+}
+
+html[data-mode='desktop'] .desk-note-slash-option { display: flex; min-height: 34px; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 6px; color: var(--desk-text); text-align: start; }
+html[data-mode='desktop'] .desk-note-slash-option:hover,
+html[data-mode='desktop'] .desk-note-slash-option.is-active { background: var(--desk-accent-soft); }
+html[data-mode='desktop'] .desk-note-slash-empty { padding: 8px; color: var(--desk-muted); font-size: 12px; }
+html[data-mode='desktop'] .desk-note-slash-option:focus-visible,
+html[data-mode='desktop'] .desk-note-history-restore:focus-visible { outline: 2px solid var(--desk-accent); outline-offset: 2px; }
+
 html[data-mode='desktop'] .desk-note-editor {
   min-height: 260px;
   max-width: 100%;
@@ -658,11 +706,24 @@ html[data-mode='desktop'] .desk-note-content blockquote {
   color: var(--desk-muted);
 }
 
+html[data-mode='desktop'] .desk-note-content li:has(> .desk-note-checkbox) { display: flex; align-items: baseline; gap: 8px; list-style: none; }
+html[data-mode='desktop'] .desk-note-checkbox { display: inline-flex; min-width: 1.1em; align-items: center; justify-content: center; color: var(--desk-accent); cursor: pointer; font-weight: 700; }
+html[data-mode='desktop'] .desk-note-checkbox:focus-visible { border-radius: 3px; outline: 2px solid var(--desk-accent); outline-offset: 2px; }
+html[data-mode='desktop'] .desk-note-word-count { margin-block-start: 6px; color: var(--desk-muted); font-size: 11px; text-align: end; }
+
 html[data-mode='desktop'] .desk-note-content pre {
   max-width: 100%;
+  padding: 10px;
   overflow-x: auto;
+  border: 1px solid var(--desk-border);
+  border-radius: 8px;
+  background: var(--desk-bg);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   white-space: pre-wrap;
 }
+
+html[data-mode='desktop'] .desk-note-content a { color: var(--desk-accent); text-decoration: underline; text-underline-offset: 2px; }
+html[data-mode='desktop'] .desk-note-content hr { margin-block: 1rem; border: 0; border-top: 1px solid var(--desk-border); }
 
 html[data-mode='desktop'] .desk-note-content [data-note-style^='text-'] {
   color: var(--desk-text);
