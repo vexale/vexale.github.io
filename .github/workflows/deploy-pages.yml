@@ -35,8 +35,7 @@ jobs:
         run: npm ci
 
       - name: Build production bundle
-        run: npm run build
-
+run: npx vite build
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
