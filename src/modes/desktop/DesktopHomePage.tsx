@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { ArrowUpRight, CalendarDays, Check, FileText, Flame, Folder, Plus, Star } from 'lucide-react'
-import { dbGetNote } from '../../db'
+import { ArrowUpRight, BookOpen, CalendarDays, Check, FileText, Flame, Folder, Plus, Star } from 'lucide-react'
+import { dbGetNote, dbPutNote } from '../../db'
 import { findNode, useLibrary, useTree } from '../../shared'
 import { useLocale } from '../../lib/i18n'
 import { useDesktopMessages } from './i18n'
@@ -14,6 +14,20 @@ import type { DesktopPage } from './types'
 interface HomeProps { onNavigate: (page: DesktopPage) => void }
 interface SectionRef { id: string; title: string; path: string[] }
 interface RecentNote extends SectionRef { excerpt: string; updatedAt: number }
+interface SampleTaskSeed { title: string; children?: readonly SampleTaskSeed[] }
+
+const SAMPLE_LIBRARY_KEY = 'vexale-sample-library-v1'
+
+function sampleTaskCount(seeds: readonly SampleTaskSeed[]): number {
+  return seeds.reduce((total, seed) => total + 1 + sampleTaskCount(seed.children ?? []), 0)
+}
+
+function addSampleTasks(seeds: readonly SampleTaskSeed[], parentId: string | null = null): boolean {
+  return seeds.every(seed => {
+    const id = createTask(parentId, seed.title)
+    return Boolean(id && addSampleTasks(seed.children ?? [], id))
+  })
+}
 
 function dateKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
@@ -64,11 +78,18 @@ export default function DesktopHomePage({ onNavigate }: HomeProps) {
   const labels = messages.homeDashboard
   const focusSessions = useFocusSessions()
   const preferences = useDesktopPreferences()
-  const { tree, path, setPath } = useTree()
+  const { tree, path, setPath, addNode } = useTree()
   const { items } = useLibrary()
   const tasks = useTaskTreeStore()
   const [quickTitle, setQuickTitle] = useState('')
   const [taskLimitReached, setTaskLimitReached] = useState(false)
+  const [sampleLoaded, setSampleLoaded] = useState(() => {
+    try { return typeof window !== 'undefined' && window.localStorage.getItem(SAMPLE_LIBRARY_KEY) === 'loaded' }
+    catch { return false }
+  })
+  const [sampleLoading, setSampleLoading] = useState(false)
+  const [sampleStatus, setSampleStatus] = useState('')
+  const sampleLoadingRef = useRef(false)
   const [recentNotes, setRecentNotes] = useState<RecentNote[]>([])
   const sections = useMemo(() => flattenSections(tree), [tree])
   const focusSummary = useMemo(() => getFocusSummary(focusSessions, locale), [focusSessions, locale])
@@ -112,12 +133,40 @@ export default function DesktopHomePage({ onNavigate }: HomeProps) {
       setQuickTitle('')
     }
   }
+  const loadSampleLibrary = (): void => {
+    if (sampleLoaded || sampleLoadingRef.current) return
+    const sample = labels.sampleLibrary
+    if (tasks.length + sampleTaskCount(sample.tasks) > MAX_TASK_COUNT) {
+      setSampleStatus(sample.taskLimit)
+      return
+    }
+    sampleLoadingRef.current = true
+    setSampleLoading(true)
+    setSampleStatus('')
+    const courseId = addNode(null, sample.course)
+    const biologyId = addNode(courseId, sample.biology)
+    addNode(courseId, sample.studySkills)
+    const readingId = addNode(null, sample.readingLog)
+    addNode(readingId, sample.weeklyReading)
+    if (!addSampleTasks(sample.tasks)) {
+      sampleLoadingRef.current = false
+      setSampleLoading(false)
+      setSampleStatus(sample.taskLimit)
+      return
+    }
+    try { window.localStorage.setItem(SAMPLE_LIBRARY_KEY, 'loaded') } catch { /* Keep this load guarded for the current view. */ }
+    setSampleLoaded(true)
+    void dbPutNote({ nodeId: biologyId, html: `<h2>${sample.noteTitle}</h2><p>${sample.noteBody}</p>`, updatedAt: Date.now() })
+      .then(() => setSampleStatus(sample.success))
+      .catch(() => setSampleStatus(sample.noteFailed))
+      .finally(() => { sampleLoadingRef.current = false; setSampleLoading(false) })
+  }
   const toggleDone = (id: string, done: boolean): void => updateTask(id, { status: done ? 'done' : 'todo' })
   const dateFormat = (value: string | null): string => value ? new Intl.DateTimeFormat(locale === 'ar' ? 'ar-IQ' : 'en', { month: 'short', day: 'numeric' }).format(new Date(`${value}T12:00:00`)) : labels.noDate
 
   return <section className="desk-home" aria-label={labels.title}>
     <header className="desk-home-welcome">
-      <div><p className="desk-home-date"><CalendarDays size={16} aria-hidden="true" />{dateLabel}</p><h2>{labels.greeting}</h2><p>{labels.intro}</p></div>
+      <div><p className="desk-home-date"><CalendarDays size={16} aria-hidden="true" />{dateLabel}</p><h2>{labels.greeting}</h2><p>{labels.intro}</p><div className="desk-home-sample"><p>{labels.sampleLibrary.description}</p><button type="button" className="desk-button" onClick={loadSampleLibrary} disabled={sampleLoaded || sampleLoading}><BookOpen size={16} aria-hidden="true" /><span>{sampleLoading ? labels.sampleLibrary.loading : sampleLoaded ? labels.sampleLibrary.loadedButton : labels.sampleLibrary.load}</span></button>{sampleStatus && <p role="status">{sampleStatus}</p>}</div></div>
       <form className="desk-home-quick-add" onSubmit={addQuickTask}>
         <label htmlFor="desk-home-task">{labels.quickAdd}</label>
         <div><input id="desk-home-task" value={quickTitle} onChange={event => { setQuickTitle(event.target.value); setTaskLimitReached(false) }} placeholder={labels.taskPlaceholder} maxLength={180} /><button className="desk-button desk-button-primary" type="submit" disabled={!quickTitle.trim() || tasks.length >= MAX_TASK_COUNT}><Plus size={17} aria-hidden="true" /><span>{labels.addTask}</span></button></div>

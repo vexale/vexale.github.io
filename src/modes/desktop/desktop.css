@@ -1393,9 +1393,12 @@ html[data-mode='desktop'] .desk-task-map-context-menu button.is-danger { color: 
 html[data-mode='desktop'] .desk-home { display: grid; gap: 18px; min-width: 0; }
 html[data-mode='desktop'] .desk-home-welcome { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, .78fr); align-items: center; gap: 24px; padding: 4px 0 20px; border-bottom: 1px solid var(--desk-border); }
 html[data-mode='desktop'] .desk-home-welcome h2 { margin: 8px 0 5px; font-size: clamp(22px, 3vw, 30px); line-height: 1.2; }
-html[data-mode='desktop'] .desk-home-welcome > div > p:last-child { margin: 0; color: var(--desk-muted); font-size: 14px; }
+html[data-mode='desktop'] .desk-home-welcome > div > p:not(.desk-home-date) { margin: 0; color: var(--desk-muted); font-size: 14px; }
 html[data-mode='desktop'] .desk-home-date { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--desk-muted); font-size: 13px; }
 html[data-mode='desktop'] .desk-home-date svg, html[data-mode='desktop'] .desk-home-panel-heading h3 svg { color: var(--desk-accent); }
+html[data-mode='desktop'] .desk-home-sample { display: grid; justify-items: start; gap: 8px; margin-block-start: 14px; }
+html[data-mode='desktop'] .desk-home-sample > p { margin: 0; color: var(--desk-muted); font-size: 12px; line-height: 1.5; }
+html[data-mode='desktop'] .desk-home-sample [role='status'] { color: var(--desk-accent); }
 html[data-mode='desktop'] .desk-home-quick-add { display: grid; gap: 7px; }
 html[data-mode='desktop'] .desk-home-quick-add > label { color: var(--desk-muted); font-size: 13px; font-weight: 600; }
 html[data-mode='desktop'] .desk-home-quick-add > div { display: flex; min-width: 0; gap: 7px; }

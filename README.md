@@ -1,75 +1,63 @@
-# React + TypeScript + Vite
+# Vexale
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Vexale مساحة دراسة تجمع مكتبة هرمية للملاحظات والملفات، وشجرة مهام، وأدوات دراسة، مع واجهتي Office وSpace. واجهة Office متاحة بالعربية والإنجليزية. هذا المستودع تطبيق Vite/React/TypeScript.
 
-Currently, two official plugins are available:
+## الإعداد والتشغيل
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+يتطلب التطوير Node.js 22 وnpm. من جذر المشروع:
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm ci
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+تعمل الميزات المحلية دون إعداد سحابي. لميزات الحساب ومساحات العمل المشتركة، أنشئ ملف `.env.local` في جذر المشروع وأضف إعدادات Supabase المخصصة لبيئتك:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```dotenv
+VITE_SUPABASE_URL=
+VITE_SUPABASE_PUBLISHABLE_KEY=
 ```
+
+يمكن استخدام `VITE_SUPABASE_ANON_KEY` بدلاً من المفتاح القابل للنشر. لا تضع مفاتيح الخدمة السرية في متغيرات `VITE_` أو في المستودع؛ فهي تُضمّن في حزمة المتصفح. شغّل خادم التطوير مجدداً بعد تغيير متغيرات البيئة.
+
+## أوامر المشروع
+
+| الأمر | الغرض |
+| --- | --- |
+| `npm run dev` | خادم تطوير Vite |
+| `npm run lint` | فحص ESLint |
+| `npm run build` | فحص TypeScript وإنشاء حزمة الإنتاج |
+| `npm test` | تشغيل اختبارات Vitest مرة واحدة |
+| `npm run preview` | معاينة حزمة الإنتاج محلياً |
+| `npm run deploy` | نشر حزمة `dist` عبر `gh-pages` عند إعداد المستودع لذلك |
+
+يعمل سير CI عند فتح pull request ويشغّل التثبيت ثم lint والبناء والاختبارات على Node.js 22. ويُنشر GitHub Pages من فرع `main` عبر سير النشر المنفصل.
+
+## الميزات
+
+- مكتبة بأقسام وفروع، وملاحظات غنية وملفات مرتبطة بالأقسام.
+- شجرة مهام متداخلة مع التقدم وإعادة الترتيب وإرفاق موارد المكتبة.
+- تصدير الأقسام والمهام إلى Markdown وJSON، مع عرض ملائم للطباعة.
+- مؤقّت تركيز وسجل جلسات، ولوحة رئيسية للمواعيد والمهام.
+- زر **تحميل مكتبة تجريبية** يضيف أقساماً وملاحظة ومهاماً نموذجية مرة واحدة على الجهاز؛ يضيفها إلى بياناتك ولا يستبدل المحتوى الموجود.
+- واجهة Office بالعربية والإنجليزية، إعدادات المظهر وإتاحة الاستخدام، ودعم وضع غير متصل للبيانات المحلية.
+- مساحة Space تفاعلية وأدوات دراسة مرتبطة بالتطبيق.
+
+## بنية المشروع
+
+- `src/main.tsx`, `src/App.tsx`: مدخل التطبيق والتوجيه بين المساحات.
+- `src/modes/desktop/`: واجهة Office وشجرة المهام والتفضيلات.
+- `src/modes/desktop/i18n/ar.ts`, `en.ts`: رسائل واجهة Office العربية والإنجليزية.
+- `src/modes/`: أوضاع الواجهة الأخرى.
+- `src/components/`: مكونات مشتركة وإعداد البداية.
+- `src/lib/`, `src/db.ts`, `src/shared.tsx`: خدمات ومخازن وبيانات التطبيق.
+- `tests/`: اختبارات منطق الشجرة والمتجر والنسخ الاحتياطي.
+- `public/`: الصفحة الثابتة والأيقونات وأصول الويب.
+- `supabase/`: إعدادات ووظائف التكامل السحابي.
+- `.github/workflows/`: سير CI ونشر GitHub Pages.
+
+## الخصوصية والبيانات
+
+تُحفظ الأقسام والمهام والتفضيلات والبيانات المحلية في متصفح هذا الجهاز، وتُحفظ الملاحظات والملفات المحلية في IndexedDB. قد يؤدي مسح بيانات الموقع إلى حذف هذه المعلومات؛ استخدم ميزة النسخ الاحتياطي قبل حذف بيانات المتصفح. العلامة التي تمنع إعادة تحميل العينة تُخزّن محلياً كذلك.
+
+تتطلب المصادقة ومساحات العمل المشتركة الخدمات السحابية المهيأة، وقد تتلقى تلك الخدمات البيانات اللازمة لتقديم هذه الميزات. لا تُرسل بيانات إلى ميزة الذكاء الاصطناعي تلقائياً: لا تُرسل إلا عند تنفيذ إجراء ذكاء اصطناعي صراحةً، وقد يشمل ذلك النص أو الملفات التي تختارها. يمكن إدارة التحليلات المجهولة من صفحة الخصوصية داخل التطبيق. راجع إشعارات الخصوصية والشروط في التطبيق لمعرفة التفاصيل والخيارات الحالية.
