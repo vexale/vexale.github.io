@@ -1,7 +1,10 @@
 import { lazy, Suspense, useRef, useState } from 'react'
-import { Eye, FileAudio, FileImage, FileText, FileX2, FolderOpen, Plus, Timer, Trash2, X } from 'lucide-react'
+import { Download, Eye, FileAudio, FileImage, FileText, FileX2, FolderOpen, Plus, Printer, Timer, Trash2, X } from 'lucide-react'
 import { findNode, useLibrary, useTree } from '../../shared'
 import type { Item, TNode } from '../../shared'
+import { dbGetAll, dbGetNote } from '../../db'
+import { serializeLibraryBackup } from '../../lib/libraryBackup'
+import { blobToBase64, createPrintWindow, downloadTextFile, renderPrintView, sectionToMarkdown, sectionToPrintHtml } from '../../lib/treeExports'
 import { useLocale } from '../../lib/i18n'
 import { useDesktopMessages } from './i18n'
 import { TOOL_CATALOG } from '../../lib/settings'
@@ -16,6 +19,9 @@ function kindOf(file: File): Item['kind'] {
   if (file.type.startsWith('audio/')) return 'audio'
   return 'doc'
 }
+
+function sectionNodes(node: TNode): TNode[] { return [node, ...node.children.flatMap(sectionNodes)] }
+function safeExportName(value: string): string { return value.normalize('NFKD').replace(/[^A-Za-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'section' }
 
 function FileKindIcon({ kind }: { kind: Item['kind'] }) {
   if (kind === 'image' || kind === 'drawing') return <FileImage size={19} aria-hidden="true" />
@@ -46,6 +52,8 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
   const [openTool, setOpenTool] = useState('')
   const [previewItem, setPreviewItem] = useState<Item | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [exportStatus, setExportStatus] = useState('')
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const { items, add, remove, storageError } = useLibrary()
   const { tree, setPath } = useTree()
@@ -69,6 +77,63 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
 
   const removeFile = (item: Item): void => {
     if (window.confirm(messages.files.removeConfirm)) remove(item.id)
+  }
+
+  const loadSectionExportData = async () => {
+    const nodes = sectionNodes(node)
+    const sectionIds = new Set(nodes.map(section => section.id))
+    const [noteRows, allFiles] = await Promise.all([
+      Promise.all(nodes.map(async section => [section.id, await dbGetNote(section.id)] as const)),
+      dbGetAll(),
+    ])
+    const noteHtml: Record<string, string> = {}
+    const notes: Record<string, { html: string; updatedAt: number }> = {}
+    for (const [id, note] of noteRows) {
+      if (!note) continue
+      noteHtml[id] = note.html
+      notes[id] = note
+    }
+    return { noteHtml, notes, files: allFiles.filter(file => sectionIds.has(file.nodeId)) }
+  }
+
+  const exportSection = async (format: 'json' | 'markdown'): Promise<void> => {
+    setExporting(true); setExportStatus('')
+    try {
+      const data = await loadSectionExportData()
+      const filename = safeExportName(node.title)
+      if (format === 'markdown') {
+        downloadTextFile(`vexale-section-${filename}.md`, sectionToMarkdown(node, data.noteHtml, data.files, messages.files.title), 'text/markdown;charset=utf-8')
+      } else {
+        const files = await Promise.all(data.files.map(async file => ({
+          ...file,
+          file: undefined,
+          mimeType: file.file.type || 'application/octet-stream',
+          data: await blobToBase64(file.file),
+        })))
+        const payload = { format: 'vexale-library' as const, version: 2, exportedAt: new Date().toISOString(), tree: [node], notes: data.notes, files }
+        downloadTextFile(`vexale-section-${filename}.json`, serializeLibraryBackup(payload), 'application/json;charset=utf-8')
+      }
+      setExportStatus(messages.exportActions.exportDone)
+    } catch {
+      setExportStatus(messages.exportActions.exportFailed)
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const printSection = async (): Promise<void> => {
+    const printWindow = createPrintWindow()
+    if (!printWindow) { setExportStatus(messages.exportActions.popupBlocked); return }
+    setExporting(true); setExportStatus('')
+    try {
+      const data = await loadSectionExportData()
+      renderPrintView(printWindow, node.title, sectionToPrintHtml(node, data.noteHtml, data.files, messages.files.title), locale)
+    } catch {
+      printWindow.close()
+      setExportStatus(messages.exportActions.exportFailed)
+    } finally {
+      setExporting(false)
+    }
   }
 
   return (
@@ -103,6 +168,12 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
           onChange={event => { void addFiles(event.target.files); event.target.value = '' }}
         />
       </header>
+      <div className="desk-section-export" role="group" aria-label={messages.exportActions.sectionGroup}>
+        <button type="button" className="desk-button" disabled={exporting} onClick={() => void exportSection('json')}><Download size={15} aria-hidden="true" />{messages.exportActions.sectionJson}</button>
+        <button type="button" className="desk-button" disabled={exporting} onClick={() => void exportSection('markdown')}><FileText size={15} aria-hidden="true" />{messages.exportActions.sectionMarkdown}</button>
+        <button type="button" className="desk-button" disabled={exporting} onClick={() => void printSection()}><Printer size={15} aria-hidden="true" />{messages.exportActions.printPdf}</button>
+      </div>
+      {exportStatus && <p className="desk-inline-status" role="status">{exportStatus}</p>}
       <section className="desk-child-sections" aria-label={messages.sections.childSections}><h3>{messages.sections.childSections}</h3>{childSections.length ? <div className="desk-child-section-grid">{childSections.map(child => <button type="button" key={child.id} className="desk-child-section-card" onClick={() => setPath([...path, child.id])}><span>{child.title}</span><span>{child.children.length} {messages.sections.childrenCount}</span></button>)}</div> : <p className="desk-section-empty">{messages.sections.childEmpty}</p>}</section>
       <section className="desk-section-tools" aria-label={messages.toolHub.sectionSpecific}>
         <div className="desk-section-tools-list">{sectionTools.map(tool => <button type="button" className="desk-tool-chip-button" key={tool.id} onClick={() => setOpenTool(tool.id)}>{locale === 'ar' ? ({ calc: 'الحاسبة', notes: 'ملاحظات سريعة', plot: 'الإحداثيات', chat: 'محادثة المكتبة', math: 'حلّال الرياضيات', code: 'مساحة الأكواد', quiz: 'اختبارات وبطاقات', data: 'تحليل البيانات', board: 'لوحة وخرائط', docs: 'أدوات المستندات', tasks: 'المهام', audio: 'تركيز وصوت' }[tool.id] ?? tool.label) : tool.label}</button>)}<button type="button" className="desk-tool-chip-button desk-tool-add-button" onClick={() => { window.history.pushState({ desktopPage: 'tools' }, '', '#/office/tools'); window.dispatchEvent(new PopStateEvent('popstate')) }}>{messages.toolHub.addTool}</button></div>

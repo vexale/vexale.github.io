@@ -408,6 +408,12 @@ html[data-mode='desktop'] .desk-library-page {
   gap: 14px;
 }
 
+html[data-mode='desktop'] .desk-section-export {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 html[data-mode='desktop'] .desk-breadcrumbs {
   display: flex;
   flex-wrap: wrap;
