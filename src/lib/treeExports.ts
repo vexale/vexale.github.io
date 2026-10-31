@@ -53,6 +53,13 @@ export function sectionToPrintHtml(root: TNode, notes: Record<string, string>, f
   return sectionPrintNode(root, 0, notes, files, filesLabel)
 }
 
+export function createStandaloneHtml(title: string, content: string, locale: ExportLocale): string {
+  const direction = locale === 'ar' ? 'rtl' : 'ltr'
+  return `<!doctype html><html lang="${locale}" dir="${direction}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title><style>
+    :root { color-scheme: light; } * { box-sizing: border-box; } body { max-width: 920px; margin: 0 auto; padding: 32px 22px; color: #202124; background: #fff; font-family: system-ui, "Noto Sans Arabic", sans-serif; line-height: 1.65; overflow-wrap: anywhere; } h1 { margin: 0 0 26px; padding-block-end: 12px; border-bottom: 2px solid #d7d9df; font-size: 2rem; line-height: 1.25; } h2, h3, h4, h5, h6 { margin-block: 1.2em .4em; line-height: 1.35; } p { white-space: pre-wrap; } .section-block { margin-block: 14px; } .file-list, .task-list { margin: 6px 0 14px; padding-inline-start: 1.5em; } .file-list li, .task-list li { margin-block: 4px; } .task-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; } .task-check { width: 1.2em; text-align: center; } .task-status, .task-due { color: #5f6368; font-size: .9em; } @media (max-width: 600px) { body { padding: 22px 15px; } h1 { font-size: 1.65rem; } }
+  </style></head><body><main><h1>${escapeHtml(title)}</h1>${content}</main></body></html>`
+}
+
 export function taskTreeToMarkdown(tasks: TaskRecord[], statusLabels: Record<TaskStatus, string>, dueDateLabel: string): string {
   const lines: string[] = []
   const append = (parentId: string | null, depth: number): void => {

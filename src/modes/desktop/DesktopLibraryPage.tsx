@@ -4,7 +4,7 @@ import { findNode, useLibrary, useTree } from '../../shared'
 import type { Item, TNode } from '../../shared'
 import { dbGetAll, dbGetAllOcr, dbGetNote } from '../../db'
 import { serializeLibraryBackup } from '../../lib/libraryBackup'
-import { blobToBase64, createPrintWindow, downloadTextFile, renderPrintView, sectionToMarkdown, sectionToPrintHtml } from '../../lib/treeExports'
+import { blobToBase64, createPrintWindow, createStandaloneHtml, downloadTextFile, renderPrintView, sectionToMarkdown, sectionToPrintHtml } from '../../lib/treeExports'
 import { useLocale } from '../../lib/i18n'
 import { useDesktopMessages } from './i18n'
 import { TOOL_CATALOG } from '../../lib/settings'
@@ -120,13 +120,15 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
     return { noteHtml, notes, files: allFiles.filter(file => sectionIds.has(file.nodeId)) }
   }
 
-  const exportSection = async (format: 'json' | 'markdown'): Promise<void> => {
+  const exportSection = async (format: 'json' | 'markdown' | 'html'): Promise<void> => {
     setExporting(true); setExportStatus('')
     try {
       const data = await loadSectionExportData()
       const filename = safeExportName(node.title)
       if (format === 'markdown') {
         downloadTextFile(`vexale-section-${filename}.md`, sectionToMarkdown(node, data.noteHtml, data.files, messages.files.title), 'text/markdown;charset=utf-8')
+      } else if (format === 'html') {
+        downloadTextFile(`vexale-section-${filename}.html`, createStandaloneHtml(node.title, sectionToPrintHtml(node, data.noteHtml, data.files, messages.files.title), locale), 'text/html;charset=utf-8')
       } else {
         const files = await Promise.all(data.files.map(async file => ({
           ...file,
@@ -228,6 +230,7 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
       <div className="desk-section-export" role="group" aria-label={messages.exportActions.sectionGroup}>
         <button type="button" className="desk-button" disabled={exporting} onClick={() => void exportSection('json')}><Download size={15} aria-hidden="true" />{messages.exportActions.sectionJson}</button>
         <button type="button" className="desk-button" disabled={exporting} onClick={() => void exportSection('markdown')}><FileText size={15} aria-hidden="true" />{messages.exportActions.sectionMarkdown}</button>
+        <button type="button" className="desk-button" disabled={exporting} onClick={() => void exportSection('html')}><FileText size={15} aria-hidden="true" />{messages.exportActions.sectionHtml}</button>
         <button type="button" className="desk-button" disabled={exporting} onClick={() => void printSection()}><Printer size={15} aria-hidden="true" />{messages.exportActions.printPdf}</button>
       </div>
       {(exportStatus || cardStatus) && <p className="desk-inline-status" role="status">{exportStatus || cardStatus}</p>}
