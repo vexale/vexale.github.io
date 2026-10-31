@@ -1076,7 +1076,7 @@ html[data-mode='desktop'] .desk-google-signin { min-width: 200px; min-height: 40
 @media (max-width: 760px) {
   html[data-mode='desktop'] .desk-app[data-rail-collapsed='true'],
   html[data-mode='desktop'] .desk-app[data-sections-collapsed='true'] { grid-template-columns: minmax(0, 1fr); }
-  html[data-mode='desktop'] .desk-app[data-rail-collapsed='true'] .desk-sidebar,
+  html[data-mode='desktop'] .desk-app[data-rail-collapsed='true'] .desk-sidebar:not(.is-mobile-open),
   html[data-mode='desktop'] .desk-app[data-sections-collapsed='true'] .desk-section-pane { display: none; }
   html[data-mode='desktop'] .desk-app[data-rail-collapsed='true'] .desk-main,
   html[data-mode='desktop'] .desk-app[data-sections-collapsed='true'] .desk-main { grid-row: 3; }
