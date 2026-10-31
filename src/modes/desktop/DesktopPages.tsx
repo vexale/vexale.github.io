@@ -19,6 +19,7 @@ import { DESKTOP_THEME_COLORS as THEME_COLORS } from './themeCatalog'
 import { getTaskTree, replaceTaskTree } from './taskStore'
 import type { TaskRecord } from './taskStore'
 import ReviewPage from './ReviewPage'
+import CalendarPage from './CalendarPage'
 
 const DesktopToolsPage = lazy(() => import('./DesktopToolsPage'))
 const DesktopTaskTreePage = lazy(() => import('./DesktopTaskTreePage'))
@@ -212,6 +213,7 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
 
   if (page === 'tasks') return <Suspense fallback={<RouteSkeleton label={m.pages.tasks.title} />}><DesktopTaskTreePage /></Suspense>
   if (page === 'review') return <ReviewPage />
+  if (page === 'calendar') return <CalendarPage />
   if (page === 'trash') return <TrashPage />
   if (page === 'tools') return <Suspense fallback={<RouteSkeleton label={m.pages.tools.title} />}><DesktopToolsPage /></Suspense>
   if (page === 'support') return <SupportPage onOpenPrivacy={onOpenPrivacy} />

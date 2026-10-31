@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { BookOpen, BookOpenCheck, Building2, Download, Ellipsis, House, LifeBuoy, ListTodo, Menu, MessageSquareText, Monitor, Palette, Search, Settings, ShieldCheck, Trash2, UserRound, Wrench, X, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize2, Minimize2 } from 'lucide-react'
+import { BookOpen, BookOpenCheck, Building2, CalendarDays, Download, Ellipsis, House, LifeBuoy, ListTodo, Menu, MessageSquareText, Monitor, Palette, Search, Settings, ShieldCheck, Trash2, UserRound, Wrench, X, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize2, Minimize2 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { setLocale, useLocale } from '../../lib/i18n'
 import { useSettings } from '../../lib/settings'
@@ -22,7 +22,7 @@ interface PwaInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>
 }
 const NAV_ITEMS: readonly { id: DesktopPage; Icon: LucideIcon }[] = [
-  { id: 'home', Icon: House }, { id: 'library', Icon: BookOpen }, { id: 'review', Icon: BookOpenCheck }, { id: 'tasks', Icon: ListTodo }, { id: 'tools', Icon: Wrench }, { id: 'themes', Icon: Palette },
+  { id: 'home', Icon: House }, { id: 'library', Icon: BookOpen }, { id: 'review', Icon: BookOpenCheck }, { id: 'calendar', Icon: CalendarDays }, { id: 'tasks', Icon: ListTodo }, { id: 'tools', Icon: Wrench }, { id: 'themes', Icon: Palette },
   { id: 'settings', Icon: Settings }, { id: 'account', Icon: UserRound }, { id: 'trash', Icon: Trash2 }, { id: 'support', Icon: LifeBuoy }, { id: 'privacy', Icon: ShieldCheck },
 ]
 const DesktopLibraryPage = lazy(() => import('./DesktopLibraryPage'))
@@ -33,7 +33,7 @@ const DesktopPageContent = lazy(async () => {
 const CONTENT_WIDTHS = { narrow: '760px', comfortable: '1040px', wide: '1440px' } as const
 const DENSITY_GAPS = { compact: '8px', comfortable: '14px', spacious: '22px' } as const
 const FONT_FAMILIES = { instrument: "'Instrument Sans', 'Noto Kufi Arabic', system-ui, sans-serif", noto: "'Noto Kufi Arabic', 'Instrument Sans', system-ui, sans-serif", system: "system-ui, 'Noto Kufi Arabic', sans-serif" } as const
-  const PAGE_IDS = new Set<DesktopPage>(['home', 'library', 'review', 'tasks', 'tools', 'themes', 'settings', 'account', 'trash', 'support', 'privacy'])
+  const PAGE_IDS = new Set<DesktopPage>(['home', 'library', 'review', 'calendar', 'tasks', 'tools', 'themes', 'settings', 'account', 'trash', 'support', 'privacy'])
 function pageFromHash(): DesktopPage {
   const key = window.location.hash.split('/').filter(Boolean).at(-1) as DesktopPage | undefined
   return key && PAGE_IDS.has(key) ? key : 'home'
