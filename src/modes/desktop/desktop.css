@@ -943,6 +943,41 @@ html[data-mode='desktop'] .desk-topbar-menu button {
 html[data-mode='desktop'] .desk-topbar-menu button:hover { background: var(--desk-hover); }
 html[data-mode='desktop'] .desk-topbar-menu button:disabled { opacity: .5; cursor: not-allowed; }
 html[data-mode='desktop'] .desk-topbar-menu kbd { margin-inline-start: auto; color: var(--desk-muted); font: inherit; font-size: 12px; }
+html[data-mode='desktop'] .desk-feedback-backdrop { position: fixed; z-index: 60; inset: 0; display: grid; align-items: end; justify-items: end; padding: 16px; background: #0008; }
+html[data-mode='desktop'] .desk-feedback-panel { display: grid; width: min(400px, 100%); max-height: min(720px, calc(100vh - 32px)); gap: 13px; overflow-y: auto; padding: 17px; border: 1px solid var(--desk-border); border-radius: 12px; background: var(--desk-surface); color: var(--desk-text); box-shadow: 0 18px 48px #0008; }
+html[data-mode='desktop'] .desk-feedback-header,
+html[data-mode='desktop'] .desk-feedback-header > div { display: flex; align-items: center; gap: 9px; }
+html[data-mode='desktop'] .desk-feedback-header { justify-content: space-between; padding-block-end: 8px; border-bottom: 1px solid var(--desk-border); }
+html[data-mode='desktop'] .desk-feedback-header h2 { margin: 0; font-size: 17px; }
+html[data-mode='desktop'] .desk-feedback-header > div > svg { color: var(--desk-accent); }
+html[data-mode='desktop'] .desk-feedback-description,
+html[data-mode='desktop'] .desk-feedback-page,
+html[data-mode='desktop'] .desk-feedback-privacy { margin: 0; color: var(--desk-muted); font-size: 13px; line-height: 1.55; }
+html[data-mode='desktop'] .desk-feedback-page { display: flex; flex-wrap: wrap; gap: 5px; }
+html[data-mode='desktop'] .desk-feedback-page strong { color: var(--desk-text); }
+html[data-mode='desktop'] .desk-feedback-form { display: grid; gap: 12px; }
+html[data-mode='desktop'] .desk-feedback-rating { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; }
+html[data-mode='desktop'] .desk-feedback-rating legend,
+html[data-mode='desktop'] .desk-feedback-comment { color: var(--desk-text); font-size: 13px; font-weight: 600; }
+html[data-mode='desktop'] .desk-feedback-rating legend span { color: var(--desk-muted); font-weight: 400; }
+html[data-mode='desktop'] .desk-feedback-rating [role='radiogroup'] { display: flex; gap: 5px; }
+html[data-mode='desktop'] .desk-feedback-rating button { display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid var(--desk-border); border-radius: 8px; background: var(--desk-bg); color: var(--desk-muted); cursor: pointer; }
+html[data-mode='desktop'] .desk-feedback-rating button.is-selected { color: var(--desk-accent); }
+html[data-mode='desktop'] .desk-feedback-rating button:focus-visible,
+html[data-mode='desktop'] .desk-feedback-panel button:focus-visible,
+html[data-mode='desktop'] .desk-feedback-comment textarea:focus-visible { outline: 3px solid var(--desk-focus); outline-offset: 2px; }
+html[data-mode='desktop'] .desk-feedback-comment { display: grid; gap: 6px; }
+html[data-mode='desktop'] .desk-feedback-comment textarea { width: 100%; min-width: 0; resize: vertical; padding: 9px 10px; border: 1px solid var(--desk-border); border-radius: 8px; background: var(--desk-bg); color: var(--desk-text); font: inherit; font-size: 14px; font-weight: 400; }
+html[data-mode='desktop'] .desk-feedback-form > .desk-button { justify-content: center; }
+html[data-mode='desktop'] .desk-feedback-status { margin: 0; color: var(--desk-danger); font-size: 13px; }
+html[data-mode='desktop'] .desk-feedback-status p { margin: 0 0 6px; }
+html[data-mode='desktop'] .desk-feedback-signin { padding: 0; border: 0; background: transparent; color: var(--desk-accent); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+html[data-mode='desktop'] .desk-feedback-confirmation { display: grid; justify-items: start; gap: 12px; }
+html[data-mode='desktop'] .desk-feedback-confirmation p { margin: 0; color: var(--desk-success); }
+@media (max-width: 560px) {
+  html[data-mode='desktop'] .desk-feedback-backdrop { align-items: end; padding: 8px; }
+  html[data-mode='desktop'] .desk-feedback-panel { max-height: calc(100vh - 16px); padding: 14px; }
+}
 html[data-mode='desktop'] .desk-theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 html[data-mode='desktop'] .desk-theme-option {
   display: grid; align-items: start; gap: 10px; min-height: 140px; padding: 12px;

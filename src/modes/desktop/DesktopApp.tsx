@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react'
-import { BookOpen, Building2, Download, Ellipsis, House, LifeBuoy, ListTodo, Menu, Monitor, Palette, Search, Settings, ShieldCheck, Trash2, UserRound, Wrench, X, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize2, Minimize2 } from 'lucide-react'
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { BookOpen, Building2, Download, Ellipsis, House, LifeBuoy, ListTodo, Menu, MessageSquareText, Monitor, Palette, Search, Settings, ShieldCheck, Trash2, UserRound, Wrench, X, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize2, Minimize2 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { setLocale, useLocale } from '../../lib/i18n'
 import { useSettings } from '../../lib/settings'
@@ -10,6 +10,7 @@ import DesktopSectionTree from './DesktopSectionTree'
 import DesktopCommandPalette from './DesktopCommandPalette'
 import DesktopHomePage from './DesktopHomePage'
 import DesktopFocusTimer from './DesktopFocusTimer'
+import FeedbackWidget from './FeedbackWidget'
 import DesktopSkeleton from './DesktopSkeleton'
 import OfflineNotice from './OfflineNotice'
 import './desktop.css'
@@ -46,6 +47,8 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
   const preferences = useDesktopPreferences()
   const [page, setPage] = useState<DesktopPage>(() => typeof window === 'undefined' ? 'home' : pageFromHash())
   const [menuOpen, setMenuOpen] = useState(false)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const moreButtonRef = useRef<HTMLButtonElement>(null)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [installPrompt, setInstallPrompt] = useState<PwaInstallPromptEvent | null>(null)
@@ -63,6 +66,10 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
   const toggleRail = (): void => updateDesktopPreferences({ railCollapsed: !preferences.railCollapsed })
   const toggleSections = (): void => { if (page === 'library') updateDesktopPreferences({ sectionsCollapsed: !preferences.sectionsCollapsed }) }
   const toggleFocus = (): void => { const collapsed = !bothPanelsCollapsed; updateDesktopPreferences({ railCollapsed: collapsed, sectionsCollapsed: collapsed }) }
+  const closeFeedback = useCallback((): void => {
+    setFeedbackOpen(false)
+    window.requestAnimationFrame(() => moreButtonRef.current?.focus())
+  }, [])
   const installApp = async (): Promise<void> => {
     if (!installPrompt) return
     setMenuOpen(false)
@@ -137,9 +144,10 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
         <div className="desk-brand"><img src={`${import.meta.env.BASE_URL}logo.png`} alt="" width={32} height={32} className="desk-brand-mark" /><span className="desk-brand-name">{messages.appName}</span><span className="desk-workspace-label">{messages.shell.workspaceLabel}</span></div>
         <div className="desk-topbar-actions">
           <div className="desk-menu-wrap">
-            <button type="button" className="desk-icon-button" aria-label={messages.shell.menu} aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}><Ellipsis size={18} aria-hidden="true" /></button>
+            <button ref={moreButtonRef} type="button" className="desk-icon-button" aria-label={messages.shell.menu} aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}><Ellipsis size={18} aria-hidden="true" /></button>
             {menuOpen && <div className="desk-topbar-menu" role="menu">
               {installPrompt && <button type="button" role="menuitem" onClick={() => void installApp()}><Download size={16} />{messages.shell.installApp}</button>}
+              <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); setFeedbackOpen(true) }}><MessageSquareText size={16} aria-hidden="true" />{messages.feedback.open}</button>
               <button type="button" role="menuitem" onClick={toggleRail}>{railExpanded ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}{messages.shell.toggleRail}<kbd dir="ltr">Ctrl+Shift+B</kbd></button>
               <button type="button" role="menuitem" disabled={page !== 'library'} onClick={toggleSections}>{sectionsExpanded ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}{messages.shell.toggleSections}<kbd dir="ltr">Ctrl+B</kbd></button>
               <button type="button" role="menuitem" onClick={toggleFocus}>{bothPanelsCollapsed ? <Minimize2 size={16} /> : <Maximize2 size={16} />}{messages.shell.collapseAll}<kbd dir="ltr">Ctrl+\</kbd></button>
@@ -165,6 +173,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
           {page === 'home' ? <DesktopHomePage onNavigate={navigate} /> : page === 'library' ? <Suspense fallback={<DesktopSkeleton />}><DesktopLibraryPage /></Suspense> : <Suspense fallback={<DesktopSkeleton />}><DesktopPageContent page={page} onSwitchToSpace={onSwitchToSpace} onOpenPrivacy={() => navigate('privacy')} /></Suspense>}
         </div>
       </main>
+      <FeedbackWidget open={feedbackOpen} page={page} onClose={closeFeedback} onRequestAuth={() => { setFeedbackOpen(false); navigate('account') }} />
       <DesktopCommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onNavigate={navigate} onSwitchToSpace={onSwitchToSpace} />
     </div>
   )
