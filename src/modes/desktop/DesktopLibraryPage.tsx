@@ -1,8 +1,8 @@
-import { lazy, Suspense, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Download, Eye, FileAudio, FileImage, FileText, FileX2, FolderOpen, Plus, Printer, Timer, Trash2, X } from 'lucide-react'
 import { findNode, useLibrary, useTree } from '../../shared'
 import type { Item, TNode } from '../../shared'
-import { dbGetAll, dbGetNote } from '../../db'
+import { dbGetAll, dbGetAllOcr, dbGetNote } from '../../db'
 import { serializeLibraryBackup } from '../../lib/libraryBackup'
 import { blobToBase64, createPrintWindow, downloadTextFile, renderPrintView, sectionToMarkdown, sectionToPrintHtml } from '../../lib/treeExports'
 import { useLocale } from '../../lib/i18n'
@@ -10,6 +10,7 @@ import { useDesktopMessages } from './i18n'
 import { TOOL_CATALOG } from '../../lib/settings'
 import { useDesktopPreferences } from './preferences'
 import { requestFocusTimer } from './focusTimerEvents'
+import DesktopFileOcrAction from './DesktopFileOcrAction'
 
 const DesktopToolPanel = lazy(() => import('./DesktopToolsPage'))
 const DesktopNoteEditor = lazy(() => import('./DesktopNoteEditor'))
@@ -55,10 +56,21 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
   const [exporting, setExporting] = useState(false)
   const [exportStatus, setExportStatus] = useState('')
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
+  const [busyOcrId, setBusyOcrId] = useState<string | null>(null)
+  const [ocrTextByFile, setOcrTextByFile] = useState<Record<string, string>>({})
   const { items, add, remove, storageError } = useLibrary()
   const { tree, setPath } = useTree()
   const inputRef = useRef<HTMLInputElement>(null)
   const sectionPath = path.map(id => findNode(tree, id)).filter((part): part is TNode => part !== undefined)
+  useEffect(() => {
+    let cancelled = false
+    dbGetAllOcr()
+      .then(records => {
+        if (!cancelled) setOcrTextByFile(Object.fromEntries(records.map(record => [record.itemId, record.text])))
+      })
+      .catch(() => { if (!cancelled) setOcrTextByFile({}) })
+    return () => { cancelled = true }
+  }, [])
   const nodeItems = items.filter(item => item.nodeId === node.id)
   const childSections = node.children
   const sectionTools = TOOL_CATALOG.filter(tool => { const assignment = preferences.toolAssignments[tool.id] ?? { global: true, sectionIds: [] }; return assignment.global || assignment.sectionIds.includes(node.id) })
@@ -76,7 +88,14 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
   }
 
   const removeFile = (item: Item): void => {
-    if (window.confirm(messages.files.removeConfirm)) remove(item.id)
+    if (window.confirm(messages.files.removeConfirm)) {
+      remove(item.id)
+      setOcrTextByFile(previous => {
+        const next = { ...previous }
+        delete next[item.id]
+        return next
+      })
+    }
   }
 
   const loadSectionExportData = async () => {
@@ -187,6 +206,7 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
           {storageError && <p className="desk-inline-error" role="status">{messages.files.storageError}</p>}
           {isDragging && <p className="desk-drop-hint" role="status">{messages.files.dropHere}</p>}
           {uploadProgress !== null && <div className="desk-upload-progress" role="status"><progress value={uploadProgress} max="100" /> <span>{messages.files.uploading} {uploadProgress}%</span></div>}
+          {nodeItems.some(item => item.file && (item.kind === 'image' || item.file.type === 'application/pdf' || item.name.toLowerCase().endsWith('.pdf'))) && <p className="desk-ocr-privacy">{messages.files.ocrPrivacy}</p>}
           {nodeItems.length ? (
             <ul className="desk-file-grid">
               {nodeItems.map(item => (
@@ -201,10 +221,17 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
                       <FolderOpen size={17} aria-hidden="true" />
                     </a>
                     <button type="button" className="desk-icon-button" aria-label={messages.files.preview} title={messages.files.preview} onClick={() => setPreviewItem(item)}><Eye size={17} aria-hidden="true" /></button>
-                    <button type="button" className="desk-icon-button desk-danger-button" aria-label={`${messages.files.remove}: ${item.name}`} onClick={() => removeFile(item)}>
+                    <button type="button" className="desk-icon-button desk-danger-button" disabled={busyOcrId === item.id} aria-label={`${messages.files.remove}: ${item.name}`} onClick={() => removeFile(item)}>
                       <Trash2 size={16} aria-hidden="true" />
                     </button>
                   </div>
+                  <DesktopFileOcrAction
+                    item={item}
+                    busyItemId={busyOcrId}
+                    saved={Object.prototype.hasOwnProperty.call(ocrTextByFile, item.id)}
+                    onSaved={(id, text) => setOcrTextByFile(previous => ({ ...previous, [id]: text }))}
+                    onBusyChange={setBusyOcrId}
+                  />
                 </li>
               ))}
             </ul>

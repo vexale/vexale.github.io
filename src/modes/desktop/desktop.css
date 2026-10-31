@@ -564,6 +564,13 @@ html[data-mode='desktop'] .desk-file-card .desk-file-name { font-size: 13px; }
 html[data-mode='desktop'] .desk-file-card .desk-file-meta { display: flex; align-items: center; gap: 5px; font-size: 12px; }
 html[data-mode='desktop'] .desk-file-card .desk-file-meta svg { width: 14px; height: 14px; color: var(--desk-accent); }
 html[data-mode='desktop'] .desk-file-card .desk-file-actions { justify-content: flex-end; padding: 4px 6px 6px; }
+html[data-mode='desktop'] .desk-file-ocr { display: grid; gap: 5px; min-width: 0; padding: 0 8px 8px; }
+html[data-mode='desktop'] .desk-file-ocr-button { justify-content: center; gap: 6px; min-height: 40px; padding: 7px; font-size: 12px; }
+html[data-mode='desktop'] .desk-file-ocr-progress { display: grid; gap: 3px; min-width: 0; color: var(--desk-muted); font-size: 11px; line-height: 1.4; }
+html[data-mode='desktop'] .desk-file-ocr-progress progress { width: 100%; height: 7px; accent-color: var(--desk-accent); }
+html[data-mode='desktop'] .desk-file-ocr-status,
+html[data-mode='desktop'] .desk-ocr-privacy { margin: 0; color: var(--desk-muted); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+html[data-mode='desktop'] .desk-ocr-privacy { margin-block-end: 8px; }
 
 html[data-mode='desktop'] .desk-inline-error,
 html[data-mode='desktop'] .desk-note-error {

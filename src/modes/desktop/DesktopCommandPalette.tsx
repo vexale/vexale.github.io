@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
-import { dbGetNote } from '../../db'
+import { dbGetAllOcr, dbGetNote } from '../../db'
 import { useLibrary, useTree } from '../../shared'
 import { setLocale, useLocale } from '../../lib/i18n'
 import { updateDesktopPreferences, useDesktopPreferences } from './preferences'
@@ -72,6 +72,7 @@ export default function DesktopCommandPalette({ open, onClose, onNavigate, onSwi
   const previousFocusRef = useRef<HTMLElement | null>(null)
   const [query, setQuery] = useState('')
   const [notes, setNotes] = useState<NoteRef[]>([])
+  const [ocrTextByFile, setOcrTextByFile] = useState<Record<string, string>>({})
   const [activeIndex, setActiveIndex] = useState(0)
   const p = messages.commandPalette
   const sections = useMemo(() => flatten(tree), [tree])
@@ -79,11 +80,19 @@ export default function DesktopCommandPalette({ open, onClose, onNavigate, onSwi
   useEffect(() => {
     if (!open) return
     setQuery(''); setActiveIndex(0)
+    setOcrTextByFile({})
     const focus = window.setTimeout(() => inputRef.current?.focus(), 0)
     let cancelled = false
-    void Promise.all(sections.map(async section => {
-      try { const note = await dbGetNote(section.id); return note?.html ? { ...section, body: plainText(note.html) } : null } catch { return null }
-    })).then(rows => { if (!cancelled) setNotes(rows.filter((row): row is NoteRef => Boolean(row?.body))) })
+    void Promise.all([
+      Promise.all(sections.map(async section => {
+        try { const note = await dbGetNote(section.id); return note?.html ? { ...section, body: plainText(note.html) } : null } catch { return null }
+      })),
+      dbGetAllOcr().catch(() => []),
+    ]).then(([rows, ocrRecords]) => {
+      if (cancelled) return
+      setNotes(rows.filter((row): row is NoteRef => Boolean(row?.body)))
+      setOcrTextByFile(Object.fromEntries(ocrRecords.map(record => [record.itemId, record.text])))
+    })
     return () => { cancelled = true; window.clearTimeout(focus) }
   }, [open, sections])
 
@@ -103,7 +112,7 @@ export default function DesktopCommandPalette({ open, onClose, onNavigate, onSwi
     const taskResults: PaletteResult[] = tasks.map(task => ({ id: 'task:' + task.id, group: 'tasks', label: task.title, detail: p.tasks, run: () => onNavigate('tasks') }))
     const fileResults: PaletteResult[] = items.map(item => {
       const section = sections.find(candidate => candidate.id === item.nodeId)
-      return { id: 'file:' + item.id, group: 'files', label: item.name, detail: section?.title ?? '', run: () => { if (section) { onNavigate('library'); setPath(section.path); window.setTimeout(() => Array.from(document.querySelectorAll<HTMLElement>('[data-file-id]')).find(row => row.dataset.fileId === item.id)?.scrollIntoView({ block: 'center' }), 140) } } }
+      return { id: 'file:' + item.id, group: 'files', label: item.name, detail: section?.title ?? '', searchText: ocrTextByFile[item.id] ?? '', run: () => { if (section) { onNavigate('library'); setPath(section.path); window.setTimeout(() => Array.from(document.querySelectorAll<HTMLElement>('[data-file-id]')).find(row => row.dataset.fileId === item.id)?.scrollIntoView({ block: 'center' }), 140) } } }
     })
     const pageIds: DesktopPage[] = ['home', 'library', 'tasks', 'tools', 'themes', 'settings', 'account', 'trash', 'support', 'privacy']
     const pages: PaletteResult[] = pageIds.map(page => ({ id: 'page:' + page, group: 'pages', label: page === 'home' ? messages.homeDashboard.pageTitle : messages.pages[page].title, detail: page === 'home' ? messages.homeDashboard.intro : messages.pages[page].description, run: () => onNavigate(page) }))
@@ -114,7 +123,7 @@ export default function DesktopCommandPalette({ open, onClose, onNavigate, onSwi
       { id: 'action:arabic', group: 'actions', label: p.arabic, detail: p.languageHint, run: () => setLocale('ar') },
     ]
     return [...sectionResults, ...noteResults, ...taskResults, ...fileResults, ...pages, ...actions]
-  }, [items, messages, notes, onNavigate, onSwitchToSpace, p, sections, setPath, tasks])
+  }, [items, messages, notes, onNavigate, onSwitchToSpace, ocrTextByFile, p, sections, setPath, tasks])
 
   const searchLocale = locale === 'ar' ? 'ar' : 'en'
   const queryText = query.trim()
