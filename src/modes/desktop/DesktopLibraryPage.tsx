@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { Download, Eye, FileAudio, FileImage, FileText, FileX2, FolderOpen, Plus, Printer, Timer, Trash2, X } from 'lucide-react'
+import { Download, Eye, FileAudio, FileImage, FileText, FileX2, FolderOpen, Plus, Printer, Sparkles, Timer, Trash2, X } from 'lucide-react'
 import { findNode, useLibrary, useTree } from '../../shared'
 import type { Item, TNode } from '../../shared'
 import { dbGetAll, dbGetAllOcr, dbGetNote } from '../../db'
@@ -11,6 +11,8 @@ import { TOOL_CATALOG } from '../../lib/settings'
 import { useDesktopPreferences } from './preferences'
 import { requestFocusTimer } from './focusTimerEvents'
 import DesktopFileOcrAction from './DesktopFileOcrAction'
+import { addReviewCards } from '../../lib/reviewCards'
+import { requestStudyAI } from '../../lib/studyAssistant'
 
 const DesktopToolPanel = lazy(() => import('./DesktopToolsPage'))
 const DesktopNoteEditor = lazy(() => import('./DesktopNoteEditor'))
@@ -22,6 +24,7 @@ function kindOf(file: File): Item['kind'] {
 }
 
 function sectionNodes(node: TNode): TNode[] { return [node, ...node.children.flatMap(sectionNodes)] }
+function plainText(html: string): string { return new DOMParser().parseFromString(html, 'text/html').body.textContent?.replace(/\s+/gu, ' ').trim() ?? '' }
 function safeExportName(value: string): string { return value.normalize('NFKD').replace(/[^A-Za-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'section' }
 
 function FileKindIcon({ kind }: { kind: Item['kind'] }) {
@@ -58,6 +61,8 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [busyOcrId, setBusyOcrId] = useState<string | null>(null)
   const [ocrTextByFile, setOcrTextByFile] = useState<Record<string, string>>({})
+  const [generatingCards, setGeneratingCards] = useState(false)
+  const [cardStatus, setCardStatus] = useState('')
   const { items, add, remove, storageError } = useLibrary()
   const { tree, setPath } = useTree()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -155,6 +160,38 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
     }
   }
 
+  const generateCards = async (notes: string, sourceTitle: string): Promise<void> => {
+    if (generatingCards || notes.trim().length < 40) { setCardStatus(messages.notes.placeholder); return }
+    setGeneratingCards(true); setCardStatus('')
+    try {
+      const response = await requestStudyAI({ action: 'quiz', nodeTitle: sourceTitle, notes: notes.slice(0, 16_000), language: locale, questionCount: 8 })
+      const start = response.indexOf('['), end = response.lastIndexOf(']')
+      if (start < 0 || end < start) throw new Error('invalid-cards')
+      const parsed: unknown = JSON.parse(response.slice(start, end + 1))
+      if (!Array.isArray(parsed)) throw new Error('invalid-cards')
+      const cards = parsed.flatMap(item => {
+        if (!item || typeof item !== 'object') return []
+        const card = item as { q?: unknown; a?: unknown }
+        return typeof card.q === 'string' && typeof card.a === 'string' ? [{ nodeId: node.id, sourceTitle, question: card.q, answer: card.a }] : []
+      })
+      if (!cards.length) throw new Error('invalid-cards')
+      addReviewCards(cards)
+      setCardStatus(`${cards.length} ${messages.review.totalCards}`)
+      window.history.pushState({ desktopPage: 'review' }, '', '#/office/review')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    } catch (error) {
+      setCardStatus(error instanceof Error && error.message !== 'invalid-cards' ? error.message : messages.notes.error)
+    } finally { setGeneratingCards(false) }
+  }
+
+  const generateSectionCards = async (): Promise<void> => {
+    const notes = await Promise.all(sectionNodes(node).map(async part => {
+      const note = await dbGetNote(part.id)
+      return note?.html ? `${part.title}\n${plainText(note.html)}` : ''
+    }))
+    await generateCards(notes.filter(Boolean).join('\n\n'), node.title)
+  }
+
   return (
     <div className="desk-library-page">
       <nav className="desk-breadcrumbs" aria-label={messages.sections.breadcrumb}>
@@ -174,6 +211,7 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
           <Timer size={16} aria-hidden="true" />
           <span>{messages.focusTimer.startForSection}</span>
         </button>
+        <button type="button" className="desk-button" disabled={generatingCards} onClick={() => void generateSectionCards()}><Sparkles size={16} aria-hidden="true" /><span>{generatingCards ? messages.notes.saving : messages.notes.generateCards}</span></button>
         <button type="button" className="desk-button desk-button-primary" onClick={() => inputRef.current?.click()}>
           <Plus size={17} aria-hidden="true" />
           <span>{messages.files.add}</span>
@@ -192,7 +230,7 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
         <button type="button" className="desk-button" disabled={exporting} onClick={() => void exportSection('markdown')}><FileText size={15} aria-hidden="true" />{messages.exportActions.sectionMarkdown}</button>
         <button type="button" className="desk-button" disabled={exporting} onClick={() => void printSection()}><Printer size={15} aria-hidden="true" />{messages.exportActions.printPdf}</button>
       </div>
-      {exportStatus && <p className="desk-inline-status" role="status">{exportStatus}</p>}
+      {(exportStatus || cardStatus) && <p className="desk-inline-status" role="status">{exportStatus || cardStatus}</p>}
       <section className="desk-child-sections" aria-label={messages.sections.childSections}><h3>{messages.sections.childSections}</h3>{childSections.length ? <div className="desk-child-section-grid">{childSections.map(child => <button type="button" key={child.id} className="desk-child-section-card" onClick={() => setPath([...path, child.id])}><span>{child.title}</span><span>{child.children.length} {messages.sections.childrenCount}</span></button>)}</div> : <p className="desk-section-empty">{messages.sections.childEmpty}</p>}</section>
       <section className="desk-section-tools" aria-label={messages.toolHub.sectionSpecific}>
         <div className="desk-section-tools-list">{sectionTools.map(tool => <button type="button" className="desk-tool-chip-button" key={tool.id} onClick={() => setOpenTool(tool.id)}>{locale === 'ar' ? ({ calc: 'الحاسبة', notes: 'ملاحظات سريعة', plot: 'الإحداثيات', chat: 'محادثة المكتبة', math: 'حلّال الرياضيات', code: 'مساحة الأكواد', quiz: 'اختبارات وبطاقات', data: 'تحليل البيانات', board: 'لوحة وخرائط', docs: 'أدوات المستندات', tasks: 'المهام', audio: 'تركيز وصوت' }[tool.id] ?? tool.label) : tool.label}</button>)}<button type="button" className="desk-tool-chip-button desk-tool-add-button" onClick={() => { window.history.pushState({ desktopPage: 'tools' }, '', '#/office/tools'); window.dispatchEvent(new PopStateEvent('popstate')) }}>{messages.toolHub.addTool}</button></div>
@@ -243,7 +281,7 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
           )}
         </section>
         <Suspense fallback={<div className="desk-lazy-placeholder" aria-busy="true" aria-label={messages.notes.loading} />}>
-          <DesktopNoteEditor key={node.id} nodeId={node.id} sectionTitle={node.title} />
+          <DesktopNoteEditor key={node.id} nodeId={node.id} sectionTitle={node.title} onGenerateCards={notes => void generateCards(notes, node.title)} />
         </Suspense>
       </div>
       {openTool && <Suspense fallback={<div className="desk-lazy-placeholder" aria-busy="true" aria-label={messages.toolHub.loading} />}><DesktopToolPanel toolId={openTool} onClose={() => setOpenTool('')} /></Suspense>}

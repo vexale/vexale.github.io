@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
-import { AlertCircle, Bold, Check, Code2, Heading2, Heading3, History, Italic, Link2, List, ListChecks, ListOrdered, LoaderCircle, Minus, Quote, Redo2, Table2, Undo2 } from 'lucide-react'
+import { AlertCircle, Bold, Check, Code2, Heading2, Heading3, History, Italic, Link2, List, ListChecks, ListOrdered, LoaderCircle, Minus, Quote, Redo2, Sparkles, Table2, Undo2 } from 'lucide-react'
 import { dbGetNote, dbPutNote } from '../../db'
 import { useDesktopMessages } from './i18n'
 
 interface DesktopNoteEditorProps {
   nodeId: string
   sectionTitle: string
+  onGenerateCards?: (notes: string) => void
 }
 
 type SaveState = 'loading' | 'saving' | 'saved' | 'error'
@@ -104,7 +105,7 @@ function hasReadableText(html: string): boolean {
   return (parsed.body.textContent ?? '').replace(/\u200b/g, '').trim().length > 0 || Boolean(parsed.body.querySelector('hr, pre'))
 }
 
-export default function DesktopNoteEditor({ nodeId, sectionTitle }: DesktopNoteEditorProps) {
+export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCards }: DesktopNoteEditorProps) {
   const messages = useDesktopMessages()
   const editorRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<number | null>(null)
@@ -380,7 +381,8 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle }: DesktopNoteE
         <button type="button" className="desk-note-toolbar-button" aria-label={noteMessages.undo} title={noteMessages.undo} disabled={saveState === 'loading'} onMouseDown={event => event.preventDefault()} onClick={() => runCommand('undo')}><Undo2 size={16} aria-hidden="true" /></button>
         <button type="button" className="desk-note-toolbar-button" aria-label={noteMessages.redo} title={noteMessages.redo} disabled={saveState === 'loading'} onMouseDown={event => event.preventDefault()} onClick={() => runCommand('redo')}><Redo2 size={16} aria-hidden="true" /></button>
         <div className="desk-note-history-wrap">
-          <button type="button" className="desk-note-toolbar-button" aria-label={noteMessages.versionHistory} title={noteMessages.versionHistory} aria-expanded={historyOpen} aria-controls="desk-note-history-panel" onMouseDown={event => event.preventDefault()} onClick={() => { setNoteVersions(readNoteVersions(nodeId)); setHistoryOpen(open => !open) }}><History size={16} aria-hidden="true" /></button>
+        <button type="button" className="desk-note-toolbar-button" aria-label={noteMessages.versionHistory} title={noteMessages.versionHistory} aria-expanded={historyOpen} aria-controls="desk-note-history-panel" onMouseDown={event => event.preventDefault()} onClick={() => { setNoteVersions(readNoteVersions(nodeId)); setHistoryOpen(open => !open) }}><History size={16} aria-hidden="true" /></button>
+        {onGenerateCards && <button type="button" className="desk-note-toolbar-button" aria-label={noteMessages.generateCards} title={noteMessages.generateCards} disabled={saveState !== 'saved' || !hasContent} onMouseDown={event => event.preventDefault()} onClick={() => onGenerateCards(plainText(latestHtmlRef.current))}><Sparkles size={16} aria-hidden="true" /></button>}
           {historyOpen && <div id="desk-note-history-panel" className="desk-note-history-popover" role="dialog" aria-label={noteMessages.versionHistoryTitle}>
             <strong>{noteMessages.versionHistoryTitle} <span>({noteVersions.length}/{NOTE_VERSION_LIMIT})</span></strong>
             {noteVersions.length ? <div className="desk-note-history-list">{noteVersions.map((version, index) => <article className="desk-note-history-item" key={`${version.savedAt}-${index}`}>
