@@ -1,29 +1,130 @@
 <!doctype html>
-<html lang="en" dir="ltr">
+<html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#080a12" />
-    <meta name="description" content="مساحة دراسة عربية لتنظيم الملاحظات والمواد التعليمية، مع مساعد ذكي للتلخيص والمراجعة والإجابة عن الأسئلة." />
+    <meta name="theme-color" content="#0a0f17" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="application-name" content="Vexale" />
+    <meta name="robots" content="index,follow" />
+    <meta name="description" content="نظّم الأقسام والملاحظات والملفات والمهام، واستخدم أدوات المراجعة والمحتوى التعليمي ثلاثي الأبعاد في مساحة دراسة واحدة." />
+    <title>Vexale — مساحة دراسة للملاحظات والمهام</title>
+
+    <link rel="canonical" href="https://vexale.github.io/" />
+    <link rel="alternate" hreflang="ar" href="https://vexale.github.io/" />
+    <link rel="alternate" hreflang="en" href="https://vexale.github.io/en/" />
+    <link rel="alternate" hreflang="x-default" href="https://vexale.github.io/en/" />
+
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Vexale" />
-    <meta property="og:title" content="Vexale" />
-    <meta property="og:description" content="مساحة دراسة عربية لتنظيم الملاحظات والمواد التعليمية، مع مساعد ذكي للتلخيص والمراجعة والإجابة عن الأسئلة." />
+    <meta property="og:title" content="Vexale — مساحة دراسة للملاحظات والمهام" />
+    <meta property="og:description" content="نظّم الأقسام والملاحظات والملفات والمهام، واستخدم أدوات المراجعة والمحتوى التعليمي ثلاثي الأبعاد في مساحة دراسة واحدة." />
+    <meta property="og:url" content="https://vexale.github.io/" />
+    <meta property="og:image" content="https://vexale.github.io/vexale-og.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="كتاب زجاجي مضيء بألوان Vexale البنفسجية" />
     <meta property="og:locale" content="ar_IQ" />
-    <meta name="color-scheme" content="dark" />
-    <title>Vexale</title>
-    <link rel="icon" type="image/png" href="./vexale-favicon.png" sizes="any" />
-    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta property="og:locale:alternate" content="en_US" />
 
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Vexale — مساحة دراسة للملاحظات والمهام" />
+    <meta name="twitter:description" content="نظّم الأقسام والملاحظات والملفات والمهام، واستخدم أدوات المراجعة والمحتوى التعليمي ثلاثي الأبعاد في مساحة دراسة واحدة." />
+    <meta name="twitter:image" content="https://vexale.github.io/vexale-og.jpg" />
+    <meta name="twitter:image:alt" content="كتاب زجاجي مضيء بألوان Vexale البنفسجية" />
+
+    <link rel="icon" type="image/svg+xml" href="/vexale-favicon.svg" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="128x128" href="/vexale-favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="stylesheet" href="/landing.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      html[data-vexale-view='landing'] #root,
+      html[data-vexale-view='app'] #vexale-landing,
+      #root[hidden],
+      #vexale-landing[hidden] { display: none !important; }
+    </style>
+    <script>document.documentElement.dataset.vexaleView = location.hash.startsWith('#/') ? 'app' : 'landing';</script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Vexale",
+        "url": "https://vexale.github.io/",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web",
+        "inLanguage": ["ar", "en"],
+        "description": "نظّم الأقسام والملاحظات والملفات والمهام، واستخدم أدوات المراجعة والمحتوى التعليمي ثلاثي الأبعاد في مساحة دراسة واحدة."
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <main id="vexale-landing" class="landing-page" dir="rtl">
+      <div class="landing-container">
+        <header class="landing-header">
+          <a class="landing-brand" href="/" aria-label="Vexale — الصفحة الرئيسية">
+            <img src="/vexale-favicon.png" width="42" height="42" alt="" />
+            <span>Vexale</span>
+          </a>
+          <nav class="landing-nav" aria-label="التنقل الرئيسي">
+            <a href="#features">الأدوات</a>
+            <a href="/en/" lang="en" dir="ltr">English</a>
+            <a class="landing-open-link" href="/#/office">افتح مساحة الدراسة</a>
+          </nav>
+        </header>
+
+        <section class="landing-hero" aria-labelledby="landing-title">
+          <div class="landing-copy">
+            <h1 id="landing-title">مساحة دراسة تجمع ملاحظاتك وملفاتك ومهامك.</h1>
+            <p>نظّم المواد في أقسام، واربط بكل قسم ملاحظاته وملفاته. تابِع خططك في شجرة مهام، وافتح أدوات المراجعة والمشاهد التعليمية ثلاثية الأبعاد عند الحاجة.</p>
+            <div class="landing-actions">
+              <a class="landing-button landing-button-primary" href="/#/office">افتح مساحة الدراسة</a>
+              <a class="landing-button landing-button-secondary" href="#features">تعرّف على الأدوات</a>
+            </div>
+          </div>
+          <figure class="landing-visual">
+            <img src="/vexale-og.jpg" width="1200" height="630" fetchpriority="high" alt="كتاب زجاجي مفتوح يضيء بدرجات البنفسجي على خلفية داكنة" />
+          </figure>
+        </section>
+
+        <section id="features" class="landing-features" aria-labelledby="features-title">
+          <div class="landing-section-heading">
+            <h2 id="features-title">مساحة واحدة لأجزاء مختلفة من الدراسة</h2>
+            <p>أدوات عملية لتنظيم المواد والعودة إلى ما تعمل عليه.</p>
+          </div>
+          <div class="landing-feature-grid">
+            <article class="landing-feature">
+              <h3>أقسام وملاحظات وملفات</h3>
+              <p>أنشئ أقسامًا وفروعًا، واحتفظ بملاحظاتك وملفات كل موضوع ضمن مساره.</p>
+            </article>
+            <article class="landing-feature">
+              <h3>شجرة للمهام</h3>
+              <p>قسّم خطة الدراسة إلى مهام فرعية، ورتّبها وتابع حالتها وتقدمها.</p>
+            </article>
+            <article class="landing-feature">
+              <h3>أدوات للمراجعة والتعلّم</h3>
+              <p>استخدم التلخيص والأسئلة والاختبارات، وافتح المشاهد التعليمية ثلاثية الأبعاد المتاحة.</p>
+            </article>
+          </div>
+          <p class="landing-note">لا يرسل التطبيق ملاحظاتك إلى خدمة المساعد إلا عندما تطلب استخدام إحدى أدواته.</p>
+        </section>
+
+        <footer class="landing-footer">
+          <p><span dir="ltr">Vexale</span> مساحة دراسة رقمية.</p>
+          <nav aria-label="روابط أسفل الصفحة">
+            <a href="/en/" lang="en" dir="ltr">English</a>
+            <a href="/#/office">افتح التطبيق</a>
+          </nav>
+        </footer>
+      </div>
+    </main>
+    <div id="root" hidden></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

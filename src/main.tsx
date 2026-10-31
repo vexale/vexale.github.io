@@ -11,10 +11,31 @@ if ('serviceWorker' in navigator) {
   })
 }
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <GlobalErrorBoundary>
-      <App />
-    </GlobalErrorBoundary>
-  </StrictMode>,
-)
+const rootElement = document.getElementById('root')
+const landingElement = document.getElementById('vexale-landing')
+if (!rootElement) throw new Error('Application root is missing')
+
+const root = createRoot(rootElement)
+let previousAppState: boolean | undefined
+
+function syncAppRoute(): void {
+  const isAppRoute = window.location.hash.startsWith('#/')
+  document.documentElement.dataset.vexaleView = isAppRoute ? 'app' : 'landing'
+  rootElement.hidden = !isAppRoute
+  if (landingElement) landingElement.hidden = isAppRoute
+
+  if (previousAppState === isAppRoute) return
+  previousAppState = isAppRoute
+  root.render(
+    isAppRoute ? (
+      <StrictMode>
+        <GlobalErrorBoundary>
+          <App />
+        </GlobalErrorBoundary>
+      </StrictMode>
+    ) : null,
+  )
+}
+
+syncAppRoute()
+window.addEventListener('hashchange', syncAppRoute)

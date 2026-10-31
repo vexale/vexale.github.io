@@ -1,14 +1,14 @@
 {
-  "name": "Vexale — مساحة الدراسة الذكية",
+  "name": "Vexale",
   "short_name": "Vexale",
-  "description": "مساحة دراسة عربية لتنظيم الملاحظات والمواد التعليمية مع مساعد ذكي.",
-  "lang": "ar",
-  "dir": "rtl",
-  "start_url": "./",
+  "description": "Study workspace for sections, notes, files, tasks, and learning tools.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "./#/office",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#080a12",
-  "theme_color": "#080a12",
+  "background_color": "#0a0f17",
+  "theme_color": "#0a0f17",
   "icons": [
     {
       "src": "./icons/icon-192.png",

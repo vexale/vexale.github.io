@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Vexale">
+  <defs>
+    <linearGradient id="violet" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e2d2ff"/>
+      <stop offset=".45" stop-color="#b397ff"/>
+      <stop offset="1" stop-color="#7143d8"/>
+    </linearGradient>
+    <radialGradient id="glass" cx="50%" cy="20%" r="90%">
+      <stop offset="0" stop-color="#302050"/>
+      <stop offset="1" stop-color="#0b0a17"/>
+    </radialGradient>
+  </defs>
+  <rect x="3" y="3" width="58" height="58" rx="17" fill="url(#glass)" stroke="#7651c9" stroke-width="1.4"/>
+  <path d="M32 9 49 19v21L32 51 15 40V19z" fill="none" stroke="url(#violet)" stroke-width="2.2" stroke-linejoin="round" opacity=".9"/>
+  <path d="m32 19 3.2 7 7.3 1.1-5.3 5.1 1.3 7.2-6.5-3.6-6.5 3.6 1.3-7.2-5.3-5.1 7.3-1.1z" fill="url(#violet)"/>
+  <path d="M13 34c7.6.2 13.1 3.4 19 11 5.9-7.6 11.4-10.8 19-11v12c-7.6.3-13.2 3.3-19 10-5.8-6.7-11.4-9.7-19-10z" fill="#171128" stroke="url(#violet)" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M32 45v11M17 39c5.5.4 10.1 2.7 15 7 4.9-4.3 9.5-6.6 15-7M17 44c5 .5 9.4 2.5 15 6 5.6-3.5 10-5.5 15-6" fill="none" stroke="#cdbaff" stroke-width="1.2" stroke-linecap="round" opacity=".8"/>
+</svg>
