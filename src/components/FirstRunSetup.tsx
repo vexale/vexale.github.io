@@ -54,7 +54,10 @@ export default function FirstRunSetup({ initialMode, onComplete, onSkip }: First
   const stepNames = [copy.languageStep, copy.modeStep, copy.themeStep, copy.templateStep]
   const themes = mode === 'space'
     ? SPACE_THEME_CHOICES.map(theme => ({ id: theme.id, title: theme.title[locale], swatch: theme.swatch }))
-    : DESKTOP_THEMES.map(theme => ({ id: theme.id, title: messagesThemeName(theme.labelKey, locale), swatch: DESKTOP_THEME_COLORS[theme.id][2] ?? '#5b4fe0' }))
+    : DESKTOP_THEMES.map(theme => {
+      const [background, surface, accent] = DESKTOP_THEME_COLORS[theme.id]
+      return { id: theme.id, title: messagesThemeName(theme.labelKey, locale), swatch: `linear-gradient(135deg, ${background} 0 34%, ${surface} 34% 68%, ${accent} 68% 100%)` }
+    })
   const activeTheme = mode === 'space' ? spaceTheme : officeTheme
   const template = SETUP_TEMPLATES.find(item => item.id === templateId) ?? SETUP_TEMPLATES[SETUP_TEMPLATES.length - 1]!
   const templateTaskCount = countStarterTasks(template.tasks)

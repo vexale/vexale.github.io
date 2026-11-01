@@ -312,7 +312,7 @@ html[data-mode='desktop'] .desk-count-pill {
   justify-content: center;
   padding-inline: 6px;
   border-radius: 999px;
-  background: var(--desk-accent-soft);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
   color: var(--desk-text);
   font-size: 13px;
   line-height: 1;
@@ -552,8 +552,8 @@ html[data-mode='desktop'] .desk-files-empty p {
 
 html[data-mode='desktop'] .desk-upload-progress { display: flex; align-items: center; gap: 9px; margin-block-end: 12px; color: var(--desk-muted); font-size: 13px; }
 html[data-mode='desktop'] .desk-upload-progress progress { width: min(240px, 100%); height: 8px; accent-color: var(--desk-accent); }
-html[data-mode='desktop'] .desk-file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
-html[data-mode='desktop'] .desk-file-card { display: grid; min-width: 0; grid-template-rows: 116px auto auto; overflow: hidden; border: 1px solid var(--desk-border); border-radius: 9px; background: var(--desk-elevated); }
+html[data-mode='desktop'] .desk-file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+html[data-mode='desktop'] .desk-file-card { display: grid; min-width: 0; grid-template-rows: 120px auto auto; overflow: hidden; border: 1px solid var(--desk-border); border-radius: 9px; background: var(--desk-elevated); }
 html[data-mode='desktop'] .desk-file-card-preview { display: grid; min-width: 0; min-height: 0; place-items: center; overflow: hidden; border-block-end: 1px solid var(--desk-border); background: var(--desk-bg); color: var(--desk-accent); }
 html[data-mode='desktop'] .desk-file-card-preview img,
 html[data-mode='desktop'] .desk-file-card-preview iframe { width: 100%; height: 100%; border: 0; object-fit: cover; }
@@ -1197,9 +1197,10 @@ html[data-mode='desktop'] .desk-tool-panel { position: fixed; z-index: 25; inset
 html[data-mode='desktop'] .desk-tool-panel > header { display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 12px; border-bottom: 1px solid var(--desk-border); }
 html[data-mode='desktop'] .desk-tool-panel h2 { margin: 0; font-size: 16px; }
 html[data-mode='desktop'] .desk-tool-panel-content { min-height: 0; flex: 1; overflow: auto; padding: 12px; }
-html[data-mode='desktop'] .desk-section-tools-list { display: flex; flex-wrap: wrap; gap: 8px; }
+html[data-mode='desktop'] .desk-section-tools { display: grid; gap: 8px; }
+html[data-mode='desktop'] .desk-section-tools-list { display: flex; flex: 0 0 100%; flex-wrap: wrap; gap: 8px; }
 html[data-mode='desktop'] .desk-tool-chip-button { min-height: 34px; padding: 6px 10px; border: 1px solid var(--desk-border); border-radius: 999px; background: var(--desk-surface); color: var(--desk-text); font: inherit; font-size: 13px; cursor: pointer; }
-html[data-mode='desktop'] .desk-tool-add-button { border-color: var(--desk-accent); color: var(--desk-accent); }
+html[data-mode='desktop'] .desk-tool-add-button { border-color: var(--accent); color: var(--accent); }
 @media (max-width: 640px) { html[data-mode='desktop'] .desk-tool-panel { inset-inline: 8px; width: auto; } }
 
 html[data-mode='desktop'] .desk-child-sections { display: grid; min-width: 0; gap: 9px; }
