@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { Download, Eye, FileAudio, FileImage, FileText, FileX2, FolderOpen, Plus, Printer, Sparkles, Timer, Trash2, X } from 'lucide-react'
+import { Download, Eye, FileAudio, FileImage, FileText, FileX2, FolderOpen, Plus, Printer, Sparkles, Timer, Trash2 } from 'lucide-react'
 import { findNode, useLibrary, useTree } from '../../shared'
 import type { Item, TNode } from '../../shared'
 import { dbGetAll, dbGetAllOcr, dbGetNote } from '../../db'
@@ -16,6 +16,7 @@ import { requestStudyAI } from '../../lib/studyAssistant'
 
 const DesktopToolPanel = lazy(() => import('./DesktopToolsPage'))
 const DesktopNoteEditor = lazy(() => import('./DesktopNoteEditor'))
+const DesktopFileStudyView = lazy(() => import('./DesktopFileStudyView'))
 
 function kindOf(file: File): Item['kind'] {
   if (file.type.startsWith('image/')) return 'image'
@@ -36,17 +37,6 @@ function FileKindIcon({ kind }: { kind: Item['kind'] }) {
 function formatFileSize(bytes: number, locale: string, byteUnit: string, kilobyteUnit: string): string {
   const number = new Intl.NumberFormat(locale === 'ar' ? 'ar-IQ' : 'en', { maximumFractionDigits: 1 })
   return bytes < 1024 ? `${number.format(bytes)} ${byteUnit}` : `${number.format(bytes / 1024)} ${kilobyteUnit}`
-}
-
-function FilePreview({ item, messages, onClose }: { item: Item; messages: ReturnType<typeof useDesktopMessages>['files']; onClose: () => void }) {
-  const type = item.file?.type ?? ''
-  const isPdf = type === 'application/pdf' || item.name.toLowerCase().endsWith('.pdf')
-  return <div className="desk-file-preview-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget) onClose() }}>
-    <section className="desk-file-preview" role="dialog" aria-modal="true" aria-label={messages.preview}>
-      <header><h2>{item.name}</h2><button type="button" className="desk-icon-button" aria-label={messages.closePreview} onClick={onClose}><X size={17} /></button></header>
-      <div className="desk-file-preview-content">{type.startsWith('image/') ? <img src={item.url} alt={item.name} /> : type.startsWith('audio/') ? <audio controls src={item.url} /> : type.startsWith('video/') ? <video controls src={item.url} /> : isPdf ? <iframe title={item.name} src={`${item.url}#page=1&view=FitH`} /> : <div className="desk-preview-unavailable"><FileText size={28} /><p>{messages.previewUnavailable}</p><a href={item.url} target="_blank" rel="noreferrer">{messages.open}</a></div>}</div>
-    </section>
-  </div>
 }
 
 function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
@@ -288,7 +278,7 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
         </Suspense>
       </div>
       {openTool && <Suspense fallback={<div className="desk-lazy-placeholder" aria-busy="true" aria-label={messages.toolHub.loading} />}><DesktopToolPanel toolId={openTool} onClose={() => setOpenTool('')} /></Suspense>}
-      {previewItem && <FilePreview item={previewItem} messages={messages.files} onClose={() => setPreviewItem(null)} />}
+      {previewItem && <Suspense fallback={<div className="desk-file-study-backdrop" aria-busy="true" aria-label={messages.toolHub.loading} />}><DesktopFileStudyView item={previewItem} extractedText={ocrTextByFile[previewItem.id] ?? ""} messages={messages.files} onClose={() => setPreviewItem(null)} /></Suspense>}
     </div>
   )
 }
