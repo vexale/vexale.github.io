@@ -57,11 +57,11 @@ export const en = {
     sessionCount: 'sessions', sessionLog: 'Recent sessions', noSessions: 'No sessions saved for this target yet.', settings: 'Timer settings',
   },
   feedback: {
-    open: 'Send feedback', title: 'Share feedback', description: 'Tell us how this part of the workspace is working for you.',
+    open: 'Feedback', title: 'Share feedback', description: 'Tell us how this part of the workspace is working for you.',
     currentPage: 'Current page', rating: 'Your rating', ratingOption: 'Rate {value} out of 5',
     commentLabel: 'Short comment (optional)', privacy: 'Feedback goes through the signed-in support service. The widget sends your rating, comment, and current page; it never reads or attaches note text or file names.',
     subjectPrefix: 'Office feedback', ratingField: 'Rating', pageField: 'Page', commentField: 'Feedback',
-    send: 'Send feedback', sending: 'Sending…', sent: 'Feedback sent. Thank you for sharing it.',
+    send: 'Send feedback', sending: 'Sending…', sent: 'Your feedback was sent successfully. Thank you for sharing it.',
     signInRequired: 'Sign in to send feedback. Nothing has been sent yet.', signInAction: 'Open account', failed: 'Feedback could not be sent. Please try again.', close: 'Close feedback',
   },
   toolHub: { global: 'Global', sectionSpecific: 'Specific sections', noSections: 'Create a section in the Library to assign tools to it.', addTool: 'Add tool', assignment: 'Tool scope', sectionsCount: 'sections', sectionPicker: 'Choose sections', closePicker: 'Close section picker', searchSections: 'Search sections…', noMatchingSections: 'No matching sections.', close: 'Close tool', loading: 'Loading tool…', descriptions: { calc: 'Calculate and convert study values.', notes: 'Capture a quick note without leaving Office.', plot: 'Explore coordinates and mathematical plots.', chat: 'Ask questions about your library.', math: 'Solve and explain mathematical problems.', code: 'Draft and run small code experiments.', quiz: 'Create quizzes and review cards.', data: 'Inspect and summarize structured data.', board: 'Sketch ideas on a flexible canvas.', docs: 'Work with documents and extracted text.', tasks: 'Plan work with a task roadmap.', audio: 'Use focused audio tools for study.' } },

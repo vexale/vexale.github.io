@@ -70,7 +70,18 @@ function watchRegistration(registration: ServiceWorkerRegistration): void {
 export function initializePwa(): void {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return
   const register = (): void => {
-    void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, { updateViaCache: 'none' })
+    const serviceWorkerUrl = new URL('/sw.js', window.location.origin).href
+    const rootScope = new URL('/', window.location.origin).href
+    void navigator.serviceWorker.getRegistrations()
+      .then(async registrations => {
+        const legacyRootRegistrations = registrations.filter(registration =>
+          registration.scope === rootScope &&
+          [registration.active, registration.waiting, registration.installing].some(worker => worker?.scriptURL === serviceWorkerUrl),
+        )
+        await Promise.all(legacyRootRegistrations.map(registration => registration.unregister()))
+        return navigator.serviceWorker.register(serviceWorkerUrl, { scope: '/app/', updateViaCache: 'none' })
+      })
+      .catch(() => navigator.serviceWorker.register(serviceWorkerUrl, { scope: '/app/', updateViaCache: 'none' }))
       .then(watchRegistration)
       .catch(() => undefined)
   }

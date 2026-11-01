@@ -34,7 +34,7 @@ function showSplashUntilMounted(): void {
 }
 
 function syncAppRoute(): void {
-  const isAppRoute = window.location.hash.startsWith('#/')
+  const isAppRoute = window.location.pathname.startsWith('/app/') || window.location.hash.startsWith('#/')
   if (previousAppState === isAppRoute) return
   previousAppState = isAppRoute
   document.documentElement.dataset.vexaleView = isAppRoute ? 'app' : 'landing'
