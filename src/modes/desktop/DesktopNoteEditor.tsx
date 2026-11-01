@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
-import { AlertCircle, Bold, Check, Code2, Heading2, Heading3, History, Italic, Link2, List, ListChecks, ListOrdered, LoaderCircle, Minus, Quote, Redo2, Sparkles, Table2, Undo2 } from 'lucide-react'
+import { AlertCircle, Bold, Check, Code2, Heading2, Heading3, History, Italic, Link2, List, ListChecks, ListOrdered, LoaderCircle, Maximize2, Minimize2, Minus, Quote, Redo2, Sparkles, Table2, Undo2 } from 'lucide-react'
 import { dbGetNote, dbPutNote } from '../../db'
 import { useDesktopMessages } from './i18n'
+import { useLocale } from '../../lib/i18n'
 
 interface DesktopNoteEditorProps {
   nodeId: string
@@ -107,6 +108,7 @@ function hasReadableText(html: string): boolean {
 
 export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCards }: DesktopNoteEditorProps) {
   const messages = useDesktopMessages()
+  const locale = useLocale()
   const editorRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<number | null>(null)
   const latestHtmlRef = useRef('')
@@ -119,11 +121,19 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
   const [words, setWords] = useState(0)
   const [noteVersions, setNoteVersions] = useState<NoteVersion[]>([])
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [fullWidth, setFullWidth] = useState(false)
+  const [writingFocus, setWritingFocus] = useState(false)
   const [slashQuery, setSlashQuery] = useState<string | null>(null)
   const [slashIndex, setSlashIndex] = useState(0)
   const [slashPosition, setSlashPosition] = useState({ top: 12, left: 12 })
   const noteMessages = messages.notes
   const errorMessageRef = useRef(noteMessages.error)
+
+  useEffect(() => {
+    if (writingFocus) document.documentElement.dataset.writingFocus = 'true'
+    else delete document.documentElement.dataset.writingFocus
+    return () => { delete document.documentElement.dataset.writingFocus }
+  }, [writingFocus])
 
   useEffect(() => {
     errorMessageRef.current = noteMessages.error
@@ -359,16 +369,24 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
   const StatusIcon = saveState === 'loading' || saveState === 'saving' ? LoaderCircle : saveState === 'error' ? AlertCircle : Check
 
   return (
-    <section className="desk-note-panel" aria-labelledby="desk-note-title">
+    <section className={`desk-note-panel${fullWidth ? ' is-full-width' : ''}`} aria-labelledby="desk-note-title">
       <header className="desk-note-header">
         <div>
           <h2 id="desk-note-title">{noteMessages.title}</h2>
           <p>{sectionTitle}</p>
         </div>
-        <p className={`desk-note-status desk-note-status-${saveState}`} role="status" aria-live="polite">
-          <StatusIcon size={15} aria-hidden="true" />
-          <span>{statusText}</span>
-        </p>
+        <div className="desk-note-header-actions">
+          <p className={`desk-note-status desk-note-status-${saveState}`} role="status" aria-live="polite">
+            <StatusIcon size={15} aria-hidden="true" />
+            <span>{statusText}</span>
+          </p>
+          <button type="button" className="desk-icon-button" aria-pressed={fullWidth} aria-label={locale === 'ar' ? (fullWidth ? 'إلغاء العرض الكامل' : 'تفعيل العرض الكامل') : (fullWidth ? 'Exit full width' : 'Use full width')} title={locale === 'ar' ? (fullWidth ? 'إلغاء العرض الكامل' : 'تفعيل العرض الكامل') : (fullWidth ? 'Exit full width' : 'Use full width')} onClick={() => setFullWidth(value => !value)}>
+            {fullWidth ? <Minimize2 size={16} aria-hidden="true" /> : <Maximize2 size={16} aria-hidden="true" />}
+          </button>
+          <button type="button" className={`desk-icon-button${writingFocus ? ' is-active' : ''}`} aria-pressed={writingFocus} aria-label={locale === 'ar' ? (writingFocus ? 'إيقاف وضع الكتابة' : 'تفعيل وضع الكتابة') : (writingFocus ? 'Exit writing focus' : 'Enter writing focus')} title={locale === 'ar' ? (writingFocus ? 'إيقاف وضع الكتابة' : 'تفعيل وضع الكتابة') : (writingFocus ? 'Exit writing focus' : 'Enter writing focus')} onClick={() => setWritingFocus(value => !value)}>
+            <Code2 size={16} aria-hidden="true" />
+          </button>
+        </div>
       </header>
       <div className="desk-note-toolbar" role="toolbar" aria-label={noteMessages.toolbar}>
         <button type="button" className="desk-note-toolbar-button" aria-label={noteMessages.heading} title={noteMessages.heading} disabled={saveState === 'loading'} onMouseDown={event => event.preventDefault()} onClick={() => formatBlock('h2')}><Heading2 size={16} aria-hidden="true" /></button>

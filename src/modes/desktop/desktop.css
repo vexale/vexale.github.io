@@ -593,6 +593,26 @@ html[data-mode='desktop'] .desk-note-header > div {
   min-width: 0;
 }
 
+html[data-mode='desktop'] .desk-note-header-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+html[data-mode='desktop'] .desk-note-header-actions .desk-icon-button {
+  width: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 5px;
+}
+
+html[data-mode='desktop'] .desk-note-header-actions .desk-icon-button.is-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+
 html[data-mode='desktop'] .desk-note-header > div p {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -682,7 +702,7 @@ html[data-mode='desktop'] .desk-note-slash-option:focus-visible,
 html[data-mode='desktop'] .desk-note-history-restore:focus-visible { outline: 2px solid var(--desk-accent); outline-offset: 2px; }
 
 html[data-mode='desktop'] .desk-note-editor {
-  min-height: 260px;
+  min-height: 60vh;
   max-width: 100%;
   padding: 16px;
   overflow-wrap: anywhere;
@@ -693,6 +713,17 @@ html[data-mode='desktop'] .desk-note-editor {
   font-size: max(14px, 1em);
   line-height: inherit;
   outline: none;
+}
+
+html[data-mode='desktop'] .desk-note-panel {
+  width: min(100%, 900px);
+  max-width: 900px;
+  margin-inline: auto;
+}
+
+html[data-mode='desktop'] .desk-note-panel.is-full-width {
+  width: 100%;
+  max-width: none;
 }
 
 html[data-mode='desktop'] .desk-note-editor:focus-visible {
@@ -1138,6 +1169,7 @@ html[data-mode='desktop'] .desk-tree-row > .desk-tree-toggle { flex: 0 0 34px; }
 
 /* Step 1: shared desktop page measure. */
 html[data-mode='desktop'] .desk-page { --desk-content-width: 760px; }
+html[data-mode='desktop'] .desk-app[data-desktop-page='library'] .desk-page { --desk-content-width: 900px; }
 html[data-mode='desktop'] .desk-app[data-desktop-page='tools'] .desk-page, html[data-mode='desktop'] .desk-app[data-desktop-page='themes'] .desk-page { --desk-content-width: 960px; }
 html[data-mode='desktop'] .desk-tree-row { position: relative; min-width: 0; }
 html[data-mode='desktop'] .desk-tree-row > .desk-tree-select { flex: 1 1 0; }
@@ -1708,3 +1740,16 @@ html[data-mode='desktop'] .desk-calendar-task-doing { border-inline-start: 3px s
 html[data-mode='desktop'] .desk-calendar-task-done { opacity: .58; text-decoration: line-through; }
 html[data-mode='desktop'] .desk-calendar-task-late { border-inline-start: 3px solid var(--desk-danger); }
 @media (max-width: 700px) { html[data-mode='desktop'] .desk-calendar-grid { min-width: 650px; } html[data-mode='desktop'] .desk-calendar-page { overflow-x: auto; } html[data-mode='desktop'] .desk-calendar-toolbar { align-items: flex-start; } }
+
+html[data-mode='desktop'][data-writing-focus='true'] .desk-app {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html[data-mode='desktop'][data-writing-focus='true'] .desk-sidebar,
+html[data-mode='desktop'][data-writing-focus='true'] .desk-section-pane {
+  display: none;
+}
+
+html[data-mode='desktop'][data-writing-focus='true'] .desk-main {
+  grid-column: 1 / -1;
+}
