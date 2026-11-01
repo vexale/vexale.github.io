@@ -13,14 +13,11 @@ import DesktopFocusTimer from './DesktopFocusTimer'
 import FeedbackWidget from './FeedbackWidget'
 import DesktopSkeleton from './DesktopSkeleton'
 import OfflineNotice from './OfflineNotice'
+import { activatePwaUpdate, promptPwaInstall, usePwaState } from '../../lib/pwa'
 import './desktop.css'
 import './performance.css'
 
 interface DesktopAppProps { onSwitchToSpace: () => void }
-interface PwaInstallPromptEvent extends Event {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>
-}
 const NAV_ITEMS: readonly { id: DesktopPage; Icon: LucideIcon }[] = [
   { id: 'home', Icon: House }, { id: 'library', Icon: BookOpen }, { id: 'review', Icon: BookOpenCheck }, { id: 'calendar', Icon: CalendarDays }, { id: 'tasks', Icon: ListTodo }, { id: 'tools', Icon: Wrench }, { id: 'themes', Icon: Palette },
   { id: 'settings', Icon: Settings }, { id: 'account', Icon: UserRound }, { id: 'trash', Icon: Trash2 }, { id: 'support', Icon: LifeBuoy }, { id: 'privacy', Icon: ShieldCheck },
@@ -39,6 +36,10 @@ function pageFromHash(): DesktopPage {
   return key && PAGE_IDS.has(key) ? key : 'home'
 }
 function pageHash(page: DesktopPage): string { return `#/office/${page}` }
+function isIosDevice(): boolean {
+  if (typeof navigator === 'undefined') return false
+  return /iPad|iPhone|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+}
 
 export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
   const locale = useLocale()
@@ -51,7 +52,9 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
   const moreButtonRef = useRef<HTMLButtonElement>(null)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
-  const [installPrompt, setInstallPrompt] = useState<PwaInstallPromptEvent | null>(null)
+  const pwa = usePwaState()
+  const [iosInstallGuideOpen, setIosInstallGuideOpen] = useState(false)
+  const [updateNoticeDismissed, setUpdateNoticeDismissed] = useState(false)
   const bothPanelsCollapsed = preferences.railCollapsed && preferences.sectionsCollapsed
   const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
   const railExpanded = !preferences.railCollapsed
@@ -71,11 +74,8 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
     window.requestAnimationFrame(() => moreButtonRef.current?.focus())
   }, [])
   const installApp = async (): Promise<void> => {
-    if (!installPrompt) return
     setMenuOpen(false)
-    await installPrompt.prompt()
-    await installPrompt.userChoice
-    setInstallPrompt(null)
+    await promptPwaInstall()
   }
 
   useLayoutEffect(() => {
@@ -124,19 +124,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
     return () => { window.removeEventListener('hashchange', syncHash); window.removeEventListener('popstate', syncHash); window.removeEventListener('keydown', onShortcut) }
   }, [page, preferences.railCollapsed, preferences.sectionsCollapsed])
 
-  useEffect(() => {
-    const onBeforeInstallPrompt = (event: Event): void => {
-      event.preventDefault()
-      setInstallPrompt(event as PwaInstallPromptEvent)
-    }
-    const onAppInstalled = (): void => setInstallPrompt(null)
-    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt)
-    window.addEventListener('appinstalled', onAppInstalled)
-    return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt)
-      window.removeEventListener('appinstalled', onAppInstalled)
-    }
-  }, [])
+  useEffect(() => setUpdateNoticeDismissed(false), [pwa.waitingRegistration])
 
   return (
     <div className="desk-app" data-desktop-page={page} data-rail-collapsed={preferences.railCollapsed} data-sections-collapsed={preferences.sectionsCollapsed} lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
@@ -146,7 +134,8 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
           <div className="desk-menu-wrap">
             <button ref={moreButtonRef} type="button" className="desk-icon-button" aria-label={messages.shell.menu} aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}><Ellipsis size={18} aria-hidden="true" /></button>
             {menuOpen && <div className="desk-topbar-menu" role="menu">
-              {installPrompt && <button type="button" role="menuitem" onClick={() => void installApp()}><Download size={16} />{messages.shell.installApp}</button>}
+              {pwa.installPrompt && !pwa.installed && <button type="button" role="menuitem" onClick={() => void installApp()}><Download size={16} aria-hidden="true" />{messages.shell.installApp}</button>}
+              {!pwa.installPrompt && !pwa.installed && isIosDevice() && <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); setIosInstallGuideOpen(true) }}><Download size={16} aria-hidden="true" />{messages.shell.installOnIOS}</button>}
               <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); setFeedbackOpen(true) }}><MessageSquareText size={16} aria-hidden="true" />{messages.feedback.open}</button>
               <button type="button" role="menuitem" onClick={toggleRail}>{railExpanded ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}{messages.shell.toggleRail}<kbd dir="ltr">Ctrl+Shift+B</kbd></button>
               <button type="button" role="menuitem" disabled={page !== 'library'} onClick={toggleSections}>{sectionsExpanded ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}{messages.shell.toggleSections}<kbd dir="ltr">Ctrl+B</kbd></button>
@@ -161,6 +150,15 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
         </div>
       </header>
       <OfflineNotice />
+      {pwa.waitingRegistration && !updateNoticeDismissed && <div className="desk-pwa-update-toast" role="status" aria-live="polite">
+        <span>{messages.shell.updateAvailable}</span>
+        <button type="button" className="desk-pwa-update-action" onClick={activatePwaUpdate}>{messages.shell.updateNow}</button>
+        <button type="button" className="desk-pwa-close" aria-label={messages.shell.dismissUpdate} onClick={() => setUpdateNoticeDismissed(true)}><X size={16} aria-hidden="true" /></button>
+      </div>}
+      {iosInstallGuideOpen && <aside className="desk-pwa-ios-guide" role="region" aria-label={messages.shell.iosInstallTitle}>
+        <header><strong>{messages.shell.iosInstallTitle}</strong><button type="button" className="desk-pwa-close" aria-label={messages.shell.close} onClick={() => setIosInstallGuideOpen(false)}><X size={16} aria-hidden="true" /></button></header>
+        <ol><li>{messages.shell.iosInstallStep1}</li><li>{messages.shell.iosInstallStep2}</li><li>{messages.shell.iosInstallStep3}</li></ol>
+      </aside>}
       {mobileNavOpen && <button type="button" className="desk-mobile-nav-backdrop" aria-label={messages.shell.closeNavigation} onClick={() => setMobileNavOpen(false)} />}
       <aside id="desk-sidebar" className={`desk-sidebar${mobileNavOpen ? ' is-mobile-open' : ''}`} inert={isMobile ? !mobileNavOpen : preferences.railCollapsed} aria-label={messages.navigation.primary}>
         <div className="desk-sidebar-heading"><Building2 size={16} aria-hidden="true" /><span>{messages.navigation.workspace}</span></div>

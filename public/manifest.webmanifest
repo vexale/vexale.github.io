@@ -1,4 +1,5 @@
 {
+  "id": "./",
   "name": "Vexale",
   "short_name": "Vexale",
   "description": "Study workspace for sections, notes, files, tasks, and learning tools.",
@@ -7,6 +8,9 @@
   "start_url": "./#/office",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "categories": ["education", "productivity"],
   "background_color": "#0a0f17",
   "theme_color": "#0a0f17",
   "icons": [

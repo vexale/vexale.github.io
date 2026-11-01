@@ -2,14 +2,11 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import './App.css'
+import { initializePwa } from './lib/pwa'
 import App from './App.tsx'
 import GlobalErrorBoundary from './components/GlobalErrorBoundary'
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`)
-  })
-}
+initializePwa()
 
 const rootElement = document.getElementById('root')
 const landingElement = document.getElementById('vexale-landing')
@@ -18,6 +15,23 @@ if (!rootElement) throw new Error('Application root is missing')
 
 const root = createRoot(rootElement)
 let previousAppState: boolean | undefined
+let splashObserver: MutationObserver | null = null
+
+function showSplashUntilMounted(): void {
+  if (!bootElement) return
+  splashObserver?.disconnect()
+  bootElement.hidden = false
+  const hideSplash = (): void => {
+    if (rootElement.childElementCount === 0) return
+    bootElement.hidden = true
+    splashObserver?.disconnect()
+    splashObserver = null
+  }
+  hideSplash()
+  if (bootElement.hidden) return
+  splashObserver = new MutationObserver(hideSplash)
+  splashObserver.observe(rootElement, { childList: true, subtree: true })
+}
 
 function syncAppRoute(): void {
   const isAppRoute = window.location.hash.startsWith('#/')
@@ -26,17 +40,22 @@ function syncAppRoute(): void {
   document.documentElement.dataset.vexaleView = isAppRoute ? 'app' : 'landing'
   rootElement.hidden = !isAppRoute
   if (landingElement) landingElement.hidden = isAppRoute
-  if (bootElement) bootElement.hidden = !isAppRoute
+  if (!isAppRoute) {
+    splashObserver?.disconnect()
+    splashObserver = null
+    if (bootElement) bootElement.hidden = true
+    root.render(null)
+    return
+  }
+
+  showSplashUntilMounted()
   root.render(
-    isAppRoute ? (
-      <StrictMode>
-        <GlobalErrorBoundary>
-          <App />
-        </GlobalErrorBoundary>
-      </StrictMode>
-    ) : null,
+    <StrictMode>
+      <GlobalErrorBoundary>
+        <App />
+      </GlobalErrorBoundary>
+    </StrictMode>,
   )
-  if (bootElement) bootElement.hidden = true
 }
 
 syncAppRoute()

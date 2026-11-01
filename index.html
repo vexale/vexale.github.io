@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0a0f17" />
     <meta name="color-scheme" content="dark" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Vexale" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="application-name" content="Vexale" />
     <meta name="robots" content="index,follow" />
     <meta name="description" content="نظّم الأقسام والملاحظات والملفات والمهام، واستخدم أدوات المراجعة والمحتوى التعليمي ثلاثي الأبعاد في مساحة دراسة واحدة." />
@@ -53,6 +56,9 @@
         font: 600 15px/1.4 system-ui, sans-serif;
       }
       #vexale-boot img { width: 64px; height: 64px; margin: auto; border-radius: 16px; }
+      #vexale-boot .vexale-boot-spinner { width: 20px; height: 20px; margin: 4px auto 0; border: 2px solid #f3f6fb33; border-top-color: #a78bfa; border-radius: 50%; animation: vexale-boot-spin .8s linear infinite; }
+      @keyframes vexale-boot-spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) { #vexale-boot .vexale-boot-spinner { animation: none; } }
       html[data-vexale-view='landing'] #root,
       html[data-vexale-view='app'] #vexale-landing,
       #root[hidden],
@@ -73,7 +79,7 @@
     </script>
   </head>
   <body style="background-color: #0a0f17">
-    <div id="vexale-boot" role="status" aria-live="polite"><img src="/vexale-favicon.png" width="64" height="64" alt="" /><span>Vexale</span></div>
+    <div id="vexale-boot" role="status" aria-live="polite"><img src="/vexale-favicon.png" width="64" height="64" alt="" /><span>Vexale</span><span class="vexale-boot-spinner" aria-hidden="true"></span></div>
     <main id="vexale-landing" class="landing-page" dir="rtl">
       <div class="landing-container">
         <header class="landing-header">
