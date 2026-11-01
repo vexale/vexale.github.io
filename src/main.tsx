@@ -13,6 +13,7 @@ if ('serviceWorker' in navigator) {
 
 const rootElement = document.getElementById('root')
 const landingElement = document.getElementById('vexale-landing')
+const bootElement = document.getElementById('vexale-boot')
 if (!rootElement) throw new Error('Application root is missing')
 
 const root = createRoot(rootElement)
@@ -20,12 +21,12 @@ let previousAppState: boolean | undefined
 
 function syncAppRoute(): void {
   const isAppRoute = window.location.hash.startsWith('#/')
+  if (previousAppState === isAppRoute) return
+  previousAppState = isAppRoute
   document.documentElement.dataset.vexaleView = isAppRoute ? 'app' : 'landing'
   rootElement.hidden = !isAppRoute
   if (landingElement) landingElement.hidden = isAppRoute
-
-  if (previousAppState === isAppRoute) return
-  previousAppState = isAppRoute
+  if (bootElement) bootElement.hidden = !isAppRoute
   root.render(
     isAppRoute ? (
       <StrictMode>
@@ -35,6 +36,7 @@ function syncAppRoute(): void {
       </StrictMode>
     ) : null,
   )
+  if (bootElement) bootElement.hidden = true
 }
 
 syncAppRoute()

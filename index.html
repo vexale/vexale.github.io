@@ -20,19 +20,19 @@
     <meta property="og:title" content="Vexale — مساحة دراسة للملاحظات والمهام" />
     <meta property="og:description" content="نظّم الأقسام والملاحظات والملفات والمهام، واستخدم أدوات المراجعة والمحتوى التعليمي ثلاثي الأبعاد في مساحة دراسة واحدة." />
     <meta property="og:url" content="https://vexale.github.io/" />
-    <meta property="og:image" content="https://vexale.github.io/vexale-og.jpg" />
-    <meta property="og:image:type" content="image/jpeg" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="كتاب زجاجي مضيء بألوان Vexale البنفسجية" />
+    <meta property="og:image" content="https://vexale.github.io/vexale-favicon.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="128" />
+    <meta property="og:image:height" content="128" />
+    <meta property="og:image:alt" content="شعار Vexale" />
     <meta property="og:locale" content="ar_IQ" />
     <meta property="og:locale:alternate" content="en_US" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Vexale — مساحة دراسة للملاحظات والمهام" />
     <meta name="twitter:description" content="نظّم الأقسام والملاحظات والملفات والمهام، واستخدم أدوات المراجعة والمحتوى التعليمي ثلاثي الأبعاد في مساحة دراسة واحدة." />
-    <meta name="twitter:image" content="https://vexale.github.io/vexale-og.jpg" />
-    <meta name="twitter:image:alt" content="كتاب زجاجي مضيء بألوان Vexale البنفسجية" />
+    <meta name="twitter:image" content="https://vexale.github.io/vexale-favicon.png" />
+    <meta name="twitter:image:alt" content="شعار Vexale" />
 
     <link rel="icon" type="image/svg+xml" href="/vexale-favicon.svg" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
@@ -45,6 +45,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <style>
+      html, body { background-color: #0a0f17; }
+      #vexale-boot { display: none; }
+      html[data-vexale-view="app"] #vexale-boot {
+        position: fixed; z-index: 10; inset: 0; display: grid; place-content: center;
+        gap: 12px; background: #0a0f17; color: #f3f6fb; text-align: center;
+        font: 600 15px/1.4 system-ui, sans-serif;
+      }
+      #vexale-boot img { width: 64px; height: 64px; margin: auto; border-radius: 16px; }
       html[data-vexale-view='landing'] #root,
       html[data-vexale-view='app'] #vexale-landing,
       #root[hidden],
@@ -64,7 +72,8 @@
       }
     </script>
   </head>
-  <body>
+  <body style="background-color: #0a0f17">
+    <div id="vexale-boot" role="status" aria-live="polite"><img src="/vexale-favicon.png" width="64" height="64" alt="" /><span>Vexale</span></div>
     <main id="vexale-landing" class="landing-page" dir="rtl">
       <div class="landing-container">
         <header class="landing-header">
@@ -89,7 +98,7 @@
             </div>
           </div>
           <figure class="landing-visual">
-            <img src="/vexale-og.jpg" width="1200" height="630" fetchpriority="high" alt="كتاب زجاجي مفتوح يضيء بدرجات البنفسجي على خلفية داكنة" />
+            <img src="/logo.png" width="1024" height="1024" fetchpriority="high" alt="شعار Vexale" />
           </figure>
         </section>
 

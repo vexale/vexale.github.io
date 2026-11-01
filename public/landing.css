@@ -192,12 +192,12 @@
   display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 1200 / 630;
+  aspect-ratio: 1;
   border: 1px solid rgba(201, 185, 255, .24);
   border-radius: 24px;
   background: #0b0a1b;
   box-shadow: 0 30px 90px rgba(0, 0, 0, .42), 0 0 0 8px rgba(255, 255, 255, .018);
-  object-fit: cover;
+  object-fit: contain;
 }
 
 #vexale-landing .landing-features {
