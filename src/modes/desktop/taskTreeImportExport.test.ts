@@ -57,7 +57,7 @@ describe('task tree backup import/export', () => {
       JSON.stringify(importedTasks),
     )
 
-    const reloaded = await loadStore()
+    await loadStore()
     const exportedAgain = serializeLibraryBackup({
       format: 'vexale-library',
       version: 2,

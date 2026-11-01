@@ -8,7 +8,7 @@ import GlobalErrorBoundary from './components/GlobalErrorBoundary'
 
 initializePwa()
 
-const rootElement = document.getElementById('root')
+const rootElement = document.getElementById('root') as HTMLElement
 const landingElement = document.getElementById('vexale-landing')
 const bootElement = document.getElementById('vexale-boot')
 if (!rootElement) throw new Error('Application root is missing')

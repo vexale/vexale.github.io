@@ -179,7 +179,7 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
   }
 
   if (page === 'themes') return <section className="desk-theme-grid" aria-label={m.pages.themes.title}>{Object.keys(THEME_COLORS).map(id => {
-    const [bg, surface, accent] = THEME_COLORS[id]
+    const [bg, surface, accent] = THEME_COLORS[id as keyof typeof THEME_COLORS]
     return <button type="button" key={id} className="desk-theme-option" aria-pressed={prefs.theme === id} onClick={() => updateDesktopPreferences({ theme: id as typeof prefs.theme })}>
       <span className="desk-theme-preview" style={{ background: bg }}><i style={{ background: surface }} /><b style={{ background: accent }} /></span>
       <span>{t.themes[id as keyof typeof t.themes]}</span>{prefs.theme === id && <Check size={16} aria-hidden="true" />}

@@ -106,7 +106,7 @@ export async function extractLocalOcr(
         const context = canvas.getContext('2d', { willReadFrequently: true })
         if (!context) throw new Error('Canvas is unavailable')
 
-        const renderTask = pdfPage.render({ canvasContext: context, viewport })
+        const renderTask = pdfPage.render({ canvas, canvasContext: context, viewport })
         activeRenderCancel = () => renderTask.cancel()
         await withAbort(renderTask.promise, signal)
         activeRenderCancel = undefined

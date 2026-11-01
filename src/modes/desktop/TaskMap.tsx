@@ -38,6 +38,7 @@ interface TaskMapLabels {
   collapseTask: string
   expandTask: string
   contextMenu: string
+  mapView: string
   mapKeyboardHelp: string
   addSibling: string
   addChild: string
