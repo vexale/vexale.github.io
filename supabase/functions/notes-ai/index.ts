@@ -1,4 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from 'npm:jose@6'
+import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const GOOGLE_JWKS = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'))
 const GEMINI_MODEL = 'gemini-3.6-flash'
@@ -6,18 +7,8 @@ const MAX_BODY_BYTES = 100 * 1024
 const MAX_NOTE_CHARACTERS = 16_000
 const MAX_QUESTION_CHARACTERS = 1_200
 const MAX_TITLE_CHARACTERS = 160
-const RATE_WINDOW_MS = 60_000
-const MAX_REQUESTS_PER_WINDOW = 12
-
 type StudyAction = 'summarize' | 'quiz' | 'answer' | 'theme'
 type StudyLanguage = 'en' | 'ar'
-
-interface RateEntry {
-  count: number
-  resetsAt: number
-}
-
-const rateByGoogleUser = new Map<string, RateEntry>()
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -58,6 +49,18 @@ function jsonResponse(request: Request, body: Record<string, unknown>, status = 
   return new Response(JSON.stringify(body), { status, headers })
 }
 
+function hashSubject(subject: string): Promise<string> {
+  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(subject)).then(bytes =>
+    Array.from(new Uint8Array(bytes), byte => byte.toString(16).padStart(2, '0')).join(''),
+  )
+}
+
+function getAdminClient() {
+  const url = Deno.env.get('SUPABASE_URL')?.trim()
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.trim()
+  if (!url || !serviceKey) throw new Error('Rate limit service is not configured.')
+  return createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } })
+}
 async function readJsonLimited(request: Request): Promise<Record<string, unknown>> {
   const reader = request.body?.getReader()
   if (!reader) throw new SyntaxError('empty body')
@@ -88,26 +91,6 @@ async function readJsonLimited(request: Request): Promise<Record<string, unknown
   const parsed: unknown = JSON.parse(new TextDecoder().decode(bytes))
   if (!isRecord(parsed)) throw new SyntaxError('invalid body')
   return parsed
-}
-
-function claimRequest(userId: string): boolean {
-  const now = Date.now()
-  const current = rateByGoogleUser.get(userId)
-  if (!current || current.resetsAt <= now) {
-    rateByGoogleUser.set(userId, { count: 1, resetsAt: now + RATE_WINDOW_MS })
-    return true
-  }
-  if (current.count >= MAX_REQUESTS_PER_WINDOW) return false
-  current.count += 1
-  return true
-}
-
-function pruneRateEntries(): void {
-  if (rateByGoogleUser.size < 2_000) return
-  const now = Date.now()
-  for (const [userId, entry] of rateByGoogleUser) {
-    if (entry.resetsAt <= now) rateByGoogleUser.delete(userId)
-  }
 }
 
 function getPrompt(action: StudyAction, language: StudyLanguage, title: string, notes: string, question: string, questionCount: number): string {
@@ -182,11 +165,18 @@ Deno.serve(async request => {
     return jsonResponse(request, { error: 'Your Google session needs to be refreshed. Please sign in again.' }, 401)
   }
 
-  pruneRateEntries()
-  if (!claimRequest(googleSubject)) {
-    return jsonResponse(request, { error: 'Something interrupted the request. Please try again.' }, 429)
+  let admin: ReturnType<typeof getAdminClient>
+  try {
+    admin = getAdminClient()
+  } catch {
+    return jsonResponse(request, { error: 'The study assistant is being prepared. Please try again soon.' }, 503)
   }
-
+  const { data: allowed, error: rateLimitError } = await admin.rpc('claim_notes_ai_request', { p_google_subject_hash: await hashSubject(googleSubject) })
+  if (rateLimitError) {
+    console.error('Study request quota check failed', rateLimitError.code ?? 'database error')
+    return jsonResponse(request, { error: 'Something interrupted the request. Please try again.' }, 503)
+  }
+  if (allowed !== true) return jsonResponse(request, { error: 'Something interrupted the request. Please try again.' }, 429)
   let payload: Record<string, unknown>
   try {
     payload = await readJsonLimited(request)

@@ -4,7 +4,7 @@ import { AlertTriangle, Bug, Check, CheckCircle2, Download, FileText, Lightbulb,
 import { dbGetAll, dbGetNote, dbPutNote } from '../../db'
 import { content as legalContent, LAST_UPDATED } from '../../lib/legalContent'
 import { createSharedWorkspace } from '../../lib/libraryApi'
-import { parseLibraryBackup, serializeLibraryBackup } from '../../lib/libraryBackup'
+import { MAX_LIBRARY_BACKUP_BYTES, parseLibraryBackup, serializeLibraryBackup } from '../../lib/libraryBackup'
 import { activateWorkspace, createWorkspaceInvite, leaveSharedWorkspace, useSharedWorkspace } from '../../lib/sharedWorkspace'
 import { useGoogleAuth, getGoogleIdToken, renderGoogleButton, signOutGoogle } from '../../lib/googleAuth'
 import { submitSupportRequest } from '../../lib/libraryApi'
@@ -76,8 +76,8 @@ function parseImportedTasks(value: unknown): TaskRecord[] | null {
 function importErrorMessage(error: unknown, fallback: string, locale: 'en' | 'ar'): string {
   const code = error instanceof Error ? error.message : ''
   const errors = locale === 'ar'
-    ? { notObject: 'الملف ليس كائن JSON صالحاً.', format: 'هذه ليست نسخة Vexale احتياطية.', version: 'إصدار هذه النسخة الاحتياطية غير مدعوم.', tree: 'بنية شجرة الأقسام غير صالحة.', tasks: 'تحتوي شجرة المهام على سجلات غير صالحة.' }
-    : { notObject: 'The file is not a JSON object.', format: 'This is not a Vexale backup.', version: 'This backup version is not supported.', tree: 'The section tree is invalid.', tasks: 'The task tree contains invalid records.' }
+    ? { notObject: 'الملف ليس كائن JSON صالحاً.', format: 'هذه ليست نسخة Vexale احتياطية.', version: 'إصدار هذه النسخة الاحتياطية غير مدعوم.', tree: 'بنية شجرة الأقسام غير صالحة.', notes: 'ملاحظات النسخة تالفة أو أكبر من الحد المسموح.', files: 'مرفقات النسخة غير صالحة أو تتجاوز حدود الحجم.', size: 'حجم ملف النسخة يتجاوز حد الاستيراد 64 ميغابايت.', tasks: 'تحتوي شجرة المهام على سجلات غير صالحة.' }
+    : { notObject: 'The file is not a JSON object.', format: 'This is not a Vexale backup.', version: 'This backup version is not supported.', tree: 'The section tree is invalid.', notes: 'Backup notes are malformed or too large.', files: 'Backup attachments are invalid or exceed size limits.', size: 'Backup file exceeds the 64 MB import limit.', tasks: 'The task tree contains invalid records.' }
   return errors[code as keyof typeof errors] ?? fallback
 }
 
@@ -147,6 +147,7 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
     if (!file) return
     setBusy(true); setStatus('')
     try {
+      if (file.size > MAX_LIBRARY_BACKUP_BYTES) throw new Error('size')
       const pack = parseLibraryBackup(await file.text()) as { tree?: Array<{ id?: string; title?: string; children?: unknown[] }>; notes?: Record<string, { html?: string; updatedAt?: number } | null>; files?: Array<{ nodeId: string; name: string; kind: 'image' | 'audio' | 'doc' | 'drawing'; data: string; mimeType?: string }>; tasks?: unknown }
       if (!Array.isArray(pack.tree) || !pack.tree.every(validImportNode)) throw new Error('tree')
       const importedTasks = parseImportedTasks(pack.tasks)

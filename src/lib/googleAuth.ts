@@ -27,7 +27,7 @@ interface AuthState {
   user: GoogleUser | null
 }
 
-/* ============ القراءة والكتابة الآمنة في localStorage ============ */
+/* ============ profile metadata uses sessionStorage; bearer token remains in memory ============ */
 function isUser(v: unknown): v is GoogleUser {
   const u = v as Partial<GoogleUser> | null
   return (
@@ -42,12 +42,15 @@ function isUser(v: unknown): v is GoogleUser {
 
 function load(): GoogleUser | null {
   try {
-    const raw = localStorage.getItem(KEY)
+    const legacy = localStorage.getItem(KEY)
+    if (legacy) localStorage.removeItem(KEY)
+    const raw = sessionStorage.getItem(KEY) ?? legacy
     if (!raw) return null
     const parsed: unknown = JSON.parse(raw)
     if (!isUser(parsed)) return null
-    if (Date.now() - parsed.signedInAt >= SESSION_DAYS * DAY_MS) {
-      localStorage.removeItem(KEY) // انتهت الجلسة المحلية
+    if (legacy && !sessionStorage.getItem(KEY)) sessionStorage.setItem(KEY, raw)
+    if (Date.now() - parsed.signedInAt >= SESSION_DAYS * DAY_MS) { // انتهت الجلسة المحلية
+      sessionStorage.removeItem(KEY)
       return null
     }
     return parsed
@@ -58,8 +61,9 @@ function load(): GoogleUser | null {
 
 function save(user: GoogleUser | null): void {
   try {
-    if (user) localStorage.setItem(KEY, JSON.stringify(user))
-    else localStorage.removeItem(KEY)
+    localStorage.removeItem(KEY)
+    if (user) sessionStorage.setItem(KEY, JSON.stringify(user))
+    else sessionStorage.removeItem(KEY)
   } catch { /* تجاهل: التخزين ممتلئ أو ممنوع */ }
 }
 
@@ -73,10 +77,10 @@ function setUser(user: GoogleUser | null): void {
   listeners.forEach(l => l())
 }
 
-// مزامنة عند الدخول أو الخروج من تبويب آخر
+// session-scoped profile metadata is synchronized only within its browser context
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', e => {
-    if (e.key !== KEY) return
+    if (e.key !== KEY || e.storageArea !== window.sessionStorage) return
     activeGoogleIdToken = null
     state = { user: load() }
     listeners.forEach(l => l())

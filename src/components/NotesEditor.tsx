@@ -195,7 +195,17 @@ export default function NotesEditor({ nodeId, title, nodePathKey }: NotesEditorP
 
     let cancelled = false
     setSyncState('connecting')
-    const unsubscribe = subscribeToSharedNotes(note => applyRemoteNote(note))
+    let refreshTimer: number | null = null
+    const unsubscribe = subscribeToSharedNotes(update => {
+      if (update.nodeKey !== nodePathKey) return
+      if (refreshTimer !== null) window.clearTimeout(refreshTimer)
+      refreshTimer = window.setTimeout(() => {
+        refreshTimer = null
+        void readSharedNote(workspace, nodePathKey)
+          .then(remote => { if (!cancelled && remote) applyRemoteNote(remote) })
+          .catch(() => undefined)
+      }, 200)
+    })
     void readSharedNote(workspace, nodePathKey)
       .then(async remote => {
         if (cancelled) return
@@ -217,6 +227,7 @@ export default function NotesEditor({ nodeId, title, nodePathKey }: NotesEditorP
 
     return () => {
       cancelled = true
+      if (refreshTimer !== null) window.clearTimeout(refreshTimer)
       unsubscribe()
     }
   }, [applyRemoteNote, nodePathKey, title, workspace])

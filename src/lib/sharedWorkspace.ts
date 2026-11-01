@@ -5,9 +5,10 @@ import { supabase } from './supabase'
 
 const STORAGE_KEY = 'atelier-shared-workspace-v1'
 const listeners = new Set<() => void>()
-const noteListeners = new Set<(note: SharedNote) => void>()
+const noteListeners = new Set<(update: SharedNoteUpdate) => void>()
 
 export type SharedWorkspace = SharedWorkspaceCredentials
+export interface SharedNoteUpdate { nodeKey: string; updatedAt: number }
 
 function isWorkspace(value: unknown): value is SharedWorkspace {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
@@ -18,10 +19,14 @@ function isWorkspace(value: unknown): value is SharedWorkspace {
 
 function readWorkspace(): SharedWorkspace | null {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
+    const legacy = window.localStorage.getItem(STORAGE_KEY)
+    if (legacy) window.localStorage.removeItem(STORAGE_KEY)
+    const raw = window.sessionStorage.getItem(STORAGE_KEY) ?? legacy
     if (!raw) return null
     const parsed: unknown = JSON.parse(raw)
-    return isWorkspace(parsed) ? parsed : null
+    if (!isWorkspace(parsed)) return null
+    if (!window.sessionStorage.getItem(STORAGE_KEY)) window.sessionStorage.setItem(STORAGE_KEY, raw)
+    return parsed
   } catch {
     return null
   }
@@ -49,8 +54,9 @@ function setWorkspace(next: SharedWorkspace | null): void {
   }
   workspace = next
   try {
-    if (next) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-    else window.localStorage.removeItem(STORAGE_KEY)
+    window.localStorage.removeItem(STORAGE_KEY)
+    if (next) window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    else window.sessionStorage.removeItem(STORAGE_KEY)
   } catch {
     // تظل المشاركة متاحة في الجلسة الحالية حتى إن تعذر التخزين المحلي.
   }
@@ -59,7 +65,7 @@ function setWorkspace(next: SharedWorkspace | null): void {
 
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', event => {
-    if (event.key !== STORAGE_KEY) return
+    if (event.key !== STORAGE_KEY || event.storageArea !== window.sessionStorage) return
     stopChannel()
     workspace = readWorkspace()
     emit()
@@ -117,7 +123,7 @@ function ensureChannel(workspaceValue: SharedWorkspace): Promise<RealtimeChannel
   })
   nextChannel.on('broadcast', { event: 'note-updated' }, event => {
     const note = event.payload
-    if (!isSharedNote(note)) return
+    if (!isSharedNoteUpdate(note)) return
     noteListeners.forEach(listener => listener(note))
   })
 
@@ -134,7 +140,7 @@ function ensureChannel(workspaceValue: SharedWorkspace): Promise<RealtimeChannel
   return channelReady
 }
 
-export function subscribeToSharedNotes(listener: (note: SharedNote) => void): () => void {
+export function subscribeToSharedNotes(listener: (update: SharedNoteUpdate) => void): () => void {
   const currentWorkspace = workspace
   if (!currentWorkspace || !supabase) return () => undefined
 
@@ -150,13 +156,13 @@ export async function broadcastSharedNote(note: SharedNote): Promise<void> {
   const currentWorkspace = workspace
   if (!currentWorkspace) return
   const activeChannel = await ensureChannel(currentWorkspace)
-  const result = await activeChannel.send({ type: 'broadcast', event: 'note-updated', payload: note })
+  const result = await activeChannel.send({ type: 'broadcast', event: 'note-updated', payload: { nodeKey: note.nodeKey, updatedAt: note.updatedAt } })
   if (result !== 'ok') throw new Error('The live update could not be sent.')
 }
 
-function isSharedNote(value: unknown): value is SharedNote {
+function isSharedNoteUpdate(value: unknown): value is SharedNoteUpdate {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
   const record = value as Record<string, unknown>
-  return typeof record.nodeKey === 'string' && typeof record.title === 'string' &&
-    typeof record.html === 'string' && typeof record.updatedAt === 'number' && Number.isFinite(record.updatedAt)
+  return typeof record.nodeKey === 'string' && record.nodeKey.length > 0 && record.nodeKey.length <= 500 &&
+    typeof record.updatedAt === 'number' && Number.isFinite(record.updatedAt)
 }

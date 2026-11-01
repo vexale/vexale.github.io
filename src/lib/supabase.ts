@@ -39,12 +39,23 @@ const rawKey =
   ((import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ?? '').trim() ||
   ((import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? '').trim()
 
+function clearLegacyLocalSession(): void {
+  if (typeof window === 'undefined' || !rawUrl) return
+  try {
+    const projectRef = new URL(rawUrl).hostname.split('.')[0]
+    if (projectRef) {
+      window.localStorage.removeItem(`sb-${projectRef}-auth-token`)
+      window.localStorage.removeItem(`sb-${projectRef}-auth-token-code-verifier`)
+    }
+  } catch { /* Ignore malformed configuration or unavailable storage. */ }
+}
+clearLegacyLocalSession()
 function createSafeClient(): SupabaseClient | null {
   if (!rawUrl || !rawKey) return null
   if (!/^https?:\/\//.test(rawUrl)) return null // رابط غير صالح: نتعامل معه كأنه غير مضبوط
   try {
     return createClient(rawUrl, rawKey, {
-      auth: { persistSession: true, autoRefreshToken: true },
+      auth: { persistSession: true, autoRefreshToken: true, storage: typeof window !== 'undefined' ? window.sessionStorage : undefined },
     })
   } catch {
     return null

@@ -23,7 +23,11 @@ const NOTE_STYLES = new Set(['text-light', 'text-dark', 'text-lilac', 'text-sky'
 
 function readNoteVersions(nodeId: string): NoteVersion[] {
   try {
-    const value: unknown = JSON.parse(localStorage.getItem(`vexale-note-history-v1:${encodeURIComponent(nodeId)}`) ?? '[]')
+    const key = `vexale-note-history-v1:${encodeURIComponent(nodeId)}`
+    const legacy = localStorage.getItem(key)
+    if (legacy) localStorage.removeItem(key)
+    const value: unknown = JSON.parse(sessionStorage.getItem(key) ?? legacy ?? '[]')
+    if (legacy && !sessionStorage.getItem(key)) sessionStorage.setItem(key, legacy)
     return Array.isArray(value) ? value.filter((item): item is NoteVersion => Boolean(item && typeof item === 'object' && 'html' in item && typeof item.html === 'string' && 'savedAt' in item && typeof item.savedAt === 'number' && Number.isFinite(item.savedAt) && item.savedAt >= 0 && item.savedAt <= 8.64e15)).slice(0, NOTE_VERSION_LIMIT) : []
   } catch { return [] }
 }
@@ -32,7 +36,7 @@ function writeNoteVersion(nodeId: string, html: string, savedAt = Date.now()): N
   const history = readNoteVersions(nodeId)
   if (history[0]?.html === html) return history
   const next = [{ html, savedAt }, ...history.filter(version => version.html !== html)].slice(0, NOTE_VERSION_LIMIT)
-  try { localStorage.setItem(`vexale-note-history-v1:${encodeURIComponent(nodeId)}`, JSON.stringify(next)) } catch { /* note saving must work even when local history storage is unavailable */ }
+  try { sessionStorage.setItem(`vexale-note-history-v1:${encodeURIComponent(nodeId)}`, JSON.stringify(next)); localStorage.removeItem(`vexale-note-history-v1:${encodeURIComponent(nodeId)}`) } catch { /* note saving must work even when local history storage is unavailable */ }
   return next
 }
 
