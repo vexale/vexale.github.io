@@ -16,6 +16,7 @@ import { useDesktopMessages } from './i18n'
 import { updateDesktopPreferences, useDesktopPreferences } from './preferences'
 import type { DesktopPage } from './types'
 import TrashPage from './TrashPage'
+import NotionImport from './NotionImport'
 import { DESKTOP_THEME_COLORS as THEME_COLORS } from './themeCatalog'
 import { getTaskTree, replaceTaskTree } from './taskStore'
 import type { TaskRecord } from './taskStore'
@@ -206,8 +207,9 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
       <button type="button" className="desk-button" disabled={busy} onClick={() => void exportLibrary('backup')}><Download size={16} />{t.downloadBackup}</button>
       <button type="button" className="desk-button" disabled={busy} onClick={() => fileRef.current?.click()}><Upload size={16} />{t.import}</button>
       <button type="button" className="desk-button" disabled={shareBusy} onClick={() => void createOrCopyShareLink()}>{shareBusy ? t.sharing : t.shareLink}</button>
-    <input ref={fileRef} hidden type="file" accept="application/json,.json" onChange={e => void importLibrary(e)} />
+      <input ref={fileRef} hidden type="file" accept="application/json,.json" onChange={e => void importLibrary(e)} />
     </div>
+    <NotionImport />
     {shareLink && <p className="desk-share-link" dir="ltr"><a href={shareLink}>{shareLink}</a></p>}
     <StorageSafety t={t} onBackup={() => void exportLibrary('backup')} />
     <DeleteLocalData t={t} />

@@ -216,7 +216,7 @@ interface TreeCtx {
   tree: TNode[]
   path: string[] // الفروع المفتوحة حالياً، من القسم الرئيسي حتى أعمق فرع
   setPath: (p: string[]) => void
-  addNode: (parentId: string | null, title: string) => string
+  addNode: (parentId: string | null, title: string, trackCreatedEvent?: boolean) => string
   removeNode: (id: string) => void
   renameNode: (id: string, title: string) => void
   reorderNode: (id: string, parentId: string | null, index: number) => boolean
@@ -241,9 +241,9 @@ export function TreeProvider({ children }: { children: ReactNode }) {
   useEffect(() => { writeJSON(TREE_KEY, tree) }, [tree])
   useEffect(() => { writeJSON(PATH_KEY, path) }, [path])
 
-  const addNode: TreeCtx['addNode'] = (parentId, title) => {
+  const addNode: TreeCtx['addNode'] = (parentId, title, trackCreatedEvent = true) => {
     const id = crypto.randomUUID()
-    trackAnalytics('section_created')
+    if (trackCreatedEvent) trackAnalytics('section_created')
     setTree(t =>
       parentId === null
         ? [...t, { id, title, ci: t.length % PALETTE.length, children: [] }]

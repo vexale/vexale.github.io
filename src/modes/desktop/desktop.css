@@ -768,6 +768,9 @@ html[data-mode='desktop'] .desk-note-content pre {
 
 html[data-mode='desktop'] .desk-note-content a { color: var(--desk-accent); text-decoration: underline; text-underline-offset: 2px; }
 html[data-mode='desktop'] .desk-note-content hr { margin-block: 1rem; border: 0; border-top: 1px solid var(--desk-border); }
+html[data-mode='desktop'] .desk-note-content table { width: 100%; margin-block: 12px; border-collapse: collapse; overflow-wrap: anywhere; }
+html[data-mode='desktop'] .desk-note-content th, html[data-mode='desktop'] .desk-note-content td { padding: 7px 9px; border: 1px solid var(--desk-border); text-align: start; vertical-align: top; }
+html[data-mode='desktop'] .desk-note-content th { background: var(--desk-bg); font-weight: 650; }
 
 html[data-mode='desktop'] .desk-note-content [data-note-style^='text-'] {
   color: var(--desk-text);
@@ -1058,6 +1061,21 @@ html[data-mode='desktop'] .desk-account-profile > div:not([id]) { display: grid;
 html[data-mode='desktop'] .desk-account-profile > div span { color: var(--desk-muted); overflow-wrap: anywhere; }
 html[data-mode='desktop'] .desk-account-profile > :last-child { margin-inline-start: auto; }
 html[data-mode='desktop'] .desk-account-actions, html[data-mode='desktop'] .desk-choice-row { display: flex; flex-wrap: wrap; gap: 8px; }
+html[data-mode='desktop'] .desk-notion-import { display: grid; min-width: 0; gap: 12px; padding: 16px; border: 1px solid var(--desk-border); border-radius: 10px; background: var(--desk-surface); }
+html[data-mode='desktop'] .desk-notion-import h2, html[data-mode='desktop'] .desk-notion-import h3 { margin: 0; font-size: 16px; }
+html[data-mode='desktop'] .desk-notion-import header p, html[data-mode='desktop'] .desk-notion-import > p { margin: 0; color: var(--desk-muted); }
+html[data-mode='desktop'] .desk-notion-import-preview { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--desk-border); border-radius: 8px; background: var(--desk-bg); }
+html[data-mode='desktop'] .desk-notion-import-preview > p { margin: 0; overflow-wrap: anywhere; }
+html[data-mode='desktop'] .desk-notion-import-preview dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 8px; margin: 0; }
+html[data-mode='desktop'] .desk-notion-import-preview dl div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 1px solid var(--desk-border); border-radius: 7px; }
+html[data-mode='desktop'] .desk-notion-import-preview dt { color: var(--desk-muted); }
+html[data-mode='desktop'] .desk-notion-import-preview dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 700; }
+html[data-mode='desktop'] .desk-notion-import-additive { margin: 0; color: var(--desk-muted); }
+html[data-mode='desktop'] .desk-notion-import-warnings { padding: 10px 12px; border-inline-start: 3px solid var(--desk-warning, #d19936); border-radius: 5px; background: var(--desk-bg); }
+html[data-mode='desktop'] .desk-notion-import-warnings ul { margin-block: 6px 0; padding-inline-start: 20px; }
+html[data-mode='desktop'] .desk-notion-import-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+html[data-mode='desktop'] .desk-notion-import-error { color: var(--desk-danger); }
+html[data-mode='desktop'] .desk-notion-import-status { color: var(--desk-accent); }
 html[data-mode='desktop'] .desk-danger-zone { display: grid; gap: 10px; padding: 16px; border: 1px solid var(--desk-danger); border-radius: 10px; background: var(--desk-surface); }
 html[data-mode='desktop'] .desk-danger-zone h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 16px; }
 html[data-mode='desktop'] .desk-danger-zone h2 svg, html[data-mode='desktop'] .desk-danger-zone p { color: var(--desk-danger); }

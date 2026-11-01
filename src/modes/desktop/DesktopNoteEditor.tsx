@@ -19,7 +19,7 @@ interface NoteVersion { savedAt: number; html: string }
 
 const NOTE_VERSION_LIMIT = 20
 const CHECKBOX_MARKS = new Set(['☐', '☑'])
-const ALLOWED_TAGS = new Set(['P', 'DIV', 'BR', 'H2', 'H3', 'H4', 'STRONG', 'B', 'EM', 'I', 'U', 'S', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'PRE', 'CODE', 'A', 'HR', 'SPAN'])
+const ALLOWED_TAGS = new Set(['P', 'DIV', 'BR', 'H2', 'H3', 'H4', 'STRONG', 'B', 'EM', 'I', 'U', 'S', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'PRE', 'CODE', 'A', 'HR', 'SPAN', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TH', 'TD'])
 const NOTE_STYLES = new Set(['text-light', 'text-dark', 'text-lilac', 'text-sky', 'text-rose', 'text-mint', 'highlight-yellow', 'highlight-lilac', 'highlight-mint', 'highlight-rose'])
 
 function readNoteVersions(nodeId: string): NoteVersion[] {
