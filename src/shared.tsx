@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components -- ملف الحالة المشتركة يصدّر عمداً providers وhooks وثوابت مستخدمة في التطبيق. */
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { trackAnalytics } from './lib/analytics'
 import type { ReactNode } from 'react'
 import { dbDelete, dbGetAll, dbPut } from './db'
 
@@ -242,6 +243,7 @@ export function TreeProvider({ children }: { children: ReactNode }) {
 
   const addNode: TreeCtx['addNode'] = (parentId, title) => {
     const id = crypto.randomUUID()
+    trackAnalytics('section_created')
     setTree(t =>
       parentId === null
         ? [...t, { id, title, ci: t.length % PALETTE.length, children: [] }]

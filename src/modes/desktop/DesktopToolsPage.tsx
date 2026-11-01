@@ -6,6 +6,7 @@ import { TOOL_CATALOG } from '../../lib/settings'
 import { useTree } from '../../shared'
 import { useLocale } from '../../lib/i18n'
 import { useDesktopMessages } from './i18n'
+import { trackAnalytics } from '../../lib/analytics'
 import { updateDesktopPreferences, useDesktopPreferences } from './preferences'
 
 const LazyTools = {
@@ -83,7 +84,7 @@ export default function DesktopToolsPage() {
       const assignment = prefs.toolAssignments[tool.id] ?? { global: true, sectionIds: [] }
       const name = locale === 'ar' ? AR_LABELS[tool.id] : tool.label
       return <article className="desk-tool-card" key={tool.id}>
-        <button type="button" className="desk-tool-launch" onClick={() => setOpenTool(tool.id)}><Icon size={18} aria-hidden="true" /><span className="desk-tool-name">{name}</span><span className="desk-tool-description">{t.descriptions[tool.id as keyof typeof t.descriptions]}</span></button>
+        <button type="button" className="desk-tool-launch" onClick={() => { trackAnalytics('tool_opened'); setOpenTool(tool.id) }}><Icon size={18} aria-hidden="true" /><span className="desk-tool-name">{name}</span><span className="desk-tool-description">{t.descriptions[tool.id as keyof typeof t.descriptions]}</span></button>
         <div className="desk-tool-assignment" role="group" aria-label={`${name}: ${t.assignment}`}>
           <button type="button" className={`desk-tool-segment ${assignment.global ? 'is-active' : ''}`} aria-pressed={assignment.global} onClick={() => update(tool.id, { global: true, sectionIds: [] })}>{t.global}</button>
           <button type="button" className={`desk-tool-segment ${!assignment.global ? 'is-active' : ''}`} aria-pressed={!assignment.global} onClick={() => { update(tool.id, { global: false }); setOpenPicker(tool.id) }}>{t.sectionSpecific}{!assignment.global && <span className="desk-tool-count">{assignment.sectionIds.length} {t.sectionsCount}</span>}</button>

@@ -4,6 +4,7 @@ import { AlertCircle, Bold, Check, Code2, Heading2, Heading3, History, Italic, L
 import { dbGetNote, dbPutNote } from '../../db'
 import { useDesktopMessages } from './i18n'
 import { useLocale } from '../../lib/i18n'
+import { trackAnalytics } from '../../lib/analytics'
 
 interface DesktopNoteEditorProps {
   nodeId: string
@@ -207,6 +208,7 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
       void queueSave(html)
         .then(() => {
           if (!mountedRef.current || latestHtmlRef.current !== html) return
+          trackAnalytics('note_edited')
           dirtyRef.current = false
           setSaveState('saved')
         })

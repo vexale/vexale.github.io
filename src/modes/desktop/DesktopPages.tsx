@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react'
 import { AlertTriangle, Bug, Check, CheckCircle2, Download, FileText, Lightbulb, Moon, Send, Upload, UserRound } from 'lucide-react'
 import { dbGetAll, dbGetNote, dbPutNote } from '../../db'
 import { content as legalContent, LAST_UPDATED } from '../../lib/legalContent'
+import { isAnalyticsEnabled, setAnalyticsConsent, trackAnalytics } from '../../lib/analytics'
 import { createSharedWorkspace } from '../../lib/libraryApi'
 import { MAX_LIBRARY_BACKUP_BYTES, parseLibraryBackup, serializeLibraryBackup } from '../../lib/libraryBackup'
 import { activateWorkspace, createWorkspaceInvite, leaveSharedWorkspace, useSharedWorkspace } from '../../lib/sharedWorkspace'
@@ -137,6 +138,7 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
         download(format === 'backup' ? 'vexale-backup.json' : 'vexale-library.json', new Blob([serializeLibraryBackup(payload)], { type: 'application/json' }))
       }
       if (format === 'backup') localStorage.setItem('vexale-last-backup-v1', String(Date.now()))
+      trackAnalytics('export_done')
       setStatus(t.exportDone)
     } catch { setStatus(t.exportFailed) } finally { setBusy(false) }
   }
@@ -307,7 +309,7 @@ function PrivacyPage() {
   const t = m.workspacePages
   const locale = useLocale()
   const [doc, setDoc] = useState<'privacy' | 'terms'>('privacy')
-  const [analytics, setAnalytics] = useState(() => localStorage.getItem('vexale-anonymous-analytics') === 'true')
+  const [analytics, setAnalytics] = useState(isAnalyticsEnabled)
   const document = legalContent[doc]
-  return <section className="desk-legal-page"><div className="desk-choice-row" role="tablist" aria-label={t.legalTabs}><button type="button" role="tab" aria-selected={doc === 'privacy'} className="desk-button" onClick={() => setDoc('privacy')}>{t.privacyTab}</button><button type="button" role="tab" aria-selected={doc === 'terms'} className="desk-button" onClick={() => setDoc('terms')}>{t.termsTab}</button></div><p className="desk-legal-summary">{document.summary[locale]}</p><p className="desk-legal-date">{t.lastUpdated}: {LAST_UPDATED[locale]}</p><nav aria-label={t.contents}><strong>{t.contents}</strong><ol>{document.sections.map((section, i) => <li key={i}><a href={`#legal-${doc}-${i}`}>{section.heading[locale]}</a></li>)}</ol></nav><div>{document.sections.map((section, i) => <article id={`legal-${doc}-${i}`} key={i}><h2>{section.heading[locale]}</h2>{section.paragraphs.map((paragraph, p) => <p key={p}>{paragraph[locale]}</p>)}</article>)}</div><aside className="desk-privacy-controls"><label><input type="checkbox" checked={analytics} onChange={e => { setAnalytics(e.target.checked); localStorage.setItem('vexale-anonymous-analytics', String(e.target.checked)) }} />{t.analyticsToggle}</label><h2>{t.aiSharingTitle}</h2><p>{t.aiSharingBody}</p></aside></section>
+  return <section className="desk-legal-page"><div className="desk-choice-row" role="tablist" aria-label={t.legalTabs}><button type="button" role="tab" aria-selected={doc === 'privacy'} className="desk-button" onClick={() => setDoc('privacy')}>{t.privacyTab}</button><button type="button" role="tab" aria-selected={doc === 'terms'} className="desk-button" onClick={() => setDoc('terms')}>{t.termsTab}</button></div><p className="desk-legal-summary">{document.summary[locale]}</p><p className="desk-legal-date">{t.lastUpdated}: {LAST_UPDATED[locale]}</p><nav aria-label={t.contents}><strong>{t.contents}</strong><ol>{document.sections.map((section, i) => <li key={i}><a href={`#legal-${doc}-${i}`}>{section.heading[locale]}</a></li>)}</ol></nav><div>{document.sections.map((section, i) => <article id={`legal-${doc}-${i}`} key={i}><h2>{section.heading[locale]}</h2>{section.paragraphs.map((paragraph, p) => <p key={p}>{paragraph[locale]}</p>)}</article>)}</div><aside className="desk-privacy-controls"><label><input type="checkbox" checked={analytics} onChange={e => { const enabled = e.target.checked; setAnalyticsConsent(enabled); setAnalytics(enabled) }} />{t.analyticsToggle}</label><h2>{t.aiSharingTitle}</h2><p>{t.aiSharingBody}</p></aside></section>
 }

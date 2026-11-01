@@ -5,6 +5,7 @@ import { useLocale } from '../../lib/i18n'
 import { useDesktopMessages } from './i18n'
 import { startFocusAmbient } from './focusAudio'
 import { FOCUS_TIMER_REQUEST_EVENT } from './focusTimerEvents'
+import { trackAnalytics } from '../../lib/analytics'
 import { addFocusSession, readFocusSettings, saveFocusSettings, useFocusSessions } from './focusStore'
 import type { FocusAmbient, FocusSession, FocusSettings, FocusTarget } from './focusStore'
 import { useTaskTreeStore } from './taskStore'
@@ -75,6 +76,7 @@ export default function DesktopFocusTimer() {
       setDeadline(null)
       sfx.success()
       if (phase === 'focus') {
+        trackAnalytics('focus_session_done')
         const endedAt = Date.now()
         const durationSeconds = settings.workMinutes * 60
         addFocusSession({ id: sessionId(), targetType: target?.type ?? null, targetId: target?.id ?? null, targetTitle: target?.title ?? null, startedAt: startedAt.current ?? endedAt - durationSeconds * 1000, endedAt, durationSeconds } satisfies FocusSession)

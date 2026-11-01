@@ -37,6 +37,13 @@ export const content: Record<'privacy' | 'terms', LegalDocument> = {
         }],
       },
       {
+        heading: { en: 'Optional anonymous analytics', ar: 'التحليلات المجهولة الاختيارية' },
+        paragraphs: [{
+          en: 'Anonymous product analytics powered by PostHog are off by default and sent only after you opt in on this page. If enabled, Vexale sends a random session identifier and event names for app usage. Analytics never include note text, file names, email addresses, or event properties; you can opt out at any time here.',
+          ar: 'تكون تحليلات الاستخدام المجهولة عبر PostHog متوقفة افتراضياً ولا تُرسل إلا بعد موافقتك من هذه الصفحة. عند تفعيلها، ترسل Vexale معرّف جلسة عشوائياً وأسماء أحداث استخدام التطبيق فقط. لا تتضمن التحليلات نصوص الملاحظات أو أسماء الملفات أو عناوين البريد الإلكتروني أو خصائص للأحداث؛ ويمكنك سحب الموافقة هنا في أي وقت.',
+        }],
+      },
+      {
         heading: { en: 'Your choices', ar: 'خياراتك' },
         paragraphs: [{
           en: 'You can disable anonymous analytics in this page and delete local data from the Account page. AI requests are sent only when you explicitly submit an AI action.',

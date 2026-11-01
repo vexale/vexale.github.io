@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { trackAnalytics } from '../../lib/analytics'
 
 export type DesktopTheme = 'calm-violet' | 'charcoal' | 'midnight-blue' | 'forest' | 'sand-dark' | 'rose-dusk' | 'soft-light'
 export type DesktopFont = 'instrument' | 'noto' | 'system'
@@ -110,6 +111,7 @@ export function useDesktopPreferences(): DesktopPreferences {
 }
 
 export function updateDesktopPreferences(patch: Partial<DesktopPreferences>): void {
+  if (patch.theme !== undefined && patch.theme !== preferences.theme) trackAnalytics('theme_changed')
   preferences = sanitize({ ...preferences, ...patch })
   try {
     window.localStorage.setItem(DESKTOP_PREFERENCES_KEY, JSON.stringify(preferences))

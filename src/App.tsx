@@ -11,9 +11,11 @@ import { LibraryProvider, TreeProvider, useTree } from './shared'
 import { isAnimatedTheme, resolveAccent, updateSettings, useSettings } from './lib/settings'
 import { activateWorkspaceFromInvite } from './lib/sharedWorkspace'
 import { directionOf, useLocale } from './lib/i18n'
+import { trackAnalytics } from './lib/analytics'
 
 const SpaceBackground = lazy(() => import('./components/SpaceBackground'))
 const DesktopApp = lazy(() => import('./modes/desktop/DesktopApp'))
+let appOpenTracked = false
 
 type WorkspaceMode = 'space' | 'office'
 const WORKSPACE_MODE_KEY = 'vexale-workspace-mode-v1'
@@ -40,18 +42,25 @@ function readSetupCompleted(): boolean {
 function WorkspaceRouter() {
   const [mode, setMode] = useState<WorkspaceMode>(readWorkspaceMode)
   const [setupCompleted, setSetupCompleted] = useState(readSetupCompleted)
+  useEffect(() => {
+    if (appOpenTracked) return
+    appOpenTracked = true
+    trackAnalytics('app_open')
+  }, [])
   const selectMode = useCallback((nextMode: WorkspaceMode): void => {
+    if (nextMode !== mode) trackAnalytics('mode_switched')
     setMode(nextMode)
     try {
       window.localStorage.setItem(WORKSPACE_MODE_KEY, nextMode)
     } catch {
       // يبقى تبديل الوضع فعالاً خلال الجلسة عند تعذر التخزين.
     }
-  }, [])
+  }, [mode])
   const switchToOffice = useCallback((): void => selectMode('office'), [selectMode])
   const switchToSpace = useCallback((): void => selectMode('space'), [selectMode])
   const finishSetup = useCallback((nextMode: WorkspaceMode): void => {
     selectMode(nextMode)
+    trackAnalytics('onboarding_done')
     try {
       window.localStorage.setItem(SETUP_COMPLETED_KEY, 'completed')
     } catch {

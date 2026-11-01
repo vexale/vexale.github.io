@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { trackAnalytics } from './analytics'
 
 export type ThemeId = 'space-live' | 'wave-field' | 'orbit-drift' | 'liquid-velvet' | 'pastel-waves' | 'botanical-flow' | 'rose-nebula' | 'moonlit-bloom' | 'cyber-grid' | 'geometric-matrix' | 'tech-pulse' | 'nova-drive' | 'star-forge' | 'space-static' | 'solid' | 'cats' | 'floral' | 'butterflies' | 'dark-vintage' | 'pastel-ai'
 export type WindowStyle = 'glass' | 'solid'
@@ -188,6 +189,7 @@ export function useSettings(): Settings {
 }
 
 export function updateSettings(patch: Partial<Settings>): void {
+  if (patch.theme !== undefined && patch.theme !== state.theme) trackAnalytics('theme_changed')
   state = sanitize({ ...state, ...patch }, state)
   persist(state)
   apply(state)

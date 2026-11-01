@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { reorderSiblingTaskTree, reparentTaskTree } from './taskTreeLogic'
+import { trackAnalytics } from '../../lib/analytics'
 
 export type TaskStatus = 'todo' | 'doing' | 'done' | 'late'
 export const MAX_TASK_COUNT = 200
@@ -80,9 +81,11 @@ export function createTask(parentId: string | null, title: string, afterId?: str
   const nextSiblings = [...siblings.slice(0, insertAt), { id, parentId, title: title.trim(), status: 'todo' as const, dueDate: null, order: insertAt, attachedFileIds: [], attachedNoteIds: [] }, ...siblings.slice(insertAt)]
   const orderMap = new Map(nextSiblings.map((task, index) => [task.id, index]))
   commit([...tasks.filter(task => task.parentId !== parentId), ...nextSiblings.map(task => ({ ...task, order: orderMap.get(task.id) ?? task.order }))])
+  trackAnalytics('task_created')
   return id
 }
 export function updateTask(id: string, patch: Partial<Pick<TaskRecord, 'title' | 'status' | 'dueDate' | 'attachedFileIds' | 'attachedNoteIds'>>): void {
+  if (patch.status === 'done' && tasks.some(task => task.id === id && task.status !== 'done')) trackAnalytics('task_completed')
   commit(tasks.map(task => task.id === id ? { ...task, ...patch } : task))
 }
 export function removeTask(id: string): void {
