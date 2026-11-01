@@ -14,7 +14,7 @@ import DesktopFileOcrAction from './DesktopFileOcrAction'
 import { addReviewCards } from '../../lib/reviewCards'
 import { requestStudyAI } from '../../lib/studyAssistant'
 
-const DesktopToolPanel = lazy(() => import('./DesktopToolsPage'))
+const DesktopToolPanel = lazy(() => import('./DesktopToolsPage').then(module => ({ default: module.DesktopToolPanel })))
 const DesktopNoteEditor = lazy(() => import('./DesktopNoteEditor'))
 const DesktopFileStudyView = lazy(() => import('./DesktopFileStudyView'))
 

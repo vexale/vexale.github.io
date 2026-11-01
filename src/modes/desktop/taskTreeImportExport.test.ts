@@ -62,7 +62,7 @@ describe('task tree backup import/export', () => {
       format: 'vexale-library',
       version: 2,
       tree: [],
-      tasks: reloaded.getTaskTree(),
+      tasks: store.getTaskTree(),
     })
 
     expect(parseLibraryBackup(exportedAgain).tasks).toEqual(importedTasks)
