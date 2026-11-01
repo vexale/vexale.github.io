@@ -1,0 +1,125 @@
+.seo-page {
+  width: min(860px, 100%);
+  margin-inline: auto;
+  padding: clamp(30px, 6vw, 68px) 0;
+}
+
+.seo-page-header {
+  max-width: 760px;
+  margin-block-end: clamp(30px, 5vw, 52px);
+}
+
+.seo-page-header h1 {
+  max-width: 19ch;
+  margin-block: 0 18px;
+  color: #f3f6fb;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+}
+
+.seo-page-header p,
+.seo-section > p,
+.seo-steps {
+  color: #c7cddd;
+  font-size: clamp(1rem, 1.5vw, 1.12rem);
+  line-height: 1.75;
+}
+
+.seo-section {
+  margin-block: 38px;
+}
+
+.seo-section h2 {
+  margin-block: 0 14px;
+  color: #f3f6fb;
+  font-size: clamp(1.35rem, 2.5vw, 1.85rem);
+  line-height: 1.3;
+}
+
+.seo-formula,
+.seo-callout {
+  padding: 18px 20px;
+  border-inline-start: 3px solid #a78bfa;
+  border-radius: 4px 12px 12px 4px;
+  background: rgba(167, 139, 250, 0.08);
+  color: #f3f6fb !important;
+}
+
+.seo-table-wrap {
+  max-width: 100%;
+  margin-block: 20px;
+  overflow-x: auto;
+  border: 1px solid rgba(199, 205, 221, 0.18);
+  border-radius: 12px;
+  background: rgba(16, 17, 38, 0.7);
+}
+
+.seo-table-wrap:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 3px;
+}
+
+.seo-table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  color: #e6eaf2;
+  text-align: start;
+}
+
+.seo-table caption {
+  padding: 14px 16px;
+  color: #c7cddd;
+  text-align: start;
+}
+
+.seo-table th,
+.seo-table td {
+  padding: 12px 16px;
+  border-block-start: 1px solid rgba(199, 205, 221, 0.14);
+}
+
+.seo-table thead th,
+.seo-table tfoot th,
+.seo-table tfoot td {
+  color: #f3f6fb;
+  background: rgba(167, 139, 250, 0.1);
+  font-weight: 600;
+}
+
+.seo-steps {
+  padding-inline-start: 1.5rem;
+}
+
+.seo-steps li + li {
+  margin-block-start: 10px;
+}
+
+.seo-actions {
+  margin-block: 34px;
+}
+
+.seo-resource-links .landing-feature h3 a {
+  color: inherit;
+  text-decoration-color: #a78bfa;
+  text-underline-offset: 0.18em;
+}
+
+.seo-resource-links .landing-feature h3 a:hover {
+  color: #c4b5fd;
+}
+
+@media (max-width: 720px) {
+  .seo-page { padding-inline: 4px; }
+  .seo-table { min-width: 520px; }
+}
+
+@media print {
+  body, #vexale-landing { color: #111 !important; background: #fff !important; }
+  .landing-header, .landing-footer, .seo-actions { display: none !important; }
+  .seo-page, .seo-page-header, .seo-section { break-inside: avoid; }
+  .seo-page-header h1, .seo-section h2, .seo-table, .seo-table th, .seo-table td { color: #111 !important; }
+  .seo-table-wrap, .seo-callout, .seo-formula { border-color: #777 !important; background: #fff !important; }
+  .seo-table { min-width: 0 !important; }
+}

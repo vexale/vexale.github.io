@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://vexale.github.io/</loc>
-  </url>
-  <url>
-    <loc>https://vexale.github.io/en/</loc>
-  </url>
+  <url><loc>https://vexale.github.io/</loc></url>
+  <url><loc>https://vexale.github.io/ar/</loc></url>
+  <url><loc>https://vexale.github.io/en/</loc></url>
+  <url><loc>https://vexale.github.io/tools/gpa-calculator/</loc></url>
+  <url><loc>https://vexale.github.io/templates/study-schedule/</loc></url>
 </urlset>

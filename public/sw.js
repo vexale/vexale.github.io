@@ -1,21 +1,16 @@
-const CACHE_NAME = 'vexale-shell-v2'
+const CACHE_NAME = 'vexale-shell-v3'
 const SHELL_ASSETS = [
   './',
   './index.html',
-  './en/',
-  './en/index.html',
-  './manifest.webmanifest',
-  './landing.css',
-  './logo.png',
-  './vexale-favicon.png',
-  './vexale-favicon.svg',
-  './apple-touch-icon.png',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
+  '../manifest.webmanifest',
+  '../logo.png',
+  '../vexale-favicon.png',
+  '../vexale-favicon.svg',
+  '../apple-touch-icon.png',
+  '../icons/icon-192.png',
+  '../icons/icon-512.png',
 ]
 const SHELL_URL = new URL('./index.html', self.registration.scope).href
-const ENGLISH_SHELL_URL = new URL('./en/index.html', self.registration.scope).href
-const ENGLISH_PATH = new URL('./en/', self.registration.scope).pathname
 const STATIC_DESTINATIONS = new Set(['script', 'style', 'image', 'font', 'manifest', 'worker'])
 const STATIC_EXTENSION = /\.(?:m?js|css|png|jpe?g|webp|svg|ico|woff2?|ttf|otf|wasm)$/i
 
@@ -43,10 +38,8 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return
 
   if (request.mode === 'navigate') {
-    const path = new URL(request.url).pathname
-    const fallbackUrl = path === ENGLISH_PATH || path === `${ENGLISH_PATH}index.html` ? ENGLISH_SHELL_URL : SHELL_URL
     event.respondWith(
-      fetch(request).catch(async () => (await caches.match(request)) || (await caches.match(fallbackUrl)) || Response.error())
+      fetch(request).catch(async () => (await caches.match(request)) || (await caches.match(SHELL_URL)) || Response.error())
     )
     return
   }
