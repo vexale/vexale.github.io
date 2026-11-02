@@ -55,11 +55,87 @@ function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, character => replacements[character] ?? character)
 }
 
+function extractCodeText(node: Node): string {
+  if (node instanceof HTMLElement && node.hasAttribute('data-note-code-copy')) return ''
+  if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? ''
+  if (!(node instanceof HTMLElement)) return Array.from(node.childNodes).map(extractCodeText).join('')
+  if (node.tagName === 'BR') return '\n'
+
+  return Array.from(node.childNodes).map((child, index) => {
+    const text = extractCodeText(child)
+    return child instanceof HTMLElement && ['DIV', 'P', 'LI'].includes(child.tagName) && index > 0 ? `\n${text}` : text
+  }).join('')
+}
+
+function decorateCodeBlocks(editor: HTMLDivElement, copyLabel: string): void {
+  editor.querySelectorAll('pre').forEach(pre => {
+    pre.setAttribute('dir', 'ltr')
+    let code = pre.querySelector('code')
+    if (!code) {
+      code = document.createElement('code')
+      code.textContent = extractCodeText(pre)
+      pre.replaceChildren(code)
+    }
+    code.setAttribute('dir', 'ltr')
+    let button = pre.querySelector<HTMLButtonElement>('[data-note-code-copy]')
+    if (!button) {
+      button = document.createElement('button')
+      button.type = 'button'
+      button.dataset.noteCodeCopy = 'true'
+      button.setAttribute('contenteditable', 'false')
+      button.className = 'desk-note-code-copy'
+      pre.appendChild(button)
+    }
+    button.setAttribute('aria-label', copyLabel)
+    button.textContent = copyLabel
+  })
+}
+
+function hasFencedCode(value: string): boolean {
+  return /(^|\n)\s*```[^\n]*\n[\s\S]*?\n```(?=\n|$)/u.test(value)
+}
+
+function fencedTextToHtml(value: string): string {
+  const blocks: string[] = []
+  let paragraph: string[] = []
+  let code: string[] | null = null
+  const flushParagraph = (): void => {
+    if (!paragraph.length) return
+    blocks.push(`<p>${paragraph.map(escapeHtml).join('<br>') || '<br>'}</p>`)
+    paragraph = []
+  }
+
+  for (const line of value.replace(/\r\n?/gu, '\n').split('\n')) {
+    if (line.trim().startsWith('```')) {
+      if (code === null) {
+        flushParagraph()
+        code = []
+      } else {
+        blocks.push(`<pre><code>${escapeHtml(code.join('\n'))}</code></pre>`)
+        code = null
+      }
+    } else if (code === null) paragraph.push(line)
+    else code.push(line)
+  }
+
+  if (code !== null) paragraph.push('```', ...code)
+  flushParagraph()
+  return blocks.join('')
+}
+
 function sanitizeNoteHtml(html: string): string {
   const parsed = new DOMParser().parseFromString(html, 'text/html')
   const cleanNode = (node: Node): Node[] => {
+    if (node instanceof HTMLElement && node.hasAttribute('data-note-code-copy')) return []
     if (node.nodeType === Node.TEXT_NODE) return [document.createTextNode(node.textContent ?? '')]
     if (!(node instanceof HTMLElement)) return Array.from(node.childNodes).flatMap(cleanNode)
+    if (node.tagName === 'PRE') {
+      const pre = document.createElement('pre')
+      const code = document.createElement('code')
+      code.textContent = extractCodeText(node)
+      pre.appendChild(code)
+      return [pre]
+    }
 
     const children = Array.from(node.childNodes).flatMap(cleanNode)
     if (!ALLOWED_TAGS.has(node.tagName)) return children
@@ -115,6 +191,7 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
   const messages = useDesktopMessages()
   const locale = useLocale()
   const editorRef = useRef<HTMLDivElement>(null)
+  const savedRangeRef = useRef<Range | null>(null)
   const timerRef = useRef<number | null>(null)
   const latestHtmlRef = useRef('')
   const dirtyRef = useRef(false)
@@ -133,6 +210,7 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
   const [slashPosition, setSlashPosition] = useState({ top: 12, left: 12 })
   const noteMessages = messages.notes
   const errorMessageRef = useRef(noteMessages.error)
+  const copyLabelRef = useRef(locale === 'ar' ? 'نسخ الشيفرة' : 'Copy code')
 
   useEffect(() => {
     if (writingFocus) document.documentElement.dataset.writingFocus = 'true'
@@ -141,8 +219,19 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
   }, [writingFocus])
 
   useEffect(() => {
+    if (fullWidth) document.documentElement.dataset.noteFullWidth = 'true'
+    else delete document.documentElement.dataset.noteFullWidth
+    return () => { delete document.documentElement.dataset.noteFullWidth }
+  }, [fullWidth])
+
+  useEffect(() => {
     errorMessageRef.current = noteMessages.error
   }, [noteMessages.error])
+
+  useEffect(() => {
+    copyLabelRef.current = locale === 'ar' ? 'نسخ الشيفرة' : 'Copy code'
+    if (editorRef.current) decorateCodeBlocks(editorRef.current, copyLabelRef.current)
+  }, [locale])
 
   useEffect(() => {
     mountedRef.current = true
@@ -157,7 +246,10 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
         const safeHtml = sanitizeNoteHtml(note?.html ?? '')
         latestHtmlRef.current = safeHtml
         dirtyRef.current = false
-        if (editorRef.current) editorRef.current.innerHTML = safeHtml
+        if (editorRef.current) {
+          editorRef.current.innerHTML = safeHtml
+          decorateCodeBlocks(editorRef.current, copyLabelRef.current)
+        }
         setHasContent(hasReadableText(safeHtml))
         setWords(wordCount(safeHtml))
         setNoteVersions(writeNoteVersion(nodeId, safeHtml, note?.updatedAt ?? Date.now()))
@@ -223,6 +315,7 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
   const handleInput = (): void => {
     if (!editorRef.current) return
     const html = sanitizeNoteHtml(editorRef.current.innerHTML)
+    decorateCodeBlocks(editorRef.current, copyLabelRef.current)
     latestHtmlRef.current = html
     dirtyRef.current = true
     setHasContent(hasReadableText(html))
@@ -230,17 +323,63 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
     scheduleSave()
   }
 
+  const captureEditorSelection = (): void => {
+    const editor = editorRef.current
+    const selection = window.getSelection()
+    if (!editor || !selection?.rangeCount) return
+    const range = selection.getRangeAt(0)
+    if (editor.contains(range.commonAncestorContainer)) savedRangeRef.current = range.cloneRange()
+  }
+
+  const restoreEditorSelection = (): void => {
+    const editor = editorRef.current
+    if (!editor) return
+    editor.focus()
+    const range = savedRangeRef.current
+    if (!range || !editor.contains(range.commonAncestorContainer)) return
+    const selection = window.getSelection()
+    selection?.removeAllRanges()
+    selection?.addRange(range)
+  }
+
+  const copyCode = async (button: HTMLButtonElement): Promise<void> => {
+    const code = button.closest('pre')?.querySelector('code')?.textContent ?? ''
+    try {
+      await navigator.clipboard.writeText(code)
+    } catch {
+      const input = document.createElement('textarea')
+      input.value = code
+      input.setAttribute('readonly', '')
+      input.style.position = 'fixed'
+      input.style.opacity = '0'
+      document.body.appendChild(input)
+      input.select()
+      const copied = document.execCommand('copy')
+      input.remove()
+      if (!copied) return
+    }
+    button.textContent = locale === 'ar' ? 'تم النسخ' : 'Copied'
+    window.setTimeout(() => {
+      if (button.isConnected) button.textContent = copyLabelRef.current
+    }, 1400)
+  }
+
   const runCommand = (command: NoteCommand): void => {
     if (!editorRef.current || saveState === 'loading') return
-    editorRef.current.focus()
+    restoreEditorSelection()
     document.execCommand(command, false)
+    captureEditorSelection()
     handleInput()
   }
 
   const formatBlock = (tag: 'h2' | 'h3' | 'blockquote'): void => {
     if (!editorRef.current || saveState === 'loading') return
-    editorRef.current.focus()
-    document.execCommand('formatBlock', false, tag)
+    restoreEditorSelection()
+    const focusNode = window.getSelection()?.focusNode
+    const focusElement = focusNode instanceof HTMLElement ? focusNode : focusNode?.parentElement
+    const currentBlock = focusElement?.closest('h2, h3, h4, blockquote')
+    document.execCommand('formatBlock', false, currentBlock?.tagName.toLowerCase() === tag ? 'p' : tag)
+    captureEditorSelection()
     handleInput()
   }
 
@@ -272,10 +411,12 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
   const insertLink = (): void => {
     const selection = window.getSelection()
     const savedRange = selection?.rangeCount ? selection.getRangeAt(0).cloneRange() : null
+    if (savedRange) savedRangeRef.current = savedRange
     const selectedText = selection?.toString() ?? ''
     const raw = window.prompt(noteMessages.linkPrompt)?.trim()
     setSlashQuery(null)
     if (!raw) {
+      restoreEditorSelection()
       if (editorRef.current && sanitizeNoteHtml(editorRef.current.innerHTML) !== latestHtmlRef.current) handleInput()
       return
     }
@@ -285,13 +426,15 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
       if (['https:', 'http:', 'mailto:'].includes(url.protocol)) href = url.href
     } catch { /* invalid links are reported below */ }
     if (!href) {
+      restoreEditorSelection()
       if (editorRef.current && sanitizeNoteHtml(editorRef.current.innerHTML) !== latestHtmlRef.current) handleInput()
       setSaveError(noteMessages.linkInvalid)
       return
     }
-    if (selection && savedRange) { selection.removeAllRanges(); selection.addRange(savedRange) }
+    restoreEditorSelection()
     if (selectedText) document.execCommand('createLink', false, href)
     else document.execCommand('insertHTML', false, `<a href="${escapeHtml(href)}">${escapeHtml(raw)}</a>`)
+    captureEditorSelection()
     handleInput()
   }
 
@@ -356,6 +499,7 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
     if (timerRef.current !== null) { window.clearTimeout(timerRef.current); timerRef.current = null }
     setNoteVersions(writeNoteVersion(nodeId, sanitizeNoteHtml(editor.innerHTML)))
     editor.innerHTML = restored
+    decorateCodeBlocks(editor, copyLabelRef.current)
     latestHtmlRef.current = restored
     dirtyRef.current = true
     editor.focus()
@@ -434,8 +578,30 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
           data-empty={!hasContent}
           data-placeholder={noteMessages.placeholder}
           dir="auto"
-          onInput={() => { handleInput(); updateSlashMenu() }}
-          onClick={event => { const target = event.target as HTMLElement; if (target.closest('.desk-note-checkbox')) toggleCheckbox(target); else updateSlashMenu() }}
+          onInput={() => { captureEditorSelection(); handleInput(); updateSlashMenu() }}
+          onMouseUp={captureEditorSelection}
+          onKeyUp={captureEditorSelection}
+          onBlur={captureEditorSelection}
+          onPaste={event => {
+            const clipboardHtml = event.clipboardData.getData('text/html')
+            const clipboardText = event.clipboardData.getData('text/plain')
+            const containsPre = /<pre\b/i.test(clipboardHtml)
+            if (!containsPre && !hasFencedCode(clipboardText)) return
+            event.preventDefault()
+            const html = containsPre ? sanitizeNoteHtml(clipboardHtml) : fencedTextToHtml(clipboardText)
+            document.execCommand('insertHTML', false, html)
+            decorateCodeBlocks(editorRef.current!, copyLabelRef.current)
+            captureEditorSelection()
+            handleInput()
+            updateSlashMenu()
+          }}
+          onClick={event => {
+            const target = event.target as HTMLElement
+            const copyButton = target.closest<HTMLButtonElement>('[data-note-code-copy]')
+            if (copyButton) { event.preventDefault(); void copyCode(copyButton); return }
+            if (target.closest('.desk-note-checkbox')) toggleCheckbox(target)
+            else { captureEditorSelection(); updateSlashMenu() }
+          }}
           onKeyDown={onEditorKeyDown}
         />
         {slashQuery !== null && <div id="desk-note-slash-listbox" className="desk-note-slash-menu" role="listbox" aria-label={noteMessages.slashMenu} style={{ top: slashPosition.top, left: slashPosition.left }}>

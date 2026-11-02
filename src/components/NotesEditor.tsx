@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import {
   BookOpenText, Bold, Bot, Code2, Columns2, Columns3, Copy, Heading2, Heading3,
   Highlighter, Italic, List, ListChecks, ListOrdered, LoaderCircle, Palette, Quote,
-  Redo2, Save, Send, Share2, Sparkles, Underline, Undo2,
+  Link2, Redo2, Save, Send, Share2, Sparkles, Underline, Undo2,
 } from 'lucide-react'
 import { dbGetNote, dbPutNote } from '../db'
 import { useLocale, tr } from '../lib/i18n'
@@ -51,8 +51,16 @@ const HIGHLIGHT_STYLES: readonly { id: NoteStyle; label: { en: string; ar: strin
 function sanitizeNoteHtml(html: string): string {
   const parsed = new DOMParser().parseFromString(html, 'text/html')
   const cleanNode = (node: Node): Node[] => {
+    if (node instanceof HTMLElement && node.hasAttribute('data-note-code-copy')) return []
     if (node.nodeType === Node.TEXT_NODE) return [document.createTextNode(node.textContent ?? '')]
     if (!(node instanceof HTMLElement)) return Array.from(node.childNodes).flatMap(cleanNode)
+    if (node.tagName === 'PRE') {
+      const pre = document.createElement('pre')
+      const code = document.createElement('code')
+      code.textContent = extractCodeText(node)
+      pre.appendChild(code)
+      return [pre]
+    }
 
     const children = Array.from(node.childNodes).flatMap(cleanNode)
     if (!ALLOWED_TAGS.has(node.tagName)) return children
@@ -101,6 +109,74 @@ function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character] ?? character)
 }
 
+function extractCodeText(node: Node): string {
+  if (node instanceof HTMLElement && node.hasAttribute('data-note-code-copy')) return ''
+  if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? ''
+  if (!(node instanceof HTMLElement)) return Array.from(node.childNodes).map(extractCodeText).join('')
+  if (node.tagName === 'BR') return '\n'
+
+  return Array.from(node.childNodes).map((child, index) => {
+    const text = extractCodeText(child)
+    return child instanceof HTMLElement && ['DIV', 'P', 'LI'].includes(child.tagName) && index > 0 ? `\n${text}` : text
+  }).join('')
+}
+
+function decorateCodeBlocks(editor: HTMLDivElement, copyLabel: string): void {
+  editor.querySelectorAll('pre').forEach(pre => {
+    pre.setAttribute('dir', 'ltr')
+    let code = pre.querySelector('code')
+    if (!code) {
+      code = document.createElement('code')
+      code.textContent = extractCodeText(pre)
+      pre.replaceChildren(code)
+    }
+    code.setAttribute('dir', 'ltr')
+    let button = pre.querySelector<HTMLButtonElement>('[data-note-code-copy]')
+    if (!button) {
+      button = document.createElement('button')
+      button.type = 'button'
+      button.dataset.noteCodeCopy = 'true'
+      button.setAttribute('contenteditable', 'false')
+      button.className = 'note-code-copy-button absolute end-2 top-2 z-10 rounded-md border border-white/15 bg-slate-800/90 px-2 py-1 text-xs text-white shadow hover:bg-slate-700'
+      pre.appendChild(button)
+    }
+    button.setAttribute('aria-label', copyLabel)
+    button.textContent = copyLabel
+  })
+}
+
+function hasFencedCode(value: string): boolean {
+  return /(^|\n)\s*```[^\n]*\n[\s\S]*?\n```(?=\n|$)/u.test(value)
+}
+
+function fencedTextToHtml(value: string): string {
+  const blocks: string[] = []
+  let paragraph: string[] = []
+  let code: string[] | null = null
+  const flushParagraph = (): void => {
+    if (!paragraph.length) return
+    blocks.push(`<p>${paragraph.map(escapeHtml).join('<br>') || '<br>'}</p>`)
+    paragraph = []
+  }
+
+  for (const line of value.replace(/\r\n?/gu, '\n').split('\n')) {
+    if (line.trim().startsWith('```')) {
+      if (code === null) {
+        flushParagraph()
+        code = []
+      } else {
+        blocks.push(`<pre><code>${escapeHtml(code.join('\n'))}</code></pre>`)
+        code = null
+      }
+    } else if (code === null) paragraph.push(line)
+    else code.push(line)
+  }
+
+  if (code !== null) paragraph.push('```', ...code)
+  flushParagraph()
+  return blocks.join('')
+}
+
 function localizeAssistantError(error: string, locale: 'en' | 'ar'): string {
   if (locale === 'en') return error
   const translations: Record<string, string> = {
@@ -123,6 +199,7 @@ export default function NotesEditor({ nodeId, title, nodePathKey }: NotesEditorP
   const locale = useLocale()
   const workspace = useSharedWorkspace()
   const editorRef = useRef<HTMLDivElement>(null)
+  const savedRangeRef = useRef<Range | null>(null)
   const currentHtmlRef = useRef('')
   const dirtyRef = useRef(false)
   const revisionRef = useRef(0)
@@ -154,14 +231,17 @@ export default function NotesEditor({ nodeId, title, nodePathKey }: NotesEditorP
     remoteUpdatedAtRef.current = note.updatedAt
     currentHtmlRef.current = safeHtml
     revisionRef.current = 0
-    if (editorRef.current) editorRef.current.innerHTML = safeHtml
+    if (editorRef.current) {
+      editorRef.current.innerHTML = safeHtml
+      decorateCodeBlocks(editorRef.current, text('Copy code', 'نسخ الشيفرة'))
+    }
     setRevision(0)
     setHasContent(hasReadableText(safeHtml))
     setSaveState('saved')
     setSaveError('')
     setSyncState('synced')
     void dbPutNote({ nodeId, html: safeHtml, updatedAt: note.updatedAt }).catch(() => undefined)
-  }, [nodeId, nodePathKey])
+  }, [nodeId, nodePathKey, text])
 
   useEffect(() => {
     let cancelled = false
@@ -172,7 +252,10 @@ export default function NotesEditor({ nodeId, title, nodePathKey }: NotesEditorP
         currentHtmlRef.current = safeHtml
         dirtyRef.current = false
         revisionRef.current = 0
-        if (editorRef.current) editorRef.current.innerHTML = safeHtml
+        if (editorRef.current) {
+          editorRef.current.innerHTML = safeHtml
+          decorateCodeBlocks(editorRef.current, text('Copy code', 'نسخ الشيفرة'))
+        }
         setHasContent(hasReadableText(safeHtml))
         setSaveState('saved')
       })
@@ -351,31 +434,87 @@ export default function NotesEditor({ nodeId, title, nodePathKey }: NotesEditorP
     }
   }
 
+  const captureEditorSelection = (): void => {
+    const editor = editorRef.current
+    const selection = window.getSelection()
+    if (!editor || !selection?.rangeCount) return
+    const range = selection.getRangeAt(0)
+    if (editor.contains(range.commonAncestorContainer)) savedRangeRef.current = range.cloneRange()
+  }
+
+  const restoreEditorSelection = (): void => {
+    const editor = editorRef.current
+    if (!editor) return
+    editor.focus()
+    const range = savedRangeRef.current
+    if (!range || !editor.contains(range.commonAncestorContainer)) return
+    const selection = window.getSelection()
+    selection?.removeAllRanges()
+    selection?.addRange(range)
+  }
+
   const runCommand = (command: EditorCommand): void => {
     if (!editorRef.current || saveState === 'loading') return
-    editorRef.current.focus()
+    restoreEditorSelection()
     document.execCommand(command, false)
-    currentHtmlRef.current = editorRef.current.innerHTML
+    captureEditorSelection()
+    currentHtmlRef.current = sanitizeNoteHtml(editorRef.current.innerHTML)
     setHasContent(hasReadableText(currentHtmlRef.current))
     markDirty()
   }
 
   const formatBlock = (tag: 'h2' | 'h3' | 'blockquote'): void => {
     if (!editorRef.current || saveState === 'loading') return
-    editorRef.current.focus()
-    document.execCommand('formatBlock', false, tag)
-    currentHtmlRef.current = editorRef.current.innerHTML
+    restoreEditorSelection()
+    const focusNode = window.getSelection()?.focusNode
+    const focusElement = focusNode instanceof HTMLElement ? focusNode : focusNode?.parentElement
+    const currentBlock = focusElement?.closest('h2, h3, h4, blockquote')
+    document.execCommand('formatBlock', false, currentBlock?.tagName.toLowerCase() === tag ? 'p' : tag)
+    captureEditorSelection()
+    currentHtmlRef.current = sanitizeNoteHtml(editorRef.current.innerHTML)
     setHasContent(hasReadableText(currentHtmlRef.current))
+    markDirty()
+  }
+
+  const insertLink = (): void => {
+    if (!editorRef.current || saveState === 'loading') return
+    const selection = window.getSelection()
+    const savedRange = selection?.rangeCount ? selection.getRangeAt(0).cloneRange() : null
+    if (savedRange) savedRangeRef.current = savedRange
+    const selectedText = selection?.toString() ?? ''
+    const raw = window.prompt(text('Enter a URL for the link:', 'أدخل رابطاً للرابط:'))?.trim()
+    if (!raw) { restoreEditorSelection(); return }
+
+    let href = ''
+    try {
+      const url = new URL(raw, window.location.origin)
+      if (['https:', 'http:', 'mailto:'].includes(url.protocol)) href = url.href
+    } catch { /* invalid URL */ }
+    if (!href) {
+      restoreEditorSelection()
+      setSaveError(text('Enter a valid http, https, or email link.', 'أدخل رابط http أو https أو بريداً إلكترونياً صالحاً.'))
+      return
+    }
+
+    restoreEditorSelection()
+    if (selectedText) document.execCommand('createLink', false, href)
+    else document.execCommand('insertHTML', false, `<a href="${escapeHtml(href)}">${escapeHtml(raw)}</a>`)
+    captureEditorSelection()
+    currentHtmlRef.current = sanitizeNoteHtml(editorRef.current.innerHTML)
+    setHasContent(hasReadableText(currentHtmlRef.current))
+    setSaveError('')
     markDirty()
   }
 
   const insertCodeBlock = (): void => {
     if (!editorRef.current || saveState === 'loading') return
-    editorRef.current.focus()
+    restoreEditorSelection()
     const selectedText = window.getSelection()?.toString() ?? ''
     const code = selectedText ? escapeHtml(selectedText) : '\u200b'
     document.execCommand('insertHTML', false, `<pre><code>${code}</code></pre><p><br></p>`)
-    currentHtmlRef.current = editorRef.current.innerHTML
+    decorateCodeBlocks(editorRef.current, text('Copy code', 'نسخ الشيفرة'))
+    captureEditorSelection()
+    currentHtmlRef.current = sanitizeNoteHtml(editorRef.current.innerHTML)
     setHasContent(hasReadableText(currentHtmlRef.current))
     markDirty()
   }
@@ -415,9 +554,33 @@ export default function NotesEditor({ nodeId, title, nodePathKey }: NotesEditorP
 
   const onEditorInput = (): void => {
     if (!editorRef.current) return
-    currentHtmlRef.current = editorRef.current.innerHTML
+    captureEditorSelection()
+    currentHtmlRef.current = sanitizeNoteHtml(editorRef.current.innerHTML)
+    decorateCodeBlocks(editorRef.current, text('Copy code', 'نسخ الشيفرة'))
     setHasContent(hasReadableText(currentHtmlRef.current))
     markDirty()
+  }
+
+  const copyCode = async (button: HTMLButtonElement): Promise<void> => {
+    const code = button.closest('pre')?.querySelector('code')?.textContent ?? ''
+    try {
+      await navigator.clipboard.writeText(code)
+    } catch {
+      const input = document.createElement('textarea')
+      input.value = code
+      input.setAttribute('readonly', '')
+      input.style.position = 'fixed'
+      input.style.opacity = '0'
+      document.body.appendChild(input)
+      input.select()
+      const copied = document.execCommand('copy')
+      input.remove()
+      if (!copied) return
+    }
+    button.textContent = text('Copied', 'تم النسخ')
+    window.setTimeout(() => {
+      if (button.isConnected) button.textContent = text('Copy code', 'نسخ الشيفرة')
+    }, 1400)
   }
 
   const createOrCopyInvite = async (): Promise<void> => {
@@ -541,6 +704,7 @@ export default function NotesEditor({ nodeId, title, nodePathKey }: NotesEditorP
         {button(text('Bulleted list', 'قائمة نقطية'), <List size={15} />, () => runCommand('insertUnorderedList'))}
         {button(text('Numbered list', 'قائمة مرقمة'), <ListOrdered size={15} />, () => runCommand('insertOrderedList'))}
         {button(text('Quote', 'اقتباس'), <Quote size={15} />, () => formatBlock('blockquote'))}
+        {button(text('Link', 'رابط'), <Link2 size={15} />, insertLink)}
         {button(text('Code block', 'كتلة برمجية'), <Code2 size={15} />, insertCodeBlock)}
         {button(text('Study template', 'قالب دراسة'), <BookOpenText size={15} />, insertStudyTemplate)}
         {button(text('Two columns', 'عمودان'), <Columns2 size={15} />, () => insertColumns(2))}
@@ -586,17 +750,33 @@ export default function NotesEditor({ nodeId, title, nodePathKey }: NotesEditorP
           aria-busy={saveState === 'loading'}
           dir="auto"
           onInput={onEditorInput}
+          onMouseUp={captureEditorSelection}
+          onKeyUp={captureEditorSelection}
           onPaste={event => {
             event.preventDefault()
             const plainText = event.clipboardData.getData('text/plain')
-            document.execCommand('insertText', false, plainText)
+            const clipboardHtml = event.clipboardData.getData('text/html')
+            if (/<pre\b/i.test(clipboardHtml)) {
+              document.execCommand('insertHTML', false, sanitizeNoteHtml(clipboardHtml))
+            } else if (hasFencedCode(plainText)) {
+              document.execCommand('insertHTML', false, fencedTextToHtml(plainText))
+            } else {
+              document.execCommand('insertText', false, plainText)
+            }
+            if (editorRef.current) decorateCodeBlocks(editorRef.current, text('Copy code', 'نسخ الشيفرة'))
             onEditorInput()
           }}
+          onClick={event => {
+            const copyButton = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-note-code-copy]')
+            if (copyButton) { event.preventDefault(); void copyCode(copyButton); return }
+            captureEditorSelection()
+          }}
           onBlur={() => {
+            captureEditorSelection()
             if (editorRef.current) currentHtmlRef.current = sanitizeNoteHtml(editorRef.current.innerHTML)
             commitImmediately()
           }}
-          className="note-rich-editor min-h-56 max-h-[60vh] overflow-y-auto rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm leading-7 outline-none transition focus:border-white/25 focus:ring-1 focus:ring-white/10 [&_a]:text-sky-300 [&_blockquote]:my-2 [&_blockquote]:border-s-2 [&_blockquote]:border-violet-300 [&_blockquote]:ps-3 [&_code]:rounded [&_code]:bg-black/30 [&_code]:px-1 [&_h2]:my-3 [&_h2]:text-lg [&_h2]:font-bold [&_h3]:my-2 [&_h3]:text-base [&_h3]:font-semibold [&_li]:ms-5 [&_ol]:list-decimal [&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-black/50 [&_pre]:p-3 [&_ul]:list-disc"
+          className="note-rich-editor w-full min-h-[calc(100vh-220px)] max-h-none overflow-y-auto rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm leading-7 outline-none transition focus:border-white/25 focus:ring-1 focus:ring-white/10 [&_a]:text-sky-300 [&_blockquote]:my-2 [&_blockquote]:border-s-2 [&_blockquote]:border-violet-300 [&_blockquote]:ps-3 [&_code]:rounded [&_code]:bg-black/30 [&_code]:px-1 [&_h2]:my-3 [&_h2]:text-lg [&_h2]:font-bold [&_h3]:my-2 [&_h3]:text-base [&_h3]:font-semibold [&_li]:ms-5 [&_ol]:list-decimal [&_pre]:relative [&_pre]:my-2 [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-black/50 [&_pre]:p-3 [&_pre]:font-mono [&_pre]:whitespace-pre [&_pre]:[direction:ltr] [&_pre_code]:block [&_pre_code]:rounded-none [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:font-mono [&_pre_code]:whitespace-pre [&_pre_code]:[direction:ltr] [&_ul]:list-disc"
         />
       </div>
 

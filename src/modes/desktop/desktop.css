@@ -703,10 +703,12 @@ html[data-mode='desktop'] .desk-note-slash-option:focus-visible,
 html[data-mode='desktop'] .desk-note-history-restore:focus-visible { outline: 2px solid var(--desk-accent); outline-offset: 2px; }
 
 html[data-mode='desktop'] .desk-note-editor {
-  min-height: 60vh;
+  width: 100%;
+  min-height: calc(100vh - 220px);
   max-width: 100%;
   padding: 16px;
   overflow-wrap: anywhere;
+  overflow-y: auto;
   border: 1px solid var(--desk-border);
   border-radius: 9px;
   background: var(--desk-bg);
@@ -723,8 +725,88 @@ html[data-mode='desktop'] .desk-note-panel {
 }
 
 html[data-mode='desktop'] .desk-note-panel.is-full-width {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
   width: 100%;
+  height: 100vh;
+  height: 100dvh;
   max-width: none;
+  flex-direction: column;
+  overflow: auto;
+  padding: 16px;
+  border-radius: 0;
+  background: var(--desk-bg);
+}
+
+html[data-mode='desktop'] .desk-note-panel.is-full-width .desk-note-editor-shell {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+html[data-mode='desktop'] .desk-note-panel.is-full-width .desk-note-editor {
+  min-height: calc(100vh - 220px);
+  flex: 1 1 auto;
+}
+
+html[data-mode='desktop'] .desk-note-content ol {
+  list-style-type: decimal;
+}
+
+html[data-mode='desktop'] .desk-note-content pre {
+  position: relative;
+  max-width: 100%;
+  overflow-x: auto;
+  direction: ltr;
+  white-space: pre;
+}
+
+html[data-mode='desktop'] .desk-note-content pre > code {
+  display: block;
+  min-width: max-content;
+  direction: ltr;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: pre;
+}
+
+html[data-mode='desktop'] .desk-note-code-copy {
+  position: absolute;
+  inset-block-start: 6px;
+  inset-inline-end: 6px;
+  z-index: 1;
+  min-height: 28px;
+  padding: 4px 8px;
+  border: 1px solid var(--desk-border);
+  border-radius: 6px;
+  background: var(--desk-elevated);
+  color: var(--desk-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+}
+
+html[data-mode='desktop'] .desk-note-code-copy:hover,
+html[data-mode='desktop'] .desk-note-code-copy:focus-visible {
+  border-color: var(--desk-accent);
+  outline: none;
+}
+
+html[data-mode='desktop'][data-note-full-width='true'] {
+  overflow: hidden;
+}
+
+html[data-mode='desktop'][data-note-full-width='true'] .desk-topbar,
+html[data-mode='desktop'][data-note-full-width='true'] .desk-sidebar,
+html[data-mode='desktop'][data-note-full-width='true'] .desk-section-pane,
+html[data-mode='desktop'][data-note-full-width='true'] .desk-library-content > :not(.desk-note-panel),
+html[data-mode='desktop'][data-note-full-width='true'] .desk-section-heading,
+html[data-mode='desktop'][data-note-full-width='true'] .desk-section-export,
+html[data-mode='desktop'][data-note-full-width='true'] .desk-child-sections,
+html[data-mode='desktop'][data-note-full-width='true'] .desk-section-tools,
+html[data-mode='desktop'][data-note-full-width='true'] .desk-inline-status {
+  display: none !important;
 }
 
 html[data-mode='desktop'] .desk-note-editor:focus-visible {
@@ -764,7 +846,6 @@ html[data-mode='desktop'] .desk-note-content pre {
   border-radius: 8px;
   background: var(--desk-bg);
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  white-space: pre-wrap;
 }
 
 html[data-mode='desktop'] .desk-note-content a { color: var(--desk-accent); text-decoration: underline; text-underline-offset: 2px; }
