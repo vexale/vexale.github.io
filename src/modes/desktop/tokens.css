@@ -149,7 +149,8 @@ html[data-mode='desktop'] {
 }
 
 html[data-mode='desktop'] body {
-  min-width: 320px;
+  max-width: 100%;
+  overflow-x: hidden;
   background: var(--desk-bg);
   color: var(--desk-text);
   font-family: inherit;

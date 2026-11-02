@@ -878,7 +878,6 @@ html[data-mode='desktop'] .desk-mobile-nav-backdrop { display: none; }
     z-index: 20;
     inset-block: calc(60px + env(safe-area-inset-top)) 0;
     inset-inline-start: 0;
-    width: min(280px, 86vw);
     grid-column: auto;
     grid-row: auto;
     gap: 18px;
