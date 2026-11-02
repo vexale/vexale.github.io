@@ -885,13 +885,9 @@ html[data-mode='desktop'] .desk-mobile-nav-backdrop { display: none; }
     padding: 18px 14px max(18px, env(safe-area-inset-bottom));
     border-inline-end: 1px solid var(--desk-border);
     border-bottom: 0;
-    box-shadow: 20px 0 46px #0008;
-    transform: translateX(-105%);
-    transition: transform 180ms ease;
   }
 
-  html[dir='rtl'][data-mode='desktop'] .desk-sidebar { inset-inline-start: auto; inset-inline-end: 0; transform: translateX(105%); box-shadow: -20px 0 46px #0008; }
-  html[data-mode='desktop'] .desk-sidebar.is-mobile-open { transform: translateX(0); }
+  html[dir='rtl'][data-mode='desktop'] .desk-sidebar { inset-inline-start: auto; inset-inline-end: 0; }
   html[data-mode='desktop'] .desk-sidebar-heading,
   html[data-mode='desktop'] .desk-sidebar-spacer,
   html[data-mode='desktop'] .desk-mode-switch { display: flex; }
