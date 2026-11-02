@@ -71,6 +71,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
   const [updateNoticeDismissed, setUpdateNoticeDismissed] = useState(false)
   const bothPanelsCollapsed = preferences.railCollapsed && preferences.sectionsCollapsed
   const isMobileShell = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px), (pointer: coarse) and (max-width: 899px)').matches
+  const isTouchDevice = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
   const railExpanded = !preferences.railCollapsed
   const sectionsExpanded = !preferences.sectionsCollapsed
 
@@ -142,20 +143,21 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
   useEffect(() => setUpdateNoticeDismissed(false), [pwa.waitingRegistration])
 
   return (
-    <MobileShell active={isMobileShell} page={page} labels={{ home: messages.homeDashboard.pageTitle, library: messages.navigation.library, tasks: messages.navigation.tasks, more: messages.shell.menu }} onNavigate={navigate}>
+    <MobileShell active={isMobileShell} page={page} labels={{ home: messages.homeDashboard.pageTitle, library: messages.navigation.library, tasks: messages.navigation.tasks, more: messages.shell.more }} onNavigate={navigate}>
     <div className="desk-app" data-desktop-page={page} data-rail-collapsed={preferences.railCollapsed} data-sections-collapsed={preferences.sectionsCollapsed} lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
-      <header className="desk-topbar">
+      <header className={`desk-topbar${menuOpen && isTouchDevice ? ' is-touch-menu-open' : ''}`}>
         <div className="desk-brand"><img src={`${import.meta.env.BASE_URL}logo.png`} alt="" width={32} height={32} className="desk-brand-mark" /><span className="desk-brand-name">{messages.appName}</span><span className="desk-workspace-label">{messages.shell.workspaceLabel}</span></div>
         <div className="desk-topbar-actions">
           <div className="desk-menu-wrap">
             <button ref={moreButtonRef} type="button" className="desk-icon-button" aria-label={messages.shell.menu} aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(value => !value)}><Ellipsis size={18} aria-hidden="true" /></button>
-            {menuOpen && <div className="desk-topbar-menu" role="menu">
+            {menuOpen && isTouchDevice && <button type="button" className="desk-menu-sheet-backdrop" aria-label={messages.shell.close} tabIndex={-1} onClick={() => setMenuOpen(false)} />}
+            {menuOpen && <div className={`desk-topbar-menu${isTouchDevice ? ' is-touch-sheet' : ''}`} role="menu" aria-label={messages.shell.menu}>
               {pwa.installPrompt && !pwa.installed && <button type="button" role="menuitem" onClick={() => void installApp()}><Download size={16} aria-hidden="true" />{messages.shell.installApp}</button>}
               {!pwa.installPrompt && !pwa.installed && isIosDevice() && <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); setIosInstallGuideOpen(true) }}><Download size={16} aria-hidden="true" />{messages.shell.installOnIOS}</button>}
               <button type="button" role="menuitem" onClick={() => { setMenuOpen(false); setFeedbackOpen(true) }}><MessageSquareText size={16} aria-hidden="true" />{messages.feedback.open}</button>
-              <button type="button" role="menuitem" onClick={toggleRail}>{railExpanded ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}{messages.shell.toggleRail}<kbd dir="ltr">Ctrl+Shift+B</kbd></button>
-              <button type="button" role="menuitem" disabled={page !== 'library'} onClick={toggleSections}>{sectionsExpanded ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}{messages.shell.toggleSections}<kbd dir="ltr">Ctrl+B</kbd></button>
-              <button type="button" role="menuitem" onClick={toggleFocus}>{bothPanelsCollapsed ? <Minimize2 size={16} /> : <Maximize2 size={16} />}{messages.shell.collapseAll}<kbd dir="ltr">Ctrl+\</kbd></button>
+              <button type="button" role="menuitem" onClick={() => { if (isTouchDevice) setMenuOpen(false); toggleRail() }}>{railExpanded ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}{messages.shell.toggleRail}{!isTouchDevice && <kbd dir="ltr">Ctrl+Shift+B</kbd>}</button>
+              <button type="button" role="menuitem" disabled={page !== 'library'} onClick={() => { if (isTouchDevice) setMenuOpen(false); toggleSections() }}>{sectionsExpanded ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}{messages.shell.toggleSections}{!isTouchDevice && <kbd dir="ltr">Ctrl+B</kbd>}</button>
+              <button type="button" role="menuitem" onClick={() => { if (isTouchDevice) setMenuOpen(false); toggleFocus() }}>{bothPanelsCollapsed ? <Minimize2 size={16} /> : <Maximize2 size={16} />}{messages.shell.collapseAll}{!isTouchDevice && <kbd dir="ltr">Ctrl+\</kbd>}</button>
             </div>}
           </div>
           {page === 'library' && <button type="button" className="desk-mobile-section-trigger desk-icon-button" aria-label={sectionDrawerOpen ? messages.shell.close : messages.sections.title} aria-expanded={sectionDrawerOpen} onClick={() => setSectionDrawerOpen(value => !value)}><PanelRightOpen size={19} /></button>}

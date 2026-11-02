@@ -1908,6 +1908,15 @@ html[data-mode='desktop'] .desk-chat-resize:focus-visible { background: var(--de
   html[data-mode='desktop'] .desk-chat-resize { display: none; }
 }
 
+@media (any-pointer: coarse) {
+  html[data-mode='desktop'] .desk-topbar.is-touch-menu-open { z-index: 62; }
+  html[data-mode='desktop'] .desk-menu-sheet-backdrop { position: fixed; z-index: 60; inset: 0; display: block; padding: 0; border: 0; background: #0009; }
+  html[data-mode='desktop'] .desk-topbar-menu.is-touch-sheet { position: fixed; z-index: 61; inset-block-start: auto; inset-inline: 0; inset-block-end: 0; width: auto; min-width: 0; max-width: none; max-height: min(72vh, calc(100vh - 48px)); max-height: min(72dvh, calc(100dvh - 48px)); overflow-y: auto; overscroll-behavior: contain; padding: 12px 12px max(12px, env(safe-area-inset-bottom)); border-radius: 16px 16px 0 0; box-shadow: 0 20px 48px #0008; }
+  html[data-mode='desktop'] .desk-topbar-menu.is-touch-sheet button { min-width: 0; min-height: 48px; white-space: normal; overflow-wrap: anywhere; line-height: 1.45; }
+  html[data-mode='desktop'] .desk-topbar-menu.is-touch-sheet button > svg { flex: 0 0 auto; }
+  html[data-mode='desktop'] .desk-topbar-menu.is-touch-sheet kbd { display: none; }
+}
+
 /* MobileShell: drawers are absent when closed, and the library remains one column. */
 @media (max-width: 767px), (pointer: coarse) and (max-width: 899px) {
   html[data-mode='desktop'] .mobile-shell,
@@ -1941,6 +1950,9 @@ html[data-mode='desktop'] .desk-chat-resize:focus-visible { background: var(--de
   html[data-mode='desktop'] .desk-file-grid { grid-template-columns: minmax(0, 1fr); }
   html[data-mode='desktop'] .desk-section-tools-list { flex-wrap: wrap; overflow-x: auto; }
   html[data-mode='desktop'] .desk-tool-chip-button { min-height: 44px; }
+  html[data-mode='desktop'] .desk-task-root-form { width: 100%; min-width: 0; flex: 0 0 100%; flex-wrap: nowrap; gap: 8px; }
+  html[data-mode='desktop'] .desk-task-root-form input { box-sizing: border-box; width: 0; height: 44px; min-height: 44px; max-height: 44px; flex: 1 1 auto; padding-block: 8px; white-space: nowrap; }
+  html[data-mode='desktop'] .desk-task-root-form button { box-sizing: border-box; height: 44px; min-height: 44px; max-height: 44px; flex: 0 0 auto; justify-content: center; white-space: nowrap; }
   html[data-mode='desktop'] .desk-mobile-tabbar { position: fixed; z-index: 18; inset-inline: 0; inset-block-end: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 8px max(8px, env(safe-area-inset-left)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-right)); border-block-start: 1px solid var(--desk-border); background: var(--desk-surface); }
   html[data-mode='desktop'] .desk-mobile-tabbar button { display: grid; min-width: 0; min-height: 44px; place-items: center; gap: 2px; border: 0; border-radius: 8px; background: transparent; color: var(--desk-muted); font: inherit; font-size: 11px; }
   html[data-mode='desktop'] .desk-mobile-tabbar button.is-active { background: var(--desk-accent-soft); color: var(--desk-accent); }
