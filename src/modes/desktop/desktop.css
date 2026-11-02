@@ -114,13 +114,13 @@ html[data-mode='desktop'] .desk-note-toolbar-button:disabled {
 }
 
 html[data-mode='desktop'] .desk-button-primary {
-  border-color: var(--desk-accent);
-  background: var(--desk-accent);
+  border-color: var(--accent);
+  background: var(--accent);
   color: var(--desk-accent-foreground);
 }
 
 html[data-mode='desktop'] .desk-button-primary:hover {
-  background: var(--desk-selection);
+  background: var(--accent);
 }
 
 html[data-mode='desktop'] .desk-sidebar {
@@ -441,7 +441,8 @@ html[data-mode='desktop'] .desk-section-heading-copy {
 
 html[data-mode='desktop'] .desk-section-heading-copy h2 {
   margin: 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
   font-size: 22px;
   font-weight: 650;
 }
@@ -829,6 +830,7 @@ html[data-mode='desktop'] .desk-section-create-control input:focus-visible {
 }
 
 html[data-mode='desktop'] .desk-mobile-nav-trigger,
+html[data-mode='desktop'] .desk-mobile-section-trigger,
 html[data-mode='desktop'] .desk-mobile-nav-backdrop { display: none; }
 
 @media (max-width: 1100px) and (min-width: 768px) {
@@ -1133,7 +1135,7 @@ html[data-mode='desktop'] .desk-privacy-controls input { width: 18px; height: 18
 /* Stage 4: controlled desktop layout, flat surfaces, and theme accent alias. */
 html[data-mode='desktop'] .desk-app { --accent: var(--desk-accent); }
 html[data-mode='desktop'] .desk-button-primary { border-color: var(--accent); background: var(--accent); color: var(--desk-accent-foreground); }
-html[data-mode='desktop'] .desk-button-primary:hover { border-color: var(--desk-selection); background: var(--desk-selection); color: var(--desk-accent-foreground); }
+html[data-mode='desktop'] .desk-button-primary:hover { border-color: var(--accent); background: var(--accent); color: var(--desk-accent-foreground); }
 html[data-mode='desktop'] .desk-tree-select > svg,
 html[data-mode='desktop'] .desk-file-icon { color: var(--accent); }
 html[data-mode='desktop'] .desk-library-content,
@@ -1258,7 +1260,7 @@ html[data-mode='desktop'] .desk-tool-panel > header { display: flex; min-height:
 html[data-mode='desktop'] .desk-tool-panel h2 { margin: 0; font-size: 16px; }
 html[data-mode='desktop'] .desk-tool-panel-content { min-height: 0; flex: 1; overflow: auto; padding: 12px; }
 html[data-mode='desktop'] .desk-section-tools { display: grid; gap: 8px; }
-html[data-mode='desktop'] .desk-section-tools-list { display: flex; flex: 0 0 100%; flex-wrap: wrap; gap: 8px; }
+html[data-mode='desktop'] .desk-section-tools-list { display: flex; max-width: 100%; flex: 0 1 100%; flex-wrap: wrap; gap: 8px; overflow-x: auto; overscroll-behavior-inline: contain; }
 html[data-mode='desktop'] .desk-tool-chip-button { min-height: 34px; padding: 6px 10px; border: 1px solid var(--desk-border); border-radius: 999px; background: var(--desk-surface); color: var(--desk-text); font: inherit; font-size: 13px; cursor: pointer; }
 html[data-mode='desktop'] .desk-tool-add-button { border-color: var(--accent); color: var(--accent); }
 @media (max-width: 640px) { html[data-mode='desktop'] .desk-tool-panel { inset-inline: 8px; width: auto; } }
@@ -1828,4 +1830,42 @@ html[data-mode='desktop'] .desk-chat-resize:focus-visible { background: var(--de
   html[data-mode='desktop'] .desk-file-study-chat,
   html[data-mode='desktop'] .desk-file-study-chat.mode-split { width: 100%; flex-basis: 100%; }
   html[data-mode='desktop'] .desk-chat-resize { display: none; }
+}
+
+/* MobileShell: drawers are absent when closed, and the library remains one column. */
+@media (max-width: 767px), (pointer: coarse) and (max-width: 899px) {
+  html[data-mode='desktop'] .mobile-shell,
+  html[data-mode='desktop'] .desk-app,
+  html[data-mode='desktop'] .desk-topbar,
+  html[data-mode='desktop'] .desk-main,
+  html[data-mode='desktop'] .desk-page { width: 100%; max-width: 100%; min-width: 0; }
+  html[data-mode='desktop'] .desk-app { grid-template-columns: minmax(0, 1fr); grid-template-rows: 60px minmax(0, 1fr); overflow-x: hidden; }
+  html[data-mode='desktop'] .desk-topbar { grid-column: 1; grid-row: 1; }
+  html[data-mode='desktop'] .desk-mobile-section-trigger,
+  html[data-mode='desktop'] .desk-mobile-nav-trigger { display: inline-flex; }
+  html[data-mode='desktop'] .desk-topbar .desk-mode-switch { display: none; }
+  html[data-mode='desktop'] .desk-sidebar,
+  html[data-mode='desktop'] .desk-section-pane { display: none; transform: none; box-shadow: none; }
+  html[data-mode='desktop'] .desk-sidebar.is-mobile-open,
+  html[data-mode='desktop'] .desk-section-pane.is-mobile-open { display: flex; position: fixed; z-index: 20; inset-block: calc(60px + env(safe-area-inset-top)) 0; inset-inline-start: 0; grid-column: auto; grid-row: auto; width: min(320px, calc(100% - 24px)); max-height: none; overflow-y: auto; box-shadow: 20px 0 46px #0008; }
+  html[data-mode='desktop'] .desk-sidebar.is-mobile-open { flex-direction: column; gap: 18px; padding: 18px 14px max(18px, env(safe-area-inset-bottom)); }
+  html[data-mode='desktop'] .desk-section-pane.is-mobile-open { display: block; padding: 0; border-inline-end: 1px solid var(--desk-border); }
+  html[dir='rtl'][data-mode='desktop'] .desk-sidebar.is-mobile-open,
+  html[dir='rtl'][data-mode='desktop'] .desk-section-pane.is-mobile-open { inset-inline-start: auto; inset-inline-end: 0; box-shadow: -20px 0 46px #0008; }
+  html[data-mode='desktop'] .desk-mobile-nav-backdrop { position: fixed; z-index: 19; inset: 0; display: block; border: 0; background: #0008; }
+  html[data-mode='desktop'] .desk-main,
+  html[data-mode='desktop'] .desk-main-full { grid-column: 1; grid-row: 2; padding: 22px max(16px, env(safe-area-inset-left)) calc(88px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right)); }
+  html[data-mode='desktop'] .desk-library-content { grid-template-columns: minmax(0, 1fr); }
+  html[data-mode='desktop'] .desk-section-heading { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 8px; }
+  html[data-mode='desktop'] .desk-section-heading-copy { grid-column: 1 / -1; }
+  html[data-mode='desktop'] .desk-section-heading-copy h2 { overflow-wrap: break-word; word-break: normal; }
+  html[data-mode='desktop'] .desk-section-heading > .desk-button { width: 100%; min-width: 0; min-height: 44px; padding-inline: 8px; white-space: normal; }
+  html[data-mode='desktop'] .desk-section-export { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  html[data-mode='desktop'] .desk-section-export .desk-button { min-width: 0; min-height: 44px; padding-inline: 8px; white-space: normal; }
+  html[data-mode='desktop'] .desk-file-grid { grid-template-columns: minmax(0, 1fr); }
+  html[data-mode='desktop'] .desk-section-tools-list { flex-wrap: wrap; overflow-x: auto; }
+  html[data-mode='desktop'] .desk-tool-chip-button { min-height: 44px; }
+  html[data-mode='desktop'] .desk-mobile-tabbar { position: fixed; z-index: 18; inset-inline: 0; inset-block-end: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 8px max(8px, env(safe-area-inset-left)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-right)); border-block-start: 1px solid var(--desk-border); background: var(--desk-surface); }
+  html[data-mode='desktop'] .desk-mobile-tabbar button { display: grid; min-width: 0; min-height: 44px; place-items: center; gap: 2px; border: 0; border-radius: 8px; background: transparent; color: var(--desk-muted); font: inherit; font-size: 11px; }
+  html[data-mode='desktop'] .desk-mobile-tabbar button.is-active { background: var(--desk-accent-soft); color: var(--desk-accent); }
 }

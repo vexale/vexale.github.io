@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { BookOpen, BookOpenCheck, Building2, CalendarDays, Download, Ellipsis, House, LifeBuoy, ListTodo, Menu, MessageSquareText, Monitor, Palette, Search, Settings, ShieldCheck, Trash2, UserRound, Wrench, X, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, Maximize2, Minimize2 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { setLocale, useLocale } from '../../lib/i18n'
@@ -41,6 +42,18 @@ function isIosDevice(): boolean {
   return /iPad|iPhone|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 }
 
+function MobileShell({ active, page, labels, onNavigate, children }: { active: boolean; page: DesktopPage; labels: { home: string; library: string; tasks: string; more: string }; onNavigate: (page: DesktopPage) => void; children: ReactNode }) {
+  return <div className={`mobile-shell${active ? ' is-active' : ''}`}>
+    {children}
+    {active && <nav className="desk-mobile-tabbar" aria-label={labels.more}>
+      <button type="button" className={page === 'home' ? 'is-active' : ''} aria-current={page === 'home' ? 'page' : undefined} onClick={() => onNavigate('home')}><House size={18} aria-hidden="true" /><span>{labels.home}</span></button>
+      <button type="button" className={page === 'library' ? 'is-active' : ''} aria-current={page === 'library' ? 'page' : undefined} onClick={() => onNavigate('library')}><BookOpen size={18} aria-hidden="true" /><span>{labels.library}</span></button>
+      <button type="button" className={page === 'tasks' ? 'is-active' : ''} aria-current={page === 'tasks' ? 'page' : undefined} onClick={() => onNavigate('tasks')}><ListTodo size={18} aria-hidden="true" /><span>{labels.tasks}</span></button>
+      <button type="button" className="desk-mobile-more-tab" onClick={() => onNavigate(page === 'home' ? 'tools' : 'home')}><Ellipsis size={18} aria-hidden="true" /><span>{labels.more}</span></button>
+    </nav>}
+  </div>
+}
+
 export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
   const locale = useLocale()
   const messages = useDesktopMessages()
@@ -51,12 +64,13 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const moreButtonRef = useRef<HTMLButtonElement>(null)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [sectionDrawerOpen, setSectionDrawerOpen] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const pwa = usePwaState()
   const [iosInstallGuideOpen, setIosInstallGuideOpen] = useState(false)
   const [updateNoticeDismissed, setUpdateNoticeDismissed] = useState(false)
   const bothPanelsCollapsed = preferences.railCollapsed && preferences.sectionsCollapsed
-  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
+  const isMobileShell = typeof window !== 'undefined' && window.matchMedia('(max-width: 767px), (pointer: coarse) and (max-width: 899px)').matches
   const railExpanded = !preferences.railCollapsed
   const sectionsExpanded = !preferences.sectionsCollapsed
 
@@ -65,6 +79,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
     if (updateHash && window.location.hash !== pageHash(next)) window.history.pushState({ desktopPage: next }, '', pageHash(next))
     setMenuOpen(false)
     setMobileNavOpen(false)
+    setSectionDrawerOpen(false)
   }
   const toggleRail = (): void => updateDesktopPreferences({ railCollapsed: !preferences.railCollapsed })
   const toggleSections = (): void => { if (page === 'library') updateDesktopPreferences({ sectionsCollapsed: !preferences.sectionsCollapsed }) }
@@ -127,6 +142,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
   useEffect(() => setUpdateNoticeDismissed(false), [pwa.waitingRegistration])
 
   return (
+    <MobileShell active={isMobileShell} page={page} labels={{ home: messages.homeDashboard.pageTitle, library: messages.navigation.library, tasks: messages.navigation.tasks, more: messages.shell.menu }} onNavigate={navigate}>
     <div className="desk-app" data-desktop-page={page} data-rail-collapsed={preferences.railCollapsed} data-sections-collapsed={preferences.sectionsCollapsed} lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       <header className="desk-topbar">
         <div className="desk-brand"><img src={`${import.meta.env.BASE_URL}logo.png`} alt="" width={32} height={32} className="desk-brand-mark" /><span className="desk-brand-name">{messages.appName}</span><span className="desk-workspace-label">{messages.shell.workspaceLabel}</span></div>
@@ -142,6 +158,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
               <button type="button" role="menuitem" onClick={toggleFocus}>{bothPanelsCollapsed ? <Minimize2 size={16} /> : <Maximize2 size={16} />}{messages.shell.collapseAll}<kbd dir="ltr">Ctrl+\</kbd></button>
             </div>}
           </div>
+          {page === 'library' && <button type="button" className="desk-mobile-section-trigger desk-icon-button" aria-label={sectionDrawerOpen ? messages.shell.close : messages.sections.title} aria-expanded={sectionDrawerOpen} onClick={() => setSectionDrawerOpen(value => !value)}><PanelRightOpen size={19} /></button>}
           <button type="button" className="desk-mobile-nav-trigger desk-icon-button" aria-label={mobileNavOpen ? messages.shell.closeNavigation : messages.shell.openNavigation} aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen(value => !value)}>{mobileNavOpen ? <X size={19} /> : <Menu size={19} />}</button>
           <button type="button" className="desk-command-trigger" aria-label={messages.commandPalette.open} onClick={() => setPaletteOpen(true)}><Search size={16} aria-hidden="true" /><span>{messages.commandPalette.open}</span><kbd dir="ltr">Ctrl+K</kbd></button>
           <button type="button" className="desk-button desk-language-toggle" aria-label={messages.language.switch} onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}><span>{messages.language.nextLabel}</span></button>
@@ -159,13 +176,13 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
         <header><strong>{messages.shell.iosInstallTitle}</strong><button type="button" className="desk-pwa-close" aria-label={messages.shell.close} onClick={() => setIosInstallGuideOpen(false)}><X size={16} aria-hidden="true" /></button></header>
         <ol><li>{messages.shell.iosInstallStep1}</li><li>{messages.shell.iosInstallStep2}</li><li>{messages.shell.iosInstallStep3}</li></ol>
       </aside>}
-      {mobileNavOpen && <button type="button" className="desk-mobile-nav-backdrop" aria-label={messages.shell.closeNavigation} onClick={() => setMobileNavOpen(false)} />}
-      <aside id="desk-sidebar" className={`desk-sidebar${mobileNavOpen ? ' is-mobile-open' : ''}`} inert={isMobile ? !mobileNavOpen : preferences.railCollapsed} aria-label={messages.navigation.primary}>
+      {(mobileNavOpen || sectionDrawerOpen) && <button type="button" className="desk-mobile-nav-backdrop" aria-label={messages.shell.closeNavigation} onClick={() => { setMobileNavOpen(false); setSectionDrawerOpen(false) }} />}
+      <aside id="desk-sidebar" className={`desk-sidebar${mobileNavOpen ? ' is-mobile-open' : ''}`} inert={isMobileShell ? !mobileNavOpen : preferences.railCollapsed} aria-label={messages.navigation.primary}>
         <div className="desk-sidebar-heading"><Building2 size={16} aria-hidden="true" /><span>{messages.navigation.workspace}</span></div>
         <nav className="desk-navigation" aria-label={messages.navigation.primary}>{NAV_ITEMS.map(({ id, Icon }) => <button key={id} type="button" className="desk-navigation-link" aria-current={page === id ? 'page' : undefined} onClick={() => navigate(id)}><Icon size={18} aria-hidden="true" /><span>{id === 'home' ? messages.homeDashboard.pageTitle : messages.navigation[id]}</span></button>)}</nav>
         <div className="desk-sidebar-spacer" />
       </aside>
-      {page === 'library' && <aside id="desk-section-pane" className="desk-section-pane" inert={preferences.sectionsCollapsed && !isMobile} aria-label={messages.sections.title}><DesktopSectionTree /></aside>}
+      {page === 'library' && <aside id="desk-section-pane" className={`desk-section-pane${sectionDrawerOpen ? ' is-mobile-open' : ''}`} inert={isMobileShell ? !sectionDrawerOpen : preferences.sectionsCollapsed} aria-label={messages.sections.title}><DesktopSectionTree /></aside>}
       <main className={`desk-main ${page === 'library' ? 'desk-main-with-sections' : 'desk-main-full'}`} id="main-content">
         <div className="desk-page"><header className="desk-page-header"><h1 className="desk-page-title">{page === 'home' ? messages.homeDashboard.pageTitle : messages.pages[page].title}</h1><p className="desk-page-description">{page === 'home' ? messages.homeDashboard.intro : messages.pages[page].description}</p></header>
           {page === 'home' ? <DesktopHomePage onNavigate={navigate} /> : page === 'library' ? <Suspense fallback={<DesktopSkeleton />}><DesktopLibraryPage /></Suspense> : <Suspense fallback={<DesktopSkeleton />}><DesktopPageContent page={page} onSwitchToSpace={onSwitchToSpace} onOpenPrivacy={() => navigate('privacy')} /></Suspense>}
@@ -174,5 +191,6 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
       <FeedbackWidget open={feedbackOpen} page={page} onClose={closeFeedback} onRequestAuth={() => { setFeedbackOpen(false); navigate('account') }} />
       <DesktopCommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onNavigate={navigate} onSwitchToSpace={onSwitchToSpace} />
     </div>
+    </MobileShell>
   )
 }

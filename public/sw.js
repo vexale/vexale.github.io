@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vexale-shell-v3'
+const CACHE_NAME = 'vexale-shell-v4'
 const SHELL_ASSETS = [
   './',
   './index.html',
@@ -37,6 +37,9 @@ self.addEventListener('fetch', event => {
   const request = event.request
   if (request.method !== 'GET') return
 
+  const url = new URL(request.url)
+  const isAppHtml = url.origin === self.location.origin && url.pathname.startsWith('/app/') && (request.destination === 'document' || /\.html$/i.test(url.pathname))
+
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(async () => (await caches.match(request)) || (await caches.match(SHELL_URL)) || Response.error())
@@ -44,14 +47,27 @@ self.addEventListener('fetch', event => {
     return
   }
 
-  const url = new URL(request.url)
+  if (isAppHtml) {
+    event.respondWith(
+      fetch(request).then(response => {
+        if (response.ok && response.type === 'basic') {
+          const responseForCache = response.clone()
+          void caches.open(CACHE_NAME).then(cache => cache.put(request, responseForCache))
+        }
+        return response
+      }).catch(() => caches.match(request).then(cached => cached || Response.error()))
+    )
+    return
+  }
+
   if (url.origin !== self.location.origin || (!STATIC_DESTINATIONS.has(request.destination) && !STATIC_EXTENSION.test(url.pathname))) return
 
   event.respondWith(
     caches.match(request).then(cached => cached || fetch(request).then(response => {
       const cacheControl = response.headers.get('cache-control') ?? ''
       if (response.ok && response.type === 'basic' && !/no-store|private/i.test(cacheControl)) {
-        void caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()))
+        const responseForCache = response.clone()
+        void caches.open(CACHE_NAME).then(cache => cache.put(request, responseForCache))
       }
       return response
     }))
