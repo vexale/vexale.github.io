@@ -2,8 +2,8 @@ import { Component, Suspense, lazy, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import {
-  Activity, Bot, Brain, Calculator as CalcIcon, Database, Headphones, ListChecks,
-  Network, ScanText, Sigma, StickyNote, Terminal,
+  Activity, Bot, Calculator as CalcIcon, Headphones, ListChecks,
+  ScanText, Sigma, StickyNote, Terminal,
 } from 'lucide-react'
 import { sfx } from '../shared'
 import { useSettings } from '../lib/settings'
@@ -19,9 +19,6 @@ const CalculatorTool = lazy(() => import('./Calculator'))
 const CoordinateTool = lazy(() => import('./CoordinateSystem'))
 const MathSolverTool = lazy(() => import('./AIMathSolver'))
 const CodeTool = lazy(() => import('./CodePlayground'))
-const QuizTool = lazy(() => import('./QuizGenerator'))
-const DataTool = lazy(() => import('./DataAnalyzer'))
-const WhiteboardTool = lazy(() => import('./Whiteboard'))
 const DocumentTool = lazy(() => import('./DocumentTools'))
 const TaskTool = lazy(() => import('./TaskRoadmap'))
 const AudioTool = lazy(() => import('./AudioTools'))
@@ -33,9 +30,6 @@ const TOOLS = [
   { id: 'chat', label: { en: 'Library chat', ar: 'محادثة المكتبة' }, Icon: Bot, w: 380, h: 480 },
   { id: 'math', label: { en: 'Math solver', ar: 'حلّال الرياضيات' }, Icon: Sigma, w: 560, h: 560 },
   { id: 'code', label: { en: 'Code playground', ar: 'مساحة الأكواد' }, Icon: Terminal, w: 700, h: 640 },
-  { id: 'quiz', label: { en: 'Quizzes & cards', ar: 'اختبارات وبطاقات' }, Icon: Brain, w: 620, h: 600 },
-  { id: 'data', label: { en: 'Data analysis', ar: 'تحليل البيانات' }, Icon: Database, w: 760, h: 640 },
-  { id: 'board', label: { en: 'Canvas & maps', ar: 'لوحة وخرائط' }, Icon: Network, w: 820, h: 600 },
   { id: 'docs', label: { en: 'Document tools', ar: 'أدوات المستندات' }, Icon: ScanText, w: 620, h: 600 },
   { id: 'tasks', label: { en: 'Tasks', ar: 'المهام' }, Icon: ListChecks, w: 560, h: 600 },
   { id: 'audio', label: { en: 'Focus & audio', ar: 'تركيز وصوت' }, Icon: Headphones, w: 480, h: 560 },
@@ -49,9 +43,6 @@ function renderTool(id: string): ReactNode {
     case 'chat': return <AIChat />
     case 'math': return <MathSolverTool />
     case 'code': return <CodeTool />
-    case 'quiz': return <QuizTool />
-    case 'data': return <DataTool />
-    case 'board': return <WhiteboardTool />
     case 'docs': return <DocumentTool />
     case 'tasks': return <TaskTool />
     case 'audio': return <AudioTool />

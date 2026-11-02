@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
-import { CalendarDays, Check, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Download, FilePlus2, ListTree, Map as MapIcon, Pencil, Plus, Printer, Redo2, Timer, Trash2, Undo2, X } from 'lucide-react'
+import { CalendarDays, Check, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, FilePlus2, ListTree, Map as MapIcon, Pencil, Plus, Redo2, Timer, Trash2, Undo2, X } from 'lucide-react'
 import { dbGetNote } from '../../db'
-import { serializeLibraryBackup } from '../../lib/libraryBackup'
-import { createStandaloneHtml, openPrintView, taskTreeToMarkdown, taskTreeToPrintHtml } from '../../lib/treeExports'
-import { useLocale } from '../../lib/i18n'
 import { useLibrary, useTree } from '../../shared'
 import type { Item, TNode } from '../../shared'
 import { useDesktopMessages } from './i18n'
@@ -19,12 +16,6 @@ interface CreateTarget { parentId: string | null; afterId?: string }
 type Labels = ReturnType<typeof useDesktopMessages>['taskTree']
 
 function sectionList(nodes: TNode[]): TNode[] { return nodes.flatMap(node => [node, ...sectionList(node.children)]) }
-function download(name: string, content: string, mime: string): void {
-  const url = URL.createObjectURL(new Blob([content], { type: mime }))
-  const link = document.createElement('a'); link.href = url; link.download = name; link.click()
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
-
 function InlineTaskForm({ title, placeholder, addLabel, value, onChange, onSubmit, onCancel }: { title: string; placeholder: string; addLabel: string; value: string; onChange: (value: string) => void; onSubmit: () => void; onCancel: () => void }) {
   return <form className="desk-task-inline-form" onSubmit={event => { event.preventDefault(); onSubmit() }}><input autoFocus value={value} onChange={event => onChange(event.target.value)} placeholder={placeholder} aria-label={title} maxLength={180} /><button type="submit" className="desk-task-icon" aria-label={addLabel} disabled={!value.trim()}><Check size={15} /></button><button type="button" className="desk-task-icon" aria-label={title} onClick={onCancel}><X size={15} /></button></form>
 }
@@ -68,7 +59,6 @@ function AttachmentPicker({ task, files, notes, labels, onClose }: { task: TaskR
 
 export default function DesktopTaskTreePage() {
   const messages = useDesktopMessages()
-  const locale = useLocale()
   const labels = messages.taskTree
   const tasks = useTaskTreeStore()
   const taskHistory = useTaskTreeHistory()
@@ -85,7 +75,6 @@ export default function DesktopTaskTreePage() {
   const [dragId, setDragId] = useState<string | null>(null)
   const [activeView, setActiveView] = useState<'outline' | 'map'>('outline')
   const [taskLimitReached, setTaskLimitReached] = useState(false)
-  const [exportStatus, setExportStatus] = useState('')
   const treeRef = useRef<HTMLDivElement>(null)
   const sections = useMemo(() => sectionList(tree), [tree])
   const children = useMemo(() => { const map = new Map<string | null, TaskRecord[]>(); for (const task of tasks) map.set(task.parentId, [...(map.get(task.parentId) ?? []), task]); return map }, [tasks])
@@ -104,14 +93,6 @@ export default function DesktopTaskTreePage() {
   const setTaskCollapsed = (id: string): void => setCollapsed(value => { const next = new Set(value); next.has(id) ? next.delete(id) : next.add(id); return next })
   const handleDelete = (id: string): void => { if (window.confirm(labels.deleteConfirm)) removeTask(id) }
   const expandAll = (expand: boolean): void => setCollapsed(expand ? new Set() : new Set(tasks.filter(task => (children.get(task.id) ?? []).length).map(task => task.id)))
-  const exportJson = (): void => download('task-tree.json', serializeLibraryBackup({ format: 'vexale-library', version: 2, exportedAt: new Date().toISOString(), tree: [], tasks }), 'application/json;charset=utf-8')
-  const exportMarkdown = (): void => download('task-tree.md', taskTreeToMarkdown(tasks, statusLabels, labels.dueDate), 'text/markdown;charset=utf-8')
-  const exportHtml = (): void => download('task-tree.html', createStandaloneHtml(messages.pages.tasks.title, taskTreeToPrintHtml(tasks, statusLabels, labels.dueDate), locale), 'text/html;charset=utf-8')
-  const printTasks = (): void => {
-    const content = taskTreeToPrintHtml(tasks, statusLabels, labels.dueDate)
-    if (!openPrintView(messages.pages.tasks.title, content, locale)) setExportStatus(messages.exportActions.popupBlocked)
-    else setExportStatus('')
-  }
   const handleTreeKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     const target = event.target as HTMLElement
     if (/^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName)) return
@@ -138,7 +119,7 @@ export default function DesktopTaskTreePage() {
   }
 
   return <section className="desk-task-page" aria-label={messages.pages.tasks.title}>
-    <div className="desk-task-toolbar"><form className="desk-task-root-form" onSubmit={submitRoot}><input value={rootDraft} onChange={event => setRootDraft(event.target.value)} placeholder={labels.placeholder} aria-label={labels.newTask} maxLength={180} /><button type="submit" className="desk-button desk-button-primary" disabled={!rootDraft.trim()}><Plus size={16} />{labels.addTask}</button></form><div className="desk-task-toolbar-actions"><button type="button" className="desk-button" onClick={() => undoTaskTree()} disabled={!taskHistory.canUndo}><Undo2 size={15} />{labels.undo}</button><button type="button" className="desk-button" onClick={() => redoTaskTree()} disabled={!taskHistory.canRedo}><Redo2 size={15} />{labels.redo}</button><button type="button" className="desk-button" onClick={() => expandAll(true)}><ChevronsUpDown size={15} />{labels.expandAll}</button><button type="button" className="desk-button" onClick={() => expandAll(false)}><ChevronsDownUp size={15} />{labels.collapseAll}</button><button type="button" className="desk-button" onClick={exportJson}><Download size={15} />{messages.exportActions.taskJson}</button><button type="button" className="desk-button" onClick={exportMarkdown}><Download size={15} />{messages.exportActions.taskMarkdown}</button><button type="button" className="desk-button" onClick={exportHtml}><Download size={15} />{messages.exportActions.taskHtml}</button><button type="button" className="desk-button" onClick={printTasks}><Printer size={15} />{messages.exportActions.printPdf}</button></div></div>{exportStatus && <p className="desk-inline-status" role="status">{exportStatus}</p>}
+    <div className="desk-task-toolbar"><form className="desk-task-root-form" onSubmit={submitRoot}><input value={rootDraft} onChange={event => setRootDraft(event.target.value)} placeholder={labels.placeholder} aria-label={labels.newTask} maxLength={180} /><button type="submit" className="desk-button desk-button-primary" disabled={!rootDraft.trim()}><Plus size={16} />{labels.addTask}</button></form><div className="desk-task-toolbar-actions"><button type="button" className="desk-button" onClick={() => undoTaskTree()} disabled={!taskHistory.canUndo}><Undo2 size={15} />{labels.undo}</button><button type="button" className="desk-button" onClick={() => redoTaskTree()} disabled={!taskHistory.canRedo}><Redo2 size={15} />{labels.redo}</button><button type="button" className="desk-button" onClick={() => expandAll(true)}><ChevronsUpDown size={15} />{labels.expandAll}</button><button type="button" className="desk-button" onClick={() => expandAll(false)}><ChevronsDownUp size={15} />{labels.collapseAll}</button></div></div>
     <div className="desk-task-views" role="tablist" aria-label={labels.views}>
       <button type="button" role="tab" aria-selected={activeView === 'outline'} className={activeView === 'outline' ? 'is-active' : ''} onClick={() => setActiveView('outline')}><ListTree size={15} />{labels.outlineView}</button>
       <button type="button" role="tab" aria-selected={activeView === 'map'} className={activeView === 'map' ? 'is-active' : ''} onClick={() => setActiveView('map')}><MapIcon size={15} />{labels.mapView}</button>

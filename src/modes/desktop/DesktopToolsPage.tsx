@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
-import { Activity, Bot, Brain, Calculator, Database, Headphones, ListChecks, Network, ScanText, Sigma, StickyNote, Terminal, X } from 'lucide-react'
+import { Activity, Bot, Calculator, Headphones, ListChecks, ScanText, Sigma, StickyNote, Terminal, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { TOOL_CATALOG } from '../../lib/settings'
 import { useTree } from '../../shared'
@@ -13,12 +13,11 @@ const LazyTools = {
   calc: lazy(() => import('../../components/Calculator')), notes: lazy(() => import('../../components/QuickNotes')),
   plot: lazy(() => import('../../components/CoordinateSystem')), chat: lazy(() => import('../../components/AIChat')),
   math: lazy(() => import('../../components/AIMathSolver')), code: lazy(() => import('../../components/CodePlayground')),
-  quiz: lazy(() => import('../../components/QuizGenerator')), data: lazy(() => import('../../components/DataAnalyzer')),
-  board: lazy(() => import('../../components/Whiteboard')), docs: lazy(() => import('../../components/DocumentTools')),
+  docs: lazy(() => import('../../components/DocumentTools')),
   tasks: lazy(() => import('../../components/TaskRoadmap')), audio: lazy(() => import('../../components/AudioTools')),
 }
-const ICONS: Record<string, LucideIcon> = { calc: Calculator, notes: StickyNote, plot: Activity, chat: Bot, math: Sigma, code: Terminal, quiz: Brain, data: Database, board: Network, docs: ScanText, tasks: ListChecks, audio: Headphones }
-const AR_LABELS: Record<string, string> = { calc: 'الحاسبة', notes: 'ملاحظات سريعة', plot: 'الإحداثيات', chat: 'محادثة المكتبة', math: 'حلّال الرياضيات', code: 'مساحة الأكواد', quiz: 'اختبارات وبطاقات', data: 'تحليل البيانات', board: 'لوحة وخرائط', docs: 'أدوات المستندات', tasks: 'المهام', audio: 'تركيز وصوت' }
+const ICONS: Record<string, LucideIcon> = { calc: Calculator, notes: StickyNote, plot: Activity, chat: Bot, math: Sigma, code: Terminal, docs: ScanText, tasks: ListChecks, audio: Headphones }
+const AR_LABELS: Record<string, string> = { calc: 'الحاسبة', notes: 'ملاحظات سريعة', plot: 'الإحداثيات', chat: 'محادثة المكتبة', math: 'حلّال الرياضيات', code: 'مساحة الأكواد', docs: 'أدوات المستندات', tasks: 'المهام', audio: 'تركيز وصوت' }
 type Labels = ReturnType<typeof useDesktopMessages>['toolHub']
 
 function filterSections(nodes: ReturnType<typeof useTree>['tree'], query: string): ReturnType<typeof useTree>['tree'] {

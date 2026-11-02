@@ -1,5 +1,4 @@
 import type { TNode } from '../shared'
-import type { TaskRecord, TaskStatus } from '../modes/desktop/taskStore'
 
 export type ExportLocale = 'en' | 'ar'
 export type ExportFile = { nodeId: string; name: string }
@@ -58,32 +57,6 @@ export function createStandaloneHtml(title: string, content: string, locale: Exp
   return `<!doctype html><html lang="${locale}" dir="${direction}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title><style>
     :root { color-scheme: light; } * { box-sizing: border-box; } body { max-width: 920px; margin: 0 auto; padding: 32px 22px; color: #202124; background: #fff; font-family: system-ui, "Noto Sans Arabic", sans-serif; line-height: 1.65; overflow-wrap: anywhere; } h1 { margin: 0 0 26px; padding-block-end: 12px; border-bottom: 2px solid #d7d9df; font-size: 2rem; line-height: 1.25; } h2, h3, h4, h5, h6 { margin-block: 1.2em .4em; line-height: 1.35; } p { white-space: pre-wrap; } .section-block { margin-block: 14px; } .file-list, .task-list { margin: 6px 0 14px; padding-inline-start: 1.5em; } .file-list li, .task-list li { margin-block: 4px; } .task-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; } .task-check { width: 1.2em; text-align: center; } .task-status, .task-due { color: #5f6368; font-size: .9em; } @media (max-width: 600px) { body { padding: 22px 15px; } h1 { font-size: 1.65rem; } }
   </style></head><body><main><h1>${escapeHtml(title)}</h1>${content}</main></body></html>`
-}
-
-export function taskTreeToMarkdown(tasks: TaskRecord[], statusLabels: Record<TaskStatus, string>, dueDateLabel: string): string {
-  const lines: string[] = []
-  const append = (parentId: string | null, depth: number): void => {
-    const siblings = tasks.filter(task => task.parentId === parentId).sort((a, b) => a.order - b.order)
-    for (const task of siblings) {
-      const due = task.dueDate ? ` — ${dueDateLabel}: ${task.dueDate}` : ''
-      lines.push(`${'  '.repeat(depth)}- [${task.status === 'done' ? 'x' : ' '}] ${task.title} (${statusLabels[task.status]})${due}`)
-      append(task.id, depth + 1)
-    }
-  }
-  append(null, 0)
-  return lines.join('\n')
-}
-
-export function taskTreeToPrintHtml(tasks: TaskRecord[], statusLabels: Record<TaskStatus, string>, dueDateLabel: string): string {
-  const render = (parentId: string | null): string => {
-    const siblings = tasks.filter(task => task.parentId === parentId).sort((a, b) => a.order - b.order)
-    if (!siblings.length) return ''
-    return `<ul class="task-list">${siblings.map(task => {
-      const due = task.dueDate ? `<span class="task-due">${escapeHtml(dueDateLabel)}: ${escapeHtml(task.dueDate)}</span>` : ''
-      return `<li><div class="task-row"><span class="task-check">${task.status === 'done' ? '✓' : '○'}</span><strong>${escapeHtml(task.title)}</strong><span class="task-status">${escapeHtml(statusLabels[task.status])}</span>${due}</div>${render(task.id)}</li>`
-    }).join('')}</ul>`
-  }
-  return render(null)
 }
 
 export function createPrintWindow(): Window | null {
