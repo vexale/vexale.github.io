@@ -841,6 +841,7 @@ html[data-mode='desktop'] .desk-note-word-count { margin-block-start: 6px; color
 html[data-mode='desktop'] .desk-note-content pre {
   max-width: 100%;
   padding: 10px;
+  padding-block-start: 44px;
   overflow-x: auto;
   border: 1px solid var(--desk-border);
   border-radius: 8px;
