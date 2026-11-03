@@ -204,7 +204,7 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
           <span>{messages.focusTimer.startForSection}</span>
         </button>
         <button type="button" className="desk-button" disabled={generatingCards} onClick={() => void generateSectionCards()}><Sparkles size={16} aria-hidden="true" /><span>{generatingCards ? messages.notes.saving : messages.notes.generateCards}</span></button>
-        <button type="button" className="desk-button desk-button-primary" onClick={() => inputRef.current?.click()}>
+        <button type="button" className="desk-button desk-button-primary desk-files-add-button" onClick={() => inputRef.current?.click()}>
           <Plus size={17} aria-hidden="true" />
           <span>{messages.files.add}</span>
         </button>
