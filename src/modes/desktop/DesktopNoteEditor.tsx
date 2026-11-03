@@ -55,16 +55,57 @@ function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, character => replacements[character] ?? character)
 }
 
+const CODE_BLOCK_TAGS = new Set(['ADDRESS', 'ARTICLE', 'ASIDE', 'BLOCKQUOTE', 'CAPTION', 'DD', 'DIV', 'DL', 'DT', 'FIELDSET', 'FIGCAPTION', 'FIGURE', 'FOOTER', 'FORM', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HEADER', 'LI', 'MAIN', 'NAV', 'OL', 'P', 'SECTION', 'TABLE', 'TBODY', 'TD', 'TFOOT', 'TH', 'THEAD', 'TR', 'UL'])
+
+function isCodeLineElement(element: HTMLElement): boolean {
+  if (element.tagName !== 'SPAN') return false
+  const className = typeof element.className === 'string' ? element.className : ''
+  return element.hasAttribute('data-line') || element.hasAttribute('data-line-number') || /(?:^|[\s_-])(?:code[-_])?line(?:$|[\s_-])/iu.test(className) || element.style.display === 'block'
+}
+
+function isUnmarkedCodeLineSequence(node: HTMLElement): boolean {
+  const meaningfulChildren = Array.from(node.childNodes).filter(child => child.nodeType !== Node.TEXT_NODE || Boolean(child.textContent?.trim()))
+  return meaningfulChildren.length > 1 && meaningfulChildren.every(child => child instanceof HTMLElement && child.tagName === 'SPAN' && child.attributes.length === 0)
+}
+
 function extractCodeText(node: Node): string {
   if (node instanceof HTMLElement && node.hasAttribute('data-note-code-copy')) return ''
   if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? ''
+  if (node instanceof HTMLElement && node.tagName === 'BR') return '\n'
   if (!(node instanceof HTMLElement)) return Array.from(node.childNodes).map(extractCodeText).join('')
-  if (node.tagName === 'BR') return '\n'
 
-  return Array.from(node.childNodes).map((child, index) => {
-    const text = extractCodeText(child)
-    return child instanceof HTMLElement && ['DIV', 'P', 'LI'].includes(child.tagName) && index > 0 ? `\n${text}` : text
-  }).join('')
+  let result = ''
+  const children = Array.from(node.childNodes)
+  const lineSpanSequence = isUnmarkedCodeLineSequence(node)
+  const hasBlockChildren = children.some(child => child instanceof HTMLElement && (CODE_BLOCK_TAGS.has(child.tagName) || isCodeLineElement(child) || (lineSpanSequence && child.tagName === 'SPAN')))
+  for (const child of children) {
+    if ((lineSpanSequence || hasBlockChildren) && child.nodeType === Node.TEXT_NODE && !child.textContent?.trim()) continue
+    const childText = extractCodeText(child)
+    if (!childText) continue
+    const isBlock = child instanceof HTMLElement && (CODE_BLOCK_TAGS.has(child.tagName) || isCodeLineElement(child) || (lineSpanSequence && child.tagName === 'SPAN'))
+    if (isBlock && result.length > 0 && !result.endsWith('\n')) result += '\n'
+    result += childText
+  }
+  return result
+}
+
+function codeTextToHtml(value: string): string {
+  return `<pre><code>${escapeHtml(value.replace(/\r\n?/gu, '\n'))}</code></pre>`
+}
+
+function codeTextFromHtml(html: string): string | null {
+  if (!html.trim()) return null
+  const parsed = new DOMParser().parseFromString(html, 'text/html')
+  const blocks = Array.from(parsed.body.querySelectorAll('pre'))
+  if (blocks.length) return blocks.map(pre => extractCodeText(pre.querySelector('code') ?? pre)).join('\n')
+  const code = Array.from(parsed.body.querySelectorAll('code'))
+  return code.length ? code.map(element => extractCodeText(element)).join('\n') : null
+}
+
+function looksLikePlainTextCode(value: string): boolean {
+  const normalized = value.replace(/\r\n?/gu, '\n')
+  if (normalized.split('\n').length < 2) return false
+  return /(?:^|\n)\s*(?:(?:\/\/|#!|#(?:include|define|if|endif)\b|\/\*)|(?:import\s+.+\s+from|from\s+\S+\s+import)\b|(?:export\s+)?(?:const|let|var)\s+[\w$]+|(?:async\s+)?function\s+[\w$]*\s*\(|class\s+[\w$]+|def\s+\w+\s*\(|(?:if|for|while)\s*\([^\n]*\)|(?:if|for|while)\s+[^:\n]+:\s*$|try\s*\{?|catch\s*\(|console\.|print\s*\(|echo\s+|(?:npm|npx|pnpm|yarn|git|python|pip|node|docker|kubectl)\s+(?:run|install|add|test|build|commit|status|pull|push|exec|start|check|version)\b|(?:select|insert|update|delete)\s+.+\b(?:from|into|set|where)\b|<\/?[a-z][^>]*>|[\w$]+\s*(?:=>|===?|!==?|:=)|\{|\}|\(|\)|\[|\]|;)/iu.test(normalized)
 }
 
 function decorateCodeBlocks(editor: HTMLDivElement, copyLabel: string): void {
@@ -585,12 +626,14 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
           onPaste={event => {
             const clipboardHtml = event.clipboardData.getData('text/html')
             const clipboardText = event.clipboardData.getData('text/plain')
-            const containsPre = /<pre\b/i.test(clipboardHtml)
-            if (!containsPre && !hasFencedCode(clipboardText)) return
+            const htmlCode = codeTextFromHtml(clipboardHtml)
+            const containsFencedCode = hasFencedCode(clipboardText)
+            const containsPlainTextCode = looksLikePlainTextCode(clipboardText)
+            if (htmlCode === null && !containsFencedCode && !containsPlainTextCode) return
             event.preventDefault()
-            const html = containsPre ? sanitizeNoteHtml(clipboardHtml) : fencedTextToHtml(clipboardText)
+            const html = htmlCode !== null ? codeTextToHtml(htmlCode) : containsFencedCode ? fencedTextToHtml(clipboardText) : codeTextToHtml(clipboardText)
             document.execCommand('insertHTML', false, html)
-            decorateCodeBlocks(editorRef.current!, copyLabelRef.current)
+            if (editorRef.current) decorateCodeBlocks(editorRef.current, copyLabelRef.current)
             captureEditorSelection()
             handleInput()
             updateSlashMenu()
