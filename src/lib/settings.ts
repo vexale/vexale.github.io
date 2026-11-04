@@ -56,7 +56,7 @@ export const ACCENT_PRESETS: readonly string[] = [
 
 export const AI_PERSONALITIES: readonly { id: AiPersonality; label: string; hint: string; instruction: string }[] = [
   { id: 'short', label: 'Concise', hint: 'Short, direct answers', instruction: 'Answer directly in two or three sentences.' },
-  { id: 'educational', label: 'Educational', hint: 'Clear steps with a brief example', instruction: 'Explain in simple steps and add a short example when useful.' },
+  { id: 'educational', label: 'Explanatory', hint: 'Clear steps with a brief example', instruction: 'Explain in simple steps and add a short example when useful.' },
   { id: 'detailed', label: 'Detailed', hint: 'Thorough reasoning and edge cases', instruction: 'Give a thorough answer with reasoning, details, and relevant edge cases.' },
   { id: 'creative', label: 'Creative', hint: 'Fresh angles and helpful analogies', instruction: 'Use thoughtful analogies and fresh ideas while staying accurate.' },
 ]

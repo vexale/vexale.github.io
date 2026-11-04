@@ -30,8 +30,8 @@ const STEPS: readonly TourStep[] = [
     fallback: '[data-tour="tree-categories"]',
     title: { en: 'Your category tree', ar: 'شجرة الأقسام' },
     description: {
-      en: 'Organize Quran study, science, languages, revision, or any subject you choose.',
-      ar: 'نظّم أقساماً لدراسة القرآن والعلوم واللغات والمراجعة أو أي مادة تختارها.',
+      en: 'Organize ideas, personal projects, creative work, reading, or anything you choose.',
+      ar: 'نظّم الأفكار والمشاريع الشخصية والأعمال الإبداعية والقراءة أو أي شيء تختاره.',
     },
   },
   {
@@ -46,10 +46,10 @@ const STEPS: readonly TourStep[] = [
   {
     selector: '[data-tour="ai-assistant"]',
     fallback: '[data-tour="tree-categories"]',
-    title: { en: 'Your study companion', ar: 'رفيق الدراسة' },
+    title: { en: 'Your AI assistant', ar: 'مساعدك الذكي' },
     description: {
-      en: 'Inside a section, ask for a summary, a review quiz, or an answer based on the notes you choose.',
-      ar: 'داخل القسم، اطلب ملخصاً أو اختبار مراجعة أو إجابة مستندة إلى الملاحظات التي تختارها.',
+      en: 'Inside a section, request a summary, generate questions, or ask about notes you choose to share.',
+      ar: 'داخل القسم، اطلب ملخصاً أو أنشئ أسئلة أو اسأل عن الملاحظات التي تختار مشاركتها.',
     },
   },
   {

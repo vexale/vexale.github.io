@@ -18,8 +18,8 @@ export const LAST_UPDATED: LocalizedText = {
 export const content: Record<'privacy' | 'terms', LegalDocument> = {
   privacy: {
     summary: {
-      en: 'Vexale keeps your study workspace focused, transparent, and under your control.',
-      ar: 'تحافظ Vexale على مساحة دراستك مركزة وشفافة وتحت سيطرتك.',
+      en: 'Vexale keeps your workspace clear, transparent, and under your control.',
+      ar: 'تحافظ Vexale على مساحة عملك واضحة وشفافة وتحت سيطرتك.',
     },
     sections: [
       {
@@ -54,15 +54,15 @@ export const content: Record<'privacy' | 'terms', LegalDocument> = {
   },
   terms: {
     summary: {
-      en: 'These terms describe the basic use of the Vexale study workspace.',
-      ar: 'توضح هذه الشروط الاستخدام الأساسي لمساحة دراسة Vexale.',
+      en: 'These terms describe the basic use of the Vexale workspace.',
+      ar: 'توضح هذه الشروط الاستخدام الأساسي لمساحة عمل Vexale.',
     },
     sections: [
       {
         heading: { en: 'Use of the workspace', ar: 'استخدام مساحة العمل' },
         paragraphs: [{
-          en: 'Use Vexale for lawful study and productivity purposes. You are responsible for the content you add and the people you invite to shared workspaces.',
-          ar: 'استخدم Vexale لأغراض الدراسة والإنتاجية المشروعة. أنت مسؤول عن المحتوى الذي تضيفه والأشخاص الذين تدعوهم إلى مساحات العمل المشتركة.',
+          en: 'Use Vexale for lawful personal, creative, and productivity purposes. You are responsible for the content you add and the people you invite to shared workspaces.',
+          ar: 'استخدم Vexale للأغراض الشخصية والإبداعية والإنتاجية المشروعة. أنت مسؤول عن المحتوى الذي تضيفه والأشخاص الذين تدعوهم إلى مساحات العمل المشتركة.',
         }],
       },
       {

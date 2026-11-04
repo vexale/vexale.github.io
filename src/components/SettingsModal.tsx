@@ -54,7 +54,7 @@ const THEMES: readonly { id: ThemeId; label: { en: string; ar: string }; hint: {
 
 const PERSONALITY_COPY: Record<string, { en: { label: string; hint: string }; ar: { label: string; hint: string } }> = {
   short: { en: { label: 'Concise', hint: 'Short, direct answers.' }, ar: { label: 'مختصر', hint: 'إجابات قصيرة ومباشرة.' } },
-  educational: { en: { label: 'Educational', hint: 'Clear steps and brief examples.' }, ar: { label: 'تعليمي', hint: 'خطوات واضحة وأمثلة قصيرة.' } },
+  educational: { en: { label: 'Explanatory', hint: 'Clear steps and brief examples.' }, ar: { label: 'توضيحي', hint: 'خطوات واضحة وأمثلة قصيرة.' } },
   detailed: { en: { label: 'Detailed', hint: 'More depth and useful context.' }, ar: { label: 'مفصّل', hint: 'تفاصيل أوسع وسياق مفيد.' } },
   creative: { en: { label: 'Creative', hint: 'Fresh ideas and helpful analogies.' }, ar: { label: 'إبداعي', hint: 'أفكار جديدة وتشبيهات مفيدة.' } },
 }
@@ -476,7 +476,7 @@ export default function SettingsModal({ open, onClose, onRequestAuth }: Props) {
                 <section className="space-y-3">
                   <div>
                     <h3 className="text-sm font-semibold">{text('Response style', 'أسلوب الإجابة')}</h3>
-                    <p className="mt-1 text-xs opacity-55">{text('Choose the tone that feels right for your study sessions.', 'اختر الأسلوب المناسب لجلسات دراستك.')}</p>
+                    <p className="mt-1 text-xs opacity-55">{text('Choose the response style that works best for you.', 'اختر أسلوب الإجابة الذي يناسبك.')}</p>
                   </div>
                   <div role="radiogroup" aria-label={text('AI response style', 'أسلوب إجابة الذكاء الاصطناعي')} className="grid gap-2 sm:grid-cols-2">
                     {AI_PERSONALITIES.map(personality => {

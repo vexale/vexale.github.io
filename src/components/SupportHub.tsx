@@ -105,12 +105,12 @@ export default function SupportHub({ onRequestAuth }: SupportHubProps) {
           <p className="mt-2 text-xs leading-6 opacity-70">{text('Private notes stay in this browser. Cloud support messages and shared notes are sent only when you choose those actions. A live-workspace invitation is a bearer link: anyone who has it can access that shared workspace.', 'تبقى الملاحظات الخاصة في هذا المتصفح. لا تُرسل رسائل الدعم أو الملاحظات المشتركة إلى السحابة إلا عند اختيارك ذلك. رابط مساحة المشاركة هو رابط وصول؛ يستطيع كل من يملكه الوصول إلى تلك المساحة.')}</p>
         </details>
         <details className="rounded-xl border border-white/10 bg-white/[0.025] p-3">
-          <summary className="cursor-pointer list-none text-sm font-medium">{text('What can the study assistant do?', 'ما مهام مساعد الدراسة؟')}</summary>
-          <p className="mt-2 text-xs leading-6 opacity-70">{text('It can summarize the current section, create review questions, and answer questions using the note text you choose to send. It does not browse your private library or send notes automatically.', 'يمكنه تلخيص القسم الحالي وإنشاء أسئلة للمراجعة والإجابة عن أسئلة بالاستناد إلى نص الملاحظات الذي تختار إرساله. لا يتصفح مكتبتك الخاصة ولا يرسل الملاحظات تلقائياً.')}</p>
+          <summary className="cursor-pointer list-none text-sm font-medium">{text('What can the AI assistant do?', 'ما مهام المساعد الذكي؟')}</summary>
+          <p className="mt-2 text-xs leading-6 opacity-70">{text('It can summarize the current section, generate questions, and answer questions using the note text you choose to send. It does not browse your private library or send notes automatically.', 'يمكنه تلخيص القسم الحالي وإنشاء أسئلة والإجابة عن أسئلة بالاستناد إلى نص الملاحظات الذي تختار إرساله. لا يتصفح مكتبتك الخاصة ولا يرسل الملاحظات تلقائياً.')}</p>
         </details>
         <details className="rounded-xl border border-white/10 bg-white/[0.025] p-3">
           <summary className="cursor-pointer list-none text-sm font-medium">{text('Which domains can I organize here?', 'ما المجالات التي يمكن تنظيمها هنا؟')}</summary>
-          <p className="mt-2 text-xs leading-6 opacity-70">{text('Create a structure for Quran study, science, languages, exam revision, or any subject that matters to you.', 'أنشئ بنية لدراسة القرآن أو العلوم أو اللغات أو مراجعة الاختبارات أو أي مادة تهمك.')}</p>
+          <p className="mt-2 text-xs leading-6 opacity-70">{text('Create a structure for personal projects, creative work, reading, routines, or anything that matters to you.', 'أنشئ بنية للمشاريع الشخصية أو الأعمال الإبداعية أو القراءة أو الروتين أو أي شيء يهمك.')}</p>
         </details>
       </section>
     </div>

@@ -185,7 +185,7 @@ function localizeAssistantError(error: string, locale: 'en' | 'ar'): string {
   const translations: Record<string, string> = {
     'Sign in or reconnect your Google account to continue.': 'سجّل الدخول أو أعد ربط حساب Google للمتابعة.',
     'Your Google session needs to be refreshed. Please sign in again.': 'تحتاج جلسة Google إلى تحديث. سجّل الدخول مرة أخرى.',
-    'Study tools are getting ready. Please try again soon.': 'تجري تهيئة أدوات الدراسة. حاول مرة أخرى بعد قليل.',
+    'AI tools are getting ready. Please try again soon.': 'تجري تهيئة أدوات الذكاء الاصطناعي. حاول مرة أخرى بعد قليل.',
     'Choose a focused passage to work with.': 'اختر مقطعاً محدداً للعمل عليه.',
     'Add some notes to this section to get started.': 'أضف بعض الملاحظات إلى هذا القسم للبدء.',
     'What would you like to explore?': 'ما الموضوع الذي ترغب في استكشافه؟',
@@ -430,7 +430,7 @@ export default function NotesEditor({ nodeId, title, nodePathKey }: NotesEditorP
       setAssistantAnswer(answer)
       if (action === 'answer') setAssistantQuestion('')
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'The study assistant could not complete this request.'
+      const message = error instanceof Error ? error.message : 'The AI assistant could not complete this request.'
       setAssistantError(localizeAssistantError(message, locale))
     } finally {
       setAssistantBusy(false)
@@ -526,8 +526,8 @@ export default function NotesEditor({ nodeId, title, nodePathKey }: NotesEditorP
     if (!editorRef.current || saveState === 'loading') return
     editorRef.current.focus()
     const template = locale === 'ar'
-      ? '<h2>ملاحظات الدراسة</h2><p><strong>الفكرة الرئيسة:</strong> </p><p><strong>مصطلحات ومفاهيم:</strong></p><ul><li> </li></ul><p><strong>أسئلة للمراجعة:</strong></p><ol><li> </li></ol><h3>ملخص المحاضرة</h3><p><br></p>'
-      : '<h2>Study notes</h2><p><strong>Key idea:</strong> </p><p><strong>Terms and concepts:</strong></p><ul><li> </li></ul><p><strong>Review questions:</strong></p><ol><li> </li></ol><h3>Lecture summary</h3><p><br></p>'
+      ? '<h2>ملاحظات</h2><p><strong>الفكرة الرئيسة:</strong> </p><p><strong>نقاط مهمة:</strong></p><ul><li> </li></ul><p><strong>أسئلة:</strong></p><ol><li> </li></ol><h3>ملخص</h3><p><br></p>'
+      : '<h2>Notes</h2><p><strong>Key idea:</strong> </p><p><strong>Key points:</strong></p><ul><li> </li></ul><p><strong>Questions:</strong></p><ol><li> </li></ol><h3>Summary</h3><p><br></p>'
     document.execCommand('insertHTML', false, template)
     currentHtmlRef.current = editorRef.current.innerHTML
     setHasContent(hasReadableText(currentHtmlRef.current))
@@ -709,7 +709,7 @@ export default function NotesEditor({ nodeId, title, nodePathKey }: NotesEditorP
         {button(text('Quote', 'اقتباس'), <Quote size={15} />, () => formatBlock('blockquote'))}
         {button(text('Link', 'رابط'), <Link2 size={15} />, insertLink)}
         {button(text('Code block', 'كتلة برمجية'), <Code2 size={15} />, insertCodeBlock)}
-        {button(text('Study template', 'قالب دراسة'), <BookOpenText size={15} />, insertStudyTemplate)}
+        {button(text('Notes template', 'قالب ملاحظات'), <BookOpenText size={15} />, insertStudyTemplate)}
         {button(text('Two columns', 'عمودان'), <Columns2 size={15} />, () => insertColumns(2))}
         {button(text('Three columns', 'ثلاثة أعمدة'), <Columns3 size={15} />, () => insertColumns(3))}
 
@@ -740,7 +740,7 @@ export default function NotesEditor({ nodeId, title, nodePathKey }: NotesEditorP
       <div className="relative">
         {!hasContent && saveState !== 'loading' && (
           <p aria-hidden="true" className="pointer-events-none absolute inset-x-3 top-3 z-10 text-sm leading-7 opacity-40">
-            {text('Write study notes, lecture summaries, or longer passages here…', 'اكتب ملاحظات دراسية أو ملخصات محاضرات أو نصوصاً طويلة هنا…')}
+            {text('Write notes, summaries, or longer passages here…', 'اكتب ملاحظات أو ملخصات أو نصوصاً طويلة هنا…')}
           </p>
         )}
         <div
@@ -860,8 +860,8 @@ export default function NotesEditor({ nodeId, title, nodePathKey }: NotesEditorP
           onClick={() => setAssistantOpen(value => !value)}
           className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-sm font-semibold transition hover:bg-white/5"
         >
-          <span className="flex items-center gap-2"><Bot size={17} style={{ color: 'var(--accent)' }} />{text('Study assistant', 'مساعد الدراسة')}</span>
-          <span className="text-xs opacity-60">{assistantOpen ? text('Hide', 'إخفاء') : text('Summary, quiz, or question', 'ملخص أو اختبار أو سؤال')}</span>
+          <span className="flex items-center gap-2"><Bot size={17} style={{ color: 'var(--accent)' }} />{text('Notes assistant', 'مساعد الملاحظات')}</span>
+          <span className="text-xs opacity-60">{assistantOpen ? text('Hide', 'إخفاء') : text('Summary, questions, or chat', 'ملخص أو أسئلة أو محادثة')}</span>
         </button>
 
         {assistantOpen && (
@@ -874,7 +874,7 @@ export default function NotesEditor({ nodeId, title, nodePathKey }: NotesEditorP
                 <Sparkles size={14} />{text('Summarize notes', 'تلخيص الملاحظات')}
               </button>
               <button type="button" disabled={assistantBusy || !hasContent} onClick={() => { void runAssistant('quiz') }} className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
-                <ListChecks size={14} />{text('Create a review quiz', 'إنشاء اختبار مراجعة')}
+                <ListChecks size={14} />{text('Create questions from these notes', 'إنشاء أسئلة من هذه الملاحظات')}
               </button>
             </div>
 
@@ -903,7 +903,7 @@ export default function NotesEditor({ nodeId, title, nodePathKey }: NotesEditorP
             {assistantError && <p role="alert" className="rounded-lg border border-rose-300/20 bg-rose-400/10 p-2 text-xs text-rose-100">{assistantError}</p>}
             {assistantAnswer && (
               <div aria-live="polite" className="space-y-1 rounded-xl border border-white/10 bg-black/20 p-3">
-                <h4 className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>{text('Study assistant', 'مساعد الدراسة')}</h4>
+                <h4 className="text-xs font-semibold" style={{ color: 'var(--accent)' }}>{text('Notes assistant', 'مساعد الملاحظات')}</h4>
                 <p dir="auto" className="whitespace-pre-wrap text-sm leading-7">{assistantAnswer}</p>
               </div>
             )}

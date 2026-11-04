@@ -28,11 +28,11 @@ export const FIRST_RUN_COPY = {
     modeTitle: 'Where would you like to work?',
     modeDescription: 'Choose your starting view. You can switch between them at any time.',
     spaceTitle: 'Space',
-    spaceDescription: 'A visual study space for notes, files, and study tools.',
+    spaceDescription: 'A visual space for notes, files, and useful tools.',
     officeTitle: 'Office',
     officeDescription: 'A structured workspace for sections, tasks, and planning.',
     themeTitle: 'Choose a theme',
-    spaceThemeDescription: 'Space themes shape the study canvas and its atmosphere.',
+    spaceThemeDescription: 'Space themes shape the visual canvas and its atmosphere.',
     officeThemeDescription: 'Office themes style your focused planning workspace.',
     templateTitle: 'Choose a starting template',
     templateDescription: 'Templates add sections and a starter task tree. Blank adds no template content.',
@@ -61,11 +61,11 @@ export const FIRST_RUN_COPY = {
     modeTitle: 'أين تريد العمل؟',
     modeDescription: 'اختر طريقة العرض عند البدء. يمكنك التبديل بينهما في أي وقت.',
     spaceTitle: 'Space',
-    spaceDescription: 'مساحة دراسة مرئية للملاحظات والملفات وأدوات الدراسة.',
+    spaceDescription: 'مساحة مرئية للملاحظات والملفات والأدوات المفيدة.',
     officeTitle: 'المكتب',
     officeDescription: 'مساحة منظمة للأقسام والمهام والتخطيط.',
     themeTitle: 'اختر سمة',
-    spaceThemeDescription: 'تحدد سمات Space مظهر مساحة الدراسة وأجواءها.',
+    spaceThemeDescription: 'تحدد سمات Space مظهر مساحة العمل وأجواءها.',
     officeThemeDescription: 'تحدد سمات المكتب مظهر مساحة التخطيط المركزة.',
     templateTitle: 'اختر قالب البداية',
     templateDescription: 'تضيف القوالب أقساماً وشجرة مهام أولية. لا يضيف القالب الفارغ أي محتوى جاهز.',
@@ -103,66 +103,66 @@ export const SPACE_THEME_CHOICES: readonly SpaceThemeChoice[] = [
 export const SETUP_TEMPLATES: readonly SetupTemplate[] = [
   {
     id: 'semester',
-    title: { en: 'Semester plan', ar: 'خطة الفصل الدراسي' },
-    description: { en: 'Organize courses, deadlines, weekly study, and exam review.', ar: 'نظّم المقررات والمواعيد والدراسة الأسبوعية ومراجعة الاختبارات.' },
+    title: { en: 'Weekly plan', ar: 'خطة أسبوعية' },
+    description: { en: 'Organize projects, deadlines, weekly priorities, and milestones.', ar: 'نظّم المشاريع والمواعيد والأولويات الأسبوعية والمراحل المهمة.' },
     sections: [
-      { en: 'Semester overview', ar: 'نظرة عامة على الفصل' },
-      { en: 'Courses and materials', ar: 'المقررات والمواد' },
-      { en: 'Assignments and deadlines', ar: 'الواجبات والمواعيد' },
-      { en: 'Review and exams', ar: 'المراجعة والاختبارات' },
+      { en: 'Week overview', ar: 'نظرة عامة على الأسبوع' },
+      { en: 'Projects and resources', ar: 'المشاريع والموارد' },
+      { en: 'Tasks and deadlines', ar: 'المهام والمواعيد' },
+      { en: 'Progress and next steps', ar: 'التقدم والخطوات التالية' },
     ],
     tasks: [
-      { title: { en: 'Prepare the semester', ar: 'الاستعداد للفصل' }, children: [
-        { title: { en: 'List all courses', ar: 'إدراج المقررات' } },
+      { title: { en: 'Set up the week', ar: 'تهيئة الأسبوع' }, children: [
+        { title: { en: 'List active projects', ar: 'حصر المشاريع الحالية' } },
         { title: { en: 'Add key dates', ar: 'إضافة المواعيد المهمة' } },
-        { title: { en: 'Set weekly study blocks', ar: 'تحديد أوقات الدراسة الأسبوعية' } },
+        { title: { en: 'Reserve time for priorities', ar: 'تخصيص وقت للأولويات' } },
       ] },
-      { title: { en: 'Build a weekly study rhythm', ar: 'إنشاء روتين دراسة أسبوعي' }, children: [
-        { title: { en: 'Review notes after class', ar: 'مراجعة الملاحظات بعد المحاضرة' } },
-        { title: { en: 'Check upcoming assignments', ar: 'متابعة الواجبات القادمة' } },
-        { title: { en: 'Plan a weekly reset', ar: 'تخطيط مراجعة أسبوعية' } },
+      { title: { en: 'Build a weekly routine', ar: 'إنشاء روتين أسبوعي' }, children: [
+        { title: { en: 'Organize notes after each work session', ar: 'تنظيم الملاحظات بعد كل جلسة عمل' } },
+        { title: { en: 'Check upcoming tasks', ar: 'متابعة المهام القادمة' } },
+        { title: { en: 'Plan a weekly check-in', ar: 'تخطيط متابعة أسبوعية' } },
       ] },
-      { title: { en: 'Prepare for assessments', ar: 'الاستعداد للتقييمات' }, children: [
-        { title: { en: 'Collect practice questions', ar: 'جمع أسئلة التدريب' } },
-        { title: { en: 'Schedule review sessions', ar: 'جدولة جلسات المراجعة' } },
+      { title: { en: 'Prepare for milestones', ar: 'الاستعداد للمراحل المهمة' }, children: [
+        { title: { en: 'Collect ideas and references', ar: 'جمع الأفكار والمراجع' } },
+        { title: { en: 'Schedule project check-ins', ar: 'جدولة جلسات متابعة المشاريع' } },
       ] },
     ],
   },
   {
     id: 'exam-week',
-    title: { en: 'Exam week', ar: 'أسبوع الاختبارات' },
-    description: { en: 'Map exam dates, focused revision, and the day-of checklist.', ar: 'رتّب مواعيد الاختبارات والمراجعة المركزة وقائمة يوم الاختبار.' },
+    title: { en: 'Busy week', ar: 'أسبوع مزدحم' },
+    description: { en: 'Map deadlines, focused work blocks, and a day-of checklist.', ar: 'رتّب المواعيد النهائية ووقت العمل المركّز وقائمة يوم التنفيذ.' },
     sections: [
-      { en: 'Exam schedule', ar: 'جدول الاختبارات' },
-      { en: 'Revision plan', ar: 'خطة المراجعة' },
-      { en: 'Exam-day checklist', ar: 'قائمة يوم الاختبار' },
+      { en: 'Key dates', ar: 'تواريخ مهمة' },
+      { en: 'Priority plan', ar: 'خطة الأولويات' },
+      { en: 'Day-of checklist', ar: 'قائمة يوم التنفيذ' },
     ],
     tasks: [
       { title: { en: 'Plan the week', ar: 'تخطيط الأسبوع' }, children: [
-        { title: { en: 'Confirm exam dates and locations', ar: 'تأكيد مواعيد الاختبارات ومواقعها' } },
-        { title: { en: 'Rank subjects by readiness', ar: 'ترتيب المواد حسب الاستعداد' } },
-        { title: { en: 'Leave time between exams', ar: 'ترك وقت بين الاختبارات' } },
+        { title: { en: 'Confirm key dates and locations', ar: 'تأكيد المواعيد والمواقع المهمة' } },
+        { title: { en: 'Rank priorities by urgency', ar: 'ترتيب الأولويات حسب الاستعجال' } },
+        { title: { en: 'Leave time between commitments', ar: 'ترك وقت بين الالتزامات' } },
       ] },
-      { title: { en: 'Revise each subject', ar: 'مراجعة كل مادة' }, children: [
-        { title: { en: 'Break topics into sessions', ar: 'تقسيم الموضوعات إلى جلسات' } },
-        { title: { en: 'Complete practice questions', ar: 'حل أسئلة تدريبية' } },
-        { title: { en: 'Review mistakes and gaps', ar: 'مراجعة الأخطاء والثغرات' } },
+      { title: { en: 'Work through priority items', ar: 'إنجاز الأولويات واحداً تلو الآخر' }, children: [
+        { title: { en: 'Break projects into steps', ar: 'تقسيم المشاريع إلى خطوات' } },
+        { title: { en: 'Finish the next small task', ar: 'إنجاز المهمة الصغيرة التالية' } },
+        { title: { en: 'Check progress and open questions', ar: 'متابعة التقدم والأسئلة المفتوحة' } },
       ] },
-      { title: { en: 'Prepare for exam day', ar: 'الاستعداد ليوم الاختبار' }, children: [
-        { title: { en: 'Pack required materials', ar: 'تجهيز المستلزمات المطلوبة' } },
-        { title: { en: 'Plan travel and rest', ar: 'تخطيط التنقل والراحة' } },
+      { title: { en: 'Prepare for the big day', ar: 'الاستعداد ليوم التنفيذ' }, children: [
+        { title: { en: 'Prepare needed materials', ar: 'تجهيز المواد اللازمة' } },
+        { title: { en: 'Plan travel and breaks', ar: 'تخطيط التنقل والاستراحات' } },
       ] },
     ],
   },
   {
     id: 'graduation',
-    title: { en: 'Graduation project', ar: 'مشروع التخرج' },
-    description: { en: 'Move from project scope and research to build, review, and delivery.', ar: 'انتقل من تحديد النطاق والبحث إلى التنفيذ والمراجعة والتسليم.' },
+    title: { en: 'Milestone project', ar: 'مشروع مرحلي' },
+    description: { en: 'Move from project scope and research to build, review, and delivery.', ar: 'انتقل من تحديد النطاق إلى التنفيذ والمتابعة والتسليم.' },
     sections: [
       { en: 'Project brief', ar: 'موجز المشروع' },
       { en: 'Research and references', ar: 'البحث والمراجع' },
       { en: 'Build and milestones', ar: 'التنفيذ والمراحل' },
-      { en: 'Review and delivery', ar: 'المراجعة والتسليم' },
+      { en: 'Check and delivery', ar: 'الفحص والتسليم' },
     ],
     tasks: [
       { title: { en: 'Define the project', ar: 'تحديد المشروع' }, children: [
@@ -176,7 +176,7 @@ export const SETUP_TEMPLATES: readonly SetupTemplate[] = [
         { title: { en: 'Gather feedback', ar: 'جمع الملاحظات' } },
       ] },
       { title: { en: 'Prepare final delivery', ar: 'الاستعداد للتسليم النهائي' }, children: [
-        { title: { en: 'Review project requirements', ar: 'مراجعة متطلبات المشروع' } },
+        { title: { en: 'Confirm project requirements', ar: 'تأكيد متطلبات المشروع' } },
         { title: { en: 'Draft the presentation', ar: 'إعداد مسودة العرض' } },
         { title: { en: 'Submit final files', ar: 'تسليم الملفات النهائية' } },
       ] },

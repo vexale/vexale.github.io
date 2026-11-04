@@ -1,7 +1,7 @@
 # 3D Library App - Context & Roadmap
 
 ## 🎯 Overview
-An interactive academic document and PDF transformation platform with AI summaries, flashcards, quizzes, and 3D visual modules.
+An interactive workspace for notes, files, projects, and tasks, with AI assistance and 3D visual spaces.
 
 ## 🚀 Active Stack
 - React / Vite / TypeScript
@@ -13,9 +13,9 @@ An interactive academic document and PDF transformation platform with AI summari
 - السمات ثلاثية الأبعاد تستخدم Three.js، وتحترم إعداد تقليل الحركة، وتُحفظ خياراتها عبر مخزن الإعدادات الحالي.
 - وضع التركيز المفرد يعرض القسم النشط وحده مع أداة تنقل واضحة بين الأقسام.
 
-## حالة ميزة مساعد الدراسة
+## حالة ميزة المساعد الذكي
 - ملاحظات كل فرع تُحفظ محلياً في IndexedDB بمفتاح معرّف العقدة.
-- مساعد الدراسة يستدعي Supabase Edge Function، ولا يرسل مفتاح Gemini إلى المتصفح.
+- المساعد الذكي يستدعي Supabase Edge Function، ولا يرسل مفتاح Gemini إلى المتصفح.
 - تُرسل الملاحظات إلى Gemini فقط بعد ضغط المستخدم على إجراء المساعد.
 - تتحقق الوظيفة من Google ID token بتوقيع Google والجمهور والانتهاء قبل طلب النموذج.
 - تُحفظ أسرار Gemini وإعدادات الوظيفة في Supabase، لا في ملفات العميل.

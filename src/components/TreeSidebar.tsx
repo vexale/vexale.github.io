@@ -324,7 +324,7 @@ export default function TreeSidebar() {
               <FolderPlus size={16} style={{ color: 'var(--accent)' }} />{text('Create a top-level category', 'إنشاء قسم رئيسي')}
             </div>
             <AddForm
-              placeholder={text('Quran, science, languages, exam prep…', 'القرآن، العلوم، اللغات، مراجعة الاختبارات…')}
+              placeholder={text('Projects, ideas, routines, notes…', 'مشاريع، أفكار، روتين، ملاحظات…')}
               color="var(--accent)"
               addLabel={text('Add category', 'إضافة قسم')}
               onSubmit={title => {

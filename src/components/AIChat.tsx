@@ -50,10 +50,10 @@ export default function AIChat({ context, nodeTitle, contextLoading = false }: A
     } catch (e) {
       const message = e instanceof Error ? e.message.toLowerCase() : ''
       const response = message.includes('sign in') || message.includes('سجّل الدخول')
-        ? locale === 'ar' ? 'سجّل الدخول بحساب Google أو أعد الاتصال لاستخدام مساعد المكتبة.' : 'Sign in or reconnect your Google account to use study chat.'
+        ? locale === 'ar' ? 'سجّل الدخول بحساب Google أو أعد الاتصال لاستخدام مساعد المكتبة.' : 'Sign in or reconnect your Google account to use library chat.'
         : message.includes('supabase') || message.includes('preparing') || message.includes('not configured') || message.includes('تهيئتها')
           ? locale === 'ar' ? 'خدمة الذكاء الاصطناعي غير مهيأة بعد. تحقّق من إعداد Supabase ونشر وظيفة notes-ai.' : 'AI is not configured yet. Check Supabase and deploy notes-ai.'
-          : locale === 'ar' ? 'تعذّر الاتصال بمساعد المكتبة. تحقّق من الاتصال وإعداد وظيفة notes-ai ثم أعد المحاولة.' : 'Could not connect to study chat. Check your connection and retry.'
+          : locale === 'ar' ? 'تعذّر الاتصال بمساعد المكتبة. تحقّق من الاتصال وإعداد وظيفة notes-ai ثم أعد المحاولة.' : 'Could not connect to library chat. Check your connection and retry.'
       setMsgs(m => [...m, { role: 'ai', text: response }])
     } finally {
       setBusy(false)

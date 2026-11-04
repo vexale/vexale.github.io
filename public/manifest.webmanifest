@@ -2,7 +2,7 @@
   "id": "/app/",
   "name": "Vexale",
   "short_name": "Vexale",
-  "description": "Study workspace for sections, notes, files, tasks, and learning tools.",
+  "description": "Your notes, tasks and time in one place.",
   "lang": "en",
   "dir": "ltr",
   "start_url": "/app/",
@@ -10,7 +10,7 @@
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
-  "categories": ["education", "productivity"],
+  "categories": ["productivity", "utilities"],
   "background_color": "#0a0f17",
   "theme_color": "#0a0f17",
   "icons": [

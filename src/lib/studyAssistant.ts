@@ -53,7 +53,7 @@ export async function requestStudyAI(request: StudyAIRequest): Promise<string> {
   const message = (english: string, arabic: string): string => language === 'ar' ? arabic : english
   const googleIdToken = getGoogleIdToken()
   if (!googleIdToken) throw new Error(message('Sign in or reconnect your Google account to continue.', 'سجّل الدخول بحساب Google أو أعد الاتصال للمتابعة.'))
-  if (!supabase) throw new Error(message('Study tools are not configured yet. Check the Supabase public URL and key.', 'لم يتم إعداد اتصال Supabase بعد. تحقّق من رابط المشروع ومفتاحه العام.'))
+  if (!supabase) throw new Error(message('AI tools are not configured yet. Check the Supabase public URL and key.', 'لم يتم إعداد اتصال Supabase بعد. تحقّق من رابط المشروع ومفتاحه العام.'))
 
   const notes = request.notes.trim()
   const question = request.question?.trim() ?? ''

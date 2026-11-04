@@ -5,7 +5,7 @@
 - [x] Set up Taste Skill rules inside .clinerules.
 - [x] Installed Playwright CLI testing package.
 - [x] Created PROJECT_CONTEXT.md for project scope.
-- [x] أُضيفت لوحة مساعد الدراسة إلى محرر ملاحظات كل قسم: تلخيص، اختبار مراجعة، وأسئلة عن محتوى القسم.
+- [x] أُضيفت لوحة مساعد الذكاء الاصطناعي إلى محرر ملاحظات كل قسم: تلخيص، إنشاء أسئلة، وإجابات عن محتوى القسم.
 - [x] أُنشئت Supabase Edge Function تتحقق من Google ID token وتستدعي Gemini دون كشف مفتاحه في المتصفح.
 - [x] دُمج دعم مفتاح Supabase publishable مع الحفاظ على anon، وأُضيف تنبيه خصوصية قبل إرسال الملاحظات.
 

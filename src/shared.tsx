@@ -61,9 +61,9 @@ export const PALETTE = ['#5eead4', '#f9a8d4', '#fcd34d', '#93c5fd', '#c4b5fd', '
 
 /* ============ دوال الشجرة ============ */
 const DEFAULT_TREE: TNode[] = [
-  { id: 'domain-quran', title: 'Quran', ci: 0, children: [] },
+  { id: 'domain-quran', title: 'Personal', ci: 0, children: [] },
   { id: 'domain-art', title: 'Art', ci: 1, children: [] },
-  { id: 'domain-learning', title: 'Learning', ci: 2, children: [] },
+  { id: 'domain-learning', title: 'Ideas', ci: 2, children: [] },
   { id: 'domain-projects', title: 'Projects', ci: 3, children: [] },
 ]
 

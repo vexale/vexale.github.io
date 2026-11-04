@@ -26,7 +26,7 @@ const content: Record<LegalDocument, LegalContent> = {
     },
     sections: [
       { heading: { en: '1. Who we are and scope', ar: '١. الجهة المسؤولة ونطاق السياسة' }, paragraphs: [
-        { en: 'vexale is the brand and project name for this digital library and study workspace. It is operated by the vexale Development Team in Iraq. For privacy questions, contact vexale.support@gmail.com.', ar: 'vexale هو الاسم التجاري واسم المشروع لهذه المكتبة الرقمية ومساحة الدراسة. يشغّله فريق تطوير vexale في العراق. للاستفسارات المتعلقة بالخصوصية، راسل vexale.support@gmail.com.' },
+        { en: 'vexale is the brand and project name for this digital library and flexible workspace. It is operated by the vexale Development Team in Iraq. For privacy questions, contact vexale.support@gmail.com.', ar: 'vexale هو الاسم التجاري واسم المشروع لهذه المكتبة الرقمية ومساحة العمل المرنة. يشغّله فريق تطوير vexale في العراق. للاستفسارات المتعلقة بالخصوصية، راسل vexale.support@gmail.com.' },
         { en: 'This policy applies to the app and the features you choose to use. Separate terms and privacy notices from third-party providers may also apply to those services.', ar: 'تنطبق هذه السياسة على التطبيق والميزات التي تختار استخدامها. وقد تنطبق أيضاً شروط وإشعارات خصوصية مستقلة لمزودي الخدمات الخارجيين.' }
       ] },
       { heading: { en: '2. Information we may process', ar: '٢. المعلومات التي قد نعالجها' }, paragraphs: [
@@ -72,7 +72,7 @@ const content: Record<LegalDocument, LegalContent> = {
     },
     sections: [
       { heading: { en: '1. Operator and agreement', ar: '١. الجهة المشغّلة والاتفاق' }, paragraphs: [
-        { en: 'vexale is the brand and project name for this digital library and study workspace. The service is operated by the vexale Development Team in Iraq. Contact: vexale.support@gmail.com.', ar: 'vexale هو الاسم التجاري واسم المشروع لهذه المكتبة الرقمية ومساحة الدراسة. يشغّل الخدمة فريق تطوير vexale في العراق. للتواصل: vexale.support@gmail.com.' },
+        { en: 'vexale is the brand and project name for this digital library and flexible workspace. The service is operated by the vexale Development Team in Iraq. Contact: vexale.support@gmail.com.', ar: 'vexale هو الاسم التجاري واسم المشروع لهذه المكتبة الرقمية ومساحة العمل المرنة. يشغّل الخدمة فريق تطوير vexale في العراق. للتواصل: vexale.support@gmail.com.' },
         { en: 'By accessing or using the app, you agree to these terms and the Privacy Policy. If you do not agree, stop using the service and do not submit content to its AI features.', ar: 'بدخولك إلى التطبيق أو استخدامه، فإنك توافق على هذه الشروط وسياسة الخصوصية. إذا لم توافق، فتوقف عن استخدام الخدمة ولا ترسل محتوى إلى ميزات الذكاء الاصطناعي.' }
       ] },
       { heading: { en: '2. Eligibility and account security', ar: '٢. الأهلية وأمان الحساب' }, paragraphs: [
@@ -86,7 +86,7 @@ const content: Record<LegalDocument, LegalContent> = {
       ] },
       { heading: { en: '4. AI features and files', ar: '٤. ميزات الذكاء الاصطناعي والملفات' }, paragraphs: [
         { en: 'When you request AI assistance, the app may send your prompt and relevant excerpts from your library to an AI provider through the server. Audio is sent only after you select it. By using the feature, you request that this processing take place under the Privacy Policy and provider terms.', ar: 'عند طلب المساعدة الذكية، قد يرسل التطبيق سؤالك ومقاطع ذات صلة من مكتبتك إلى مزود ذكاء اصطناعي عبر الخادم. ولا يُرسل الصوت إلا بعد أن تختاره. وباستخدامك الميزة، تطلب إجراء هذه المعالجة وفق سياسة الخصوصية وشروط المزود.' },
-        { en: 'AI output may be incorrect, incomplete, or unsuitable. Review it before relying on it. It is not professional medical, legal, financial, safety, or academic advice and is not a substitute for a qualified professional or trusted source.', ar: 'قد تكون مخرجات الذكاء الاصطناعي خاطئة أو ناقصة أو غير مناسبة. راجعها قبل الاعتماد عليها. وهي ليست استشارة مهنية طبية أو قانونية أو مالية أو متعلقة بالسلامة أو الدراسة، ولا تغني عن مختص مؤهل أو مصدر موثوق.' }
+        { en: 'AI output may be incorrect, incomplete, or unsuitable. Review it before relying on it. It is not professional medical, legal, financial, safety, or expert advice and is not a substitute for a qualified professional or trusted source.', ar: 'قد تكون مخرجات الذكاء الاصطناعي خاطئة أو ناقصة أو غير مناسبة. راجعها قبل الاعتماد عليها. وهي ليست استشارة مهنية طبية أو قانونية أو مالية أو متعلقة بالسلامة أو استشارة متخصصة، ولا تغني عن مختص مؤهل أو مصدر موثوق.' }
       ] },
       { heading: { en: '5. Usage limits and availability', ar: '٥. حدود الاستخدام والتوافر' }, paragraphs: [
         { en: 'The service may apply rate, daily-use, file-size, or file-type limits for operational and security reasons. Where server-side daily AI controls are enabled, the currently configured limit is 20 requests per account per UTC day. Limits and availability may change.', ar: 'قد تفرض الخدمة حدوداً للمعدل أو الاستخدام اليومي أو حجم الملفات أو أنواعها لأسباب تشغيلية وأمنية. وعند تفعيل ضوابط الاستخدام اليومية على الخادم، يكون الحد المهيأ حالياً ٢٠ طلباً للحساب في اليوم وفق توقيت UTC. وقد تتغير الحدود ومدى التوافر.' },
