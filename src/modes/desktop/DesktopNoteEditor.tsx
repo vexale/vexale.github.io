@@ -102,12 +102,6 @@ function codeTextFromHtml(html: string): string | null {
   return code.length ? code.map(element => extractCodeText(element)).join('\n') : null
 }
 
-function looksLikePlainTextCode(value: string): boolean {
-  const normalized = value.replace(/\r\n?/gu, '\n')
-  if (normalized.split('\n').length < 2) return false
-  return /(?:^|\n)\s*(?:(?:\/\/|#!|#(?:include|define|if|endif)\b|\/\*)|(?:import\s+.+\s+from|from\s+\S+\s+import)\b|(?:export\s+)?(?:const|let|var)\s+[\w$]+|(?:async\s+)?function\s+[\w$]*\s*\(|class\s+[\w$]+|def\s+\w+\s*\(|(?:if|for|while)\s*\([^\n]*\)|(?:if|for|while)\s+[^:\n]+:\s*$|try\s*\{?|catch\s*\(|console\.|print\s*\(|echo\s+|(?:npm|npx|pnpm|yarn|git|python|pip|node|docker|kubectl)\s+(?:run|install|add|test|build|commit|status|pull|push|exec|start|check|version)\b|(?:select|insert|update|delete)\s+.+\b(?:from|into|set|where)\b|<\/?[a-z][^>]*>|[\w$]+\s*(?:=>|===?|!==?|:=)|\{|\}|\(|\)|\[|\]|;)/iu.test(normalized)
-}
-
 function decorateCodeBlocks(editor: HTMLDivElement, copyLabel: string): void {
   editor.querySelectorAll('pre').forEach(pre => {
     pre.setAttribute('dir', 'ltr')
@@ -130,38 +124,6 @@ function decorateCodeBlocks(editor: HTMLDivElement, copyLabel: string): void {
     button.setAttribute('aria-label', copyLabel)
     button.textContent = copyLabel
   })
-}
-
-function hasFencedCode(value: string): boolean {
-  return /(^|\n)\s*```[^\n]*\n[\s\S]*?\n```(?=\n|$)/u.test(value)
-}
-
-function fencedTextToHtml(value: string): string {
-  const blocks: string[] = []
-  let paragraph: string[] = []
-  let code: string[] | null = null
-  const flushParagraph = (): void => {
-    if (!paragraph.length) return
-    blocks.push(`<p>${paragraph.map(escapeHtml).join('<br>') || '<br>'}</p>`)
-    paragraph = []
-  }
-
-  for (const line of value.replace(/\r\n?/gu, '\n').split('\n')) {
-    if (line.trim().startsWith('```')) {
-      if (code === null) {
-        flushParagraph()
-        code = []
-      } else {
-        blocks.push(`<pre><code>${escapeHtml(code.join('\n'))}</code></pre>`)
-        code = null
-      }
-    } else if (code === null) paragraph.push(line)
-    else code.push(line)
-  }
-
-  if (code !== null) paragraph.push('```', ...code)
-  flushParagraph()
-  return blocks.join('')
 }
 
 function sanitizeNoteHtml(html: string): string {
@@ -625,14 +587,85 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
           onBlur={captureEditorSelection}
           onPaste={event => {
             const clipboardHtml = event.clipboardData.getData('text/html')
-            const clipboardText = event.clipboardData.getData('text/plain')
-            const htmlCode = codeTextFromHtml(clipboardHtml)
-            const containsFencedCode = hasFencedCode(clipboardText)
-            const containsPlainTextCode = looksLikePlainTextCode(clipboardText)
-            if (htmlCode === null && !containsFencedCode && !containsPlainTextCode) return
+            if (!clipboardHtml.trim()) return
             event.preventDefault()
-            const html = htmlCode !== null ? codeTextToHtml(htmlCode) : containsFencedCode ? fencedTextToHtml(clipboardText) : codeTextToHtml(clipboardText)
-            document.execCommand('insertHTML', false, html)
+
+            const parsed = new DOMParser().parseFromString(clipboardHtml, 'text/html')
+            const output: string[] = []
+            const blockTags = new Set(['ADDRESS', 'ARTICLE', 'ASIDE', 'BLOCKQUOTE', 'DD', 'DIV', 'DL', 'DT', 'FIELDSET', 'FIGCAPTION', 'FIGURE', 'FOOTER', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HEADER', 'MAIN', 'NAV', 'P', 'SECTION'])
+            const appendBreak = (): void => {
+              if (output.length > 0 && output[output.length - 1] !== '<br>') output.push('<br>')
+            }
+            const appendText = (value: string): void => {
+              value.replace(/\r\n?/gu, '\n').split('\n').forEach((line, index) => {
+                if (index > 0) appendBreak()
+                if (line) output.push(escapeHtml(line))
+              })
+            }
+            const renderNode = (node: Node, inTableCell = false): void => {
+              if (node.nodeType === Node.TEXT_NODE) {
+                appendText(node.textContent ?? '')
+                return
+              }
+              if (!(node instanceof HTMLElement)) {
+                Array.from(node.childNodes).forEach(child => renderNode(child, inTableCell))
+                return
+              }
+
+              const tagName = node.tagName
+              if (node.hasAttribute('data-note-code-copy')) return
+              if (tagName === 'PRE' || tagName === 'CODE') {
+                appendBreak()
+                const codeNode = tagName === 'PRE' ? node.querySelector('code') ?? node : node
+                const codeText = (codeTextFromHtml(node.outerHTML) ?? extractCodeText(codeNode)).replace(/\r\n?/gu, '\n')
+                const codeHtml = codeTextToHtml(codeText)
+                output.push(codeHtml.replace('<pre>', '<pre dir="ltr" style="white-space: pre;">').replace('<code>', '<code dir="ltr">'))
+                appendBreak()
+                return
+              }
+              if (tagName === 'BR') {
+                appendBreak()
+                return
+              }
+              if (tagName === 'UL' || tagName === 'OL') {
+                appendBreak()
+                const items = Array.from(node.children).filter((child): child is HTMLLIElement => child.tagName === 'LI')
+                let nextNumber = Number.parseInt(node.getAttribute('start') ?? '1', 10)
+                if (!Number.isFinite(nextNumber)) nextNumber = 1
+                items.forEach((item, index) => {
+                  if (index > 0) appendBreak()
+                  if (tagName === 'OL') {
+                    const itemNumber = Number.parseInt(item.getAttribute('value') ?? '', 10)
+                    if (Number.isFinite(itemNumber)) nextNumber = itemNumber
+                    appendText(`${nextNumber}. `)
+                    nextNumber += 1
+                  } else appendText('• ')
+                  Array.from(item.childNodes).forEach(child => renderNode(child, inTableCell))
+                })
+                appendBreak()
+                return
+              }
+              if (tagName === 'TR') {
+                appendBreak()
+                const cells = Array.from(node.children).filter((child): child is HTMLTableCellElement => child.tagName === 'TD' || child.tagName === 'TH')
+                cells.forEach((cell, index) => {
+                  if (index > 0) output.push(' | ')
+                  Array.from(cell.childNodes).forEach(child => renderNode(child, true))
+                })
+                appendBreak()
+                return
+              }
+
+              const isBlock = !inTableCell && (blockTags.has(tagName) || tagName === 'TABLE' || tagName === 'LI')
+              if (isBlock) appendBreak()
+              Array.from(node.childNodes).forEach(child => renderNode(child, inTableCell))
+              if (isBlock) appendBreak()
+            }
+            Array.from(parsed.body.childNodes).forEach(child => renderNode(child))
+            while (output.length > 0 && output[output.length - 1] === '<br>') output.pop()
+            const pastedHtml = output.join('')
+            if (pastedHtml) document.execCommand('insertHTML', false, pastedHtml)
+            else document.execCommand('insertText', false, event.clipboardData.getData('text/plain'))
             if (editorRef.current) decorateCodeBlocks(editorRef.current, copyLabelRef.current)
             captureEditorSelection()
             handleInput()
