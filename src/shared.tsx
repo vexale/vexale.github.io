@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef,
 import { trackAnalytics } from './lib/analytics'
 import type { ReactNode } from 'react'
 import { dbDelete, dbDeleteNotes, dbGetAll, dbPut } from './db'
-import { clearLocalTombstones, getScopedStorageItem, recordLocalTombstones, setScopedStorageItem, subscribeLocalDataOwner } from './lib/localData'
+import { clearLocalTombstones, getScopedStorageItem, recordLocalTombstones, setScopedStorageItem, subscribeLocalDataOwner, subscribeLocalChanges } from './lib/localData'
 
 // إعادة تصدير حتى لا يحتاج TreeSidebar.tsx لأي تعديل (الدالة نفسها في src/drive.ts)
 export { backupAll } from './drive'
@@ -185,11 +185,12 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
         .finally(() => { if (!cancelled && requestGeneration === generation) setReady(true) })
     }
     const unsubscribe = subscribeLocalDataOwner(reload)
+    const unsubscribeChanges = subscribeLocalChanges(immediate => { if (immediate) reload() })
     reload()
 
     // نطلب من المتصفح ألا يمسح البيانات تلقائياً عند ضيق المساحة
     navigator.storage?.persist?.().catch(() => { /* تجاهل */ })
-    return () => { cancelled = true; unsubscribe() }
+    return () => { cancelled = true; unsubscribe(); unsubscribeChanges() }
   }, [])
 
   const add: LibCtx['add'] = i => {

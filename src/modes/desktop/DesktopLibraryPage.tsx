@@ -1,9 +1,10 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { Eye, FileAudio, FileImage, FileText, FileX2, FolderOpen, Plus, Sparkles, Timer, Trash2 } from 'lucide-react'
+import { CloudDownload, Eye, FileAudio, FileImage, FileText, FileX2, FolderOpen, Plus, Sparkles, Timer, Trash2 } from 'lucide-react'
 import { findNode, useLibrary, useTree } from '../../shared'
 import type { Item, TNode } from '../../shared'
-import { dbGetAllOcr, dbGetNote } from '../../db'
-import { useLocale } from '../../lib/i18n'
+import { dbGetAllOcr, dbGetAllSyncItems, dbGetNote } from '../../db'
+import { tr, useLocale } from '../../lib/i18n'
+import { subscribeLocalChanges } from '../../lib/localData'
 import { useDesktopMessages } from './i18n'
 import { TOOL_CATALOG } from '../../lib/settings'
 import { useDesktopPreferences } from './preferences'
@@ -11,6 +12,7 @@ import { requestFocusTimer } from './focusTimerEvents'
 import DesktopFileOcrAction from './DesktopFileOcrAction'
 import { addReviewCards } from '../../lib/reviewCards'
 import { requestStudyAI } from '../../lib/studyAssistant'
+import { ensureFileAvailable, useSyncStatus } from '../../lib/sync'
 
 const DesktopToolPanel = lazy(() => import('./DesktopToolsPage').then(module => ({ default: module.DesktopToolPanel })))
 const DesktopNoteEditor = lazy(() => import('./DesktopNoteEditor'))
@@ -46,9 +48,11 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [busyOcrId, setBusyOcrId] = useState<string | null>(null)
   const [ocrTextByFile, setOcrTextByFile] = useState<Record<string, string>>({})
+  const [syncFileRecords, setSyncFileRecords] = useState<Awaited<ReturnType<typeof dbGetAllSyncItems>>>([])
   const [generatingCards, setGeneratingCards] = useState(false)
   const [cardStatus, setCardStatus] = useState('')
   const { items, add, remove, storageError } = useLibrary()
+  const syncStatus = useSyncStatus()
   const { tree, setPath } = useTree()
   const inputRef = useRef<HTMLInputElement>(null)
   const sectionPath = path.map(id => findNode(tree, id)).filter((part): part is TNode => part !== undefined)
@@ -61,7 +65,19 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
       .catch(() => { if (!cancelled) setOcrTextByFile({}) })
     return () => { cancelled = true }
   }, [])
-  const nodeItems = items.filter(item => item.nodeId === node.id)
+  useEffect(() => {
+    let cancelled = false
+    const reload = (): void => { void dbGetAllSyncItems().then(records => { if (!cancelled) setSyncFileRecords(records) }).catch(() => undefined) }
+    const unsubscribe = subscribeLocalChanges(immediate => { if (immediate) reload() })
+    reload()
+    return () => { cancelled = true; unsubscribe() }
+  }, [])
+  const loadedItems = items.filter(item => item.nodeId === node.id)
+  const loadedIds = new Set(loadedItems.map(item => item.id))
+  const metadataItems: Item[] = syncFileRecords.filter(record => record.nodeId === node.id && !record.deleted && !(record.file instanceof Blob) && !loadedIds.has(record.id)).map(record => ({
+    id: record.id, nodeId: record.nodeId, name: record.name, kind: record.kind, size: record.size, file: undefined, url: '', updatedAt: record.updatedAt, deleted: false,
+  }))
+  const nodeItems = [...loadedItems, ...metadataItems]
   const childSections = node.children
   const sectionTools = TOOL_CATALOG.filter(tool => { const assignment = preferences.toolAssignments[tool.id] ?? { global: true, sectionIds: [] }; return assignment.global || assignment.sectionIds.includes(node.id) })
 
@@ -172,20 +188,19 @@ function SelectedSection({ node, path }: { node: TNode; path: string[] }) {
             <ul className="desk-file-grid">
               {nodeItems.map(item => (
                 <li key={item.id} className="desk-file-card" data-file-id={item.id}>
-                  <div className="desk-file-card-preview">{item.kind === 'image' ? <img src={item.url} alt="" loading="lazy" /> : (item.file?.type === 'application/pdf' || item.name.toLowerCase().endsWith('.pdf')) ? <iframe title={item.name} src={`${item.url}#page=1&view=FitH`} tabIndex={-1} /> : <span className="desk-file-icon"><FileKindIcon kind={item.kind} /></span>}</div>
+                  <div className="desk-file-card-preview">{item.url && item.kind === 'image' ? <img src={item.url} alt="" loading="lazy" /> : item.url && (item.file?.type === 'application/pdf' || item.name.toLowerCase().endsWith('.pdf')) ? <iframe title={item.name} src={`${item.url}#page=1&view=FitH`} tabIndex={-1} /> : <span className="desk-file-icon"><FileKindIcon kind={item.kind} /></span>}</div>
                   <div className="desk-file-details">
                     <bdi className="desk-file-name" title={item.name}>{item.name}</bdi>
                     <span className="desk-file-meta"><FileKindIcon kind={item.kind} />{formatFileSize(item.size, locale, messages.files.byteUnit, messages.files.kilobyteUnit)}</span>
                   </div>
                   <div className="desk-file-actions">
-                    <a className="desk-icon-button" href={item.url} target="_blank" rel="noreferrer" aria-label={`${messages.files.open}: ${item.name}`}>
-                      <FolderOpen size={17} aria-hidden="true" />
-                    </a>
-                    <button type="button" className="desk-icon-button" aria-label={messages.files.preview} title={messages.files.preview} onClick={() => setPreviewItem(item)}><Eye size={17} aria-hidden="true" /></button>
+                    {item.url ? <a className="desk-icon-button" href={item.url} target="_blank" rel="noreferrer" aria-label={`${messages.files.open}: ${item.name}`}><FolderOpen size={17} aria-hidden="true" /></a> : <button type="button" className="desk-icon-button" style={{ minWidth: 44, minHeight: 44, color: 'var(--accent)' }} aria-label={`${tr(locale, 'Make available offline', 'إتاحة دون اتصال')}: ${item.name}`} title={tr(locale, 'Available offline', 'متاح دون اتصال')} onClick={() => { void ensureFileAvailable(item.id).catch(() => undefined) }}><CloudDownload size={17} aria-hidden="true" /></button>}
+                    <button type="button" className="desk-icon-button" aria-label={messages.files.preview} title={messages.files.preview} disabled={!item.url} onClick={() => setPreviewItem(item)}><Eye size={17} aria-hidden="true" /></button>
                     <button type="button" className="desk-icon-button desk-danger-button" disabled={busyOcrId === item.id} aria-label={`${messages.files.remove}: ${item.name}`} onClick={() => removeFile(item)}>
                       <Trash2 size={16} aria-hidden="true" />
                     </button>
                   </div>
+                  {!item.url && syncStatus.files[item.id] && <p role="status" className="desk-file-meta">{syncStatus.files[item.id] === 'downloading' ? tr(locale, 'Downloading…', 'جارٍ التنزيل…') : syncStatus.files[item.id] === 'offline' ? tr(locale, 'Saved on this device only', 'محفوظ على هذا الجهاز فقط') : syncStatus.files[item.id] === 'too-large' ? tr(locale, 'File exceeds 50 MB', 'يتجاوز الملف ٥٠ ميغابايت') : syncStatus.files[item.id] === 'error' ? tr(locale, 'Download failed', 'فشل التنزيل') : tr(locale, 'Available online', 'متاح عبر الإنترنت')}</p>}
                   <DesktopFileOcrAction
                     item={item}
                     busyItemId={busyOcrId}

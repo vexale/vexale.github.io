@@ -215,12 +215,12 @@ export function subscribeLocalDataOwner(listener: OwnerListener): () => void {
 }
 
 
-const localChangeListeners = new Set<() => void>()
-export function subscribeLocalChanges(listener: () => void): () => void {
+const localChangeListeners = new Set<(immediate: boolean) => void>()
+export function subscribeLocalChanges(listener: (immediate: boolean) => void): () => void {
   localChangeListeners.add(listener)
   return () => localChangeListeners.delete(listener)
 }
-export function notifyLocalDataChanged(): void { localChangeListeners.forEach(listener => listener()) }
+export function notifyLocalDataChanged(immediate = false): void { localChangeListeners.forEach(listener => listener(immediate)) }
 export function getSyncDeviceId(): string {
   const key = 'vexale-sync-device-id-v1'
   try {

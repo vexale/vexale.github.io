@@ -1,21 +1,42 @@
-import { dbApplySyncRecord, dbGetSyncRecords } from '../../db'
+import { dbApplySyncRecord, dbGetSyncRecords, dbGetSyncFile, dbSaveSyncFile, dbMergeGuestFilesIntoAccount } from '../../db'
 import type { DbSyncRecord } from '../../db'
 import { supabase } from '../supabase'
 import { applyScopedRecord, getLocalDataOwner, getLocalTombstones, getSyncDeviceId, getScopedLocalRecords, mergeGuestNamespaceInto, setScopedStorageItem, subscribeLocalChanges, subscribeLocalDataOwner } from '../localData'
 import type { LocalDataOwner, ScopedLocalRecord } from '../localData'
 import { mergeRecordSets, mergeSyncRecords } from './merge'
 import type { SyncRecord } from './merge'
+import { useSyncExternalStore } from 'react'
 
 interface RemoteRow { kind: string; id: string; data: unknown; updated_at: number; deleted: boolean; device_id: string }
 interface OutboxEntry extends SyncRecord { ownerId: LocalDataOwner; queuedAt: number; attempts: number }
 const OUTBOX_DB = 'vexale-sync-outbox-v1'
 const OUTBOX_STORE = 'records'
 const DEVICE_META_KEY = 'vexale-sync-record-devices-v1'
+const FILE_UPLOAD_META_KEY = 'vexale-sync-file-uploaded-v1'
 const PAGE_SIZE = 250
+const MAX_FILE_BYTES = 50 * 1024 * 1024
 let running = false
 let retryTimer: ReturnType<typeof setTimeout> | undefined
 let debounceTimer: ReturnType<typeof setTimeout> | undefined
 let retryAttempt = 0
+
+export type SyncPhase = 'synced' | 'syncing' | 'offline' | 'error'
+export type FileSyncState = 'pending' | 'uploading' | 'synced' | 'offline' | 'error' | 'too-large' | 'downloading'
+export interface SyncStatus { phase: SyncPhase; pendingCount: number; lastSyncAt: number | null; error: string | null; files: Record<string, FileSyncState> }
+let syncStatus: SyncStatus = { phase: typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'synced', pendingCount: 0, lastSyncAt: null, error: null, files: {} }
+const statusListeners = new Set<() => void>()
+function updateStatus(update: Partial<SyncStatus>): void { syncStatus = { ...syncStatus, ...update }; statusListeners.forEach(listener => listener()) }
+const subscribeStatus = (listener: () => void): (() => void) => { statusListeners.add(listener); return () => statusListeners.delete(listener) }
+export function useSyncStatus(): SyncStatus { return useSyncExternalStore(subscribeStatus, () => syncStatus, () => syncStatus) }
+export function getSyncStatus(): SyncStatus { return syncStatus }
+function setFileStatus(id: string, state: FileSyncState): void { updateStatus({ files: { ...syncStatus.files, [id]: state } }) }
+function uploadedFiles(): Record<string, number> {
+  try { return JSON.parse(localStorage.getItem(FILE_UPLOAD_META_KEY) ?? '{}') as Record<string, number> } catch { return {} }
+}
+function markFileUploaded(owner: LocalDataOwner, id: string, updatedAt: number): void {
+  const metadata = uploadedFiles(); metadata[`${owner}\u0000${id}`] = updatedAt
+  try { localStorage.setItem(FILE_UPLOAD_META_KEY, JSON.stringify(metadata)) } catch { /* The next session may upload again safely using upsert. */ }
+}
 
 function deviceMetadata(): Record<string, { updatedAt: number; deviceId: string }> {
   try { return JSON.parse(localStorage.getItem(DEVICE_META_KEY) ?? '{}') as Record<string, { updatedAt: number; deviceId: string }> } catch { return {} }
@@ -61,6 +82,7 @@ async function queue(records: SyncRecord[], ownerId: LocalDataOwner = getLocalDa
     tx.onerror = tx.onabort = () => reject(tx.error ?? new Error('Could not persist sync outbox'))
   })
   db.close()
+  updateStatus({ pendingCount: (await getOutbox(ownerId)).length })
 }
 async function getOutbox(ownerId: LocalDataOwner): Promise<(OutboxEntry & { key: string })[]> {
   const db = await openOutbox()
@@ -82,26 +104,9 @@ async function removeOutbox(keys: string[]): Promise<void> {
     tx.onerror = tx.onabort = () => reject(tx.error)
   })
   db.close()
+  updateStatus({ pendingCount: (await getOutbox(getLocalDataOwner())).length })
 }
 
-async function encodeFileData(data: unknown): Promise<unknown> {
-  if (!data || typeof data !== 'object') return data
-  const value = data as Record<string, unknown>
-  if (!(value.file instanceof Blob)) return data
-  const bytes = new Uint8Array(await value.file.arrayBuffer())
-  let binary = ''
-  for (let offset = 0; offset < bytes.length; offset += 0x8000) binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000))
-  return { ...value, file: { __blob: btoa(binary), type: value.file.type, name: value.file instanceof File ? value.file.name : '' } }
-}
-function decodeFileData(data: unknown): unknown {
-  if (!data || typeof data !== 'object') return data
-  const value = data as Record<string, unknown>
-  const stored = value.file as { __blob?: string; type?: string; name?: string } | undefined
-  if (!stored?.__blob) return data
-  const bytes = Uint8Array.from(atob(stored.__blob), char => char.charCodeAt(0))
-  const blob = new Blob([bytes], { type: stored.type ?? '' })
-  return { ...value, file: stored.name ? new File([blob], stored.name, { type: blob.type }) : blob }
-}
 function ownerLocalRecords(owner: LocalDataOwner): SyncRecord[] {
   const result: SyncRecord[] = getScopedLocalRecords(owner).map((r: ScopedLocalRecord) => ({ kind: 'local', id: r.key, data: r.value, updatedAt: r.updatedAt, deleted: r.deleted, deviceId: recordDeviceId(owner, 'local', r.key, r.updatedAt) }))
   for (const tombstone of getLocalTombstones(owner)) result.push({ kind: tombstone.kind, id: tombstone.id, data: null, updatedAt: tombstone.updatedAt, deleted: true, deviceId: recordDeviceId(owner, tombstone.kind, tombstone.id, tombstone.updatedAt) })
@@ -111,7 +116,7 @@ async function collectOwner(owner: LocalDataOwner): Promise<SyncRecord[]> {
   const local = ownerLocalRecords(owner)
   const dbRecords = await dbGetSyncRecords(owner)
   const records: SyncRecord[] = [...local]
-  for (const record of dbRecords) records.push({ ...record, data: await encodeFileData(record.data), deviceId: recordDeviceId(owner, record.kind, record.id, record.updatedAt) })
+  for (const record of dbRecords) records.push({ ...record, deviceId: recordDeviceId(owner, record.kind, record.id, record.updatedAt) })
   return records
 }
 async function applyRecord(record: SyncRecord, owner: LocalDataOwner): Promise<void> {
@@ -121,7 +126,7 @@ async function applyRecord(record: SyncRecord, owner: LocalDataOwner): Promise<v
     return
   }
   if (record.kind === 'files' || record.kind === 'notes' || record.kind === 'ocr') {
-    await dbApplySyncRecord({ kind: record.kind, id: record.id, data: decodeFileData(record.data), updatedAt: record.updatedAt, deleted: record.deleted } as DbSyncRecord, owner)
+    await dbApplySyncRecord({ kind: record.kind, id: record.id, data: record.data, updatedAt: record.updatedAt, deleted: record.deleted } as DbSyncRecord, owner)
     return
   }
   const tombstones = getLocalTombstones(owner).filter(item => item.kind !== record.kind || item.id !== record.id)
@@ -149,50 +154,67 @@ async function pull(owner: LocalDataOwner): Promise<void> {
     offset += rows.length
   }
 }
-async function push(): Promise<void> {
-  if (!supabase || running || !navigator.onLine || !getLocalDataOwner().startsWith('acct:')) return
+async function push(): Promise<boolean> {
+  if (!supabase || running || !navigator.onLine || !getLocalDataOwner().startsWith('acct:')) return false
   running = true
   try {
     const owner = getLocalDataOwner()
     const entries = await getOutbox(owner)
     for (let index = 0; index < entries.length; index += PAGE_SIZE) {
-      if (getLocalDataOwner() !== owner) return
+      if (getLocalDataOwner() !== owner) return false
       const batch = entries.slice(index, index + PAGE_SIZE)
       const { error } = await supabase.from('sync_items').upsert(batch.map(({ kind, id, data, updatedAt, deleted, deviceId }) => ({ kind, id, data, updated_at: updatedAt, deleted, device_id: deviceId })), { onConflict: 'user_id,kind,id' })
       if (error) throw error
       await removeOutbox(batch.map(entry => entry.key))
     }
     retryAttempt = 0
+    return true
   } catch {
     retryAttempt += 1
+    updateStatus({ phase: 'error', error: 'Sync failed. Changes are still saved on this device.' })
     const delay = Math.min(60_000, 1000 * 2 ** Math.min(retryAttempt, 6)) + Math.random() * 500
     clearTimeout(retryTimer)
     retryTimer = setTimeout(() => { void push() }, delay)
+    return false
   } finally { running = false }
 }
 async function syncNow(): Promise<void> {
   const owner = getLocalDataOwner()
-  if (!owner.startsWith('acct:') || !navigator.onLine || document.visibilityState === 'hidden') return
+  if (!owner.startsWith('acct:') || document.visibilityState === 'hidden') return
+  if (!navigator.onLine) { updateStatus({ phase: 'offline', error: null }); return }
+  updateStatus({ phase: 'syncing', error: null })
   try {
     await pull(owner)
     await queue(await collectOwner(owner), owner)
-    await push()
-  } catch {
+    if (!await push()) return
+    await uploadPendingFiles(owner)
+    updateStatus({ phase: 'synced', error: null, lastSyncAt: Date.now(), pendingCount: (await getOutbox(owner)).length })
+  } catch (error) {
+    updateStatus({ phase: 'error', error: error instanceof Error ? error.message : 'Sync failed. Changes remain on this device.' })
     retryAttempt += 1
     clearTimeout(retryTimer)
     retryTimer = setTimeout(() => { void syncNow() }, Math.min(60_000, 1000 * 2 ** Math.min(retryAttempt, 6)) + Math.random() * 500)
   }
 }
-function schedulePush(): void {
+function schedulePush(immediate = false): void {
   clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => {
-    void (async () => { const owner = getLocalDataOwner(); if (owner === 'guest') return; await queue(await collectOwner(owner), owner); await push() })()
-  }, 2000)
+  const run = async (): Promise<void> => {
+    const owner = getLocalDataOwner()
+    if (owner === 'guest') return
+    try {
+      await queue(await collectOwner(owner), owner)
+      if (!navigator.onLine) { updateStatus({ phase: 'offline', error: null }); return }
+      if (await push()) { await uploadPendingFiles(owner); updateStatus({ phase: 'synced', error: null, lastSyncAt: Date.now() }) }
+    } catch (error) { updateStatus({ phase: navigator.onLine ? 'error' : 'offline', error: error instanceof Error ? error.message : 'Sync failed. Changes remain on this device.' }) }
+  }
+  if (immediate) void run()
+  else debounceTimer = setTimeout(() => { void run() }, 2000)
 }
 
 let initialized = false
 export function initializeSync(): void {
-  if (initialized || typeof window === 'undefined' || !supabase) return
+  if (initialized || typeof window === 'undefined') return
+  if (!supabase) { updateStatus({ phase: 'offline' }); return }
   initialized = true
   const activate = async (owner: LocalDataOwner): Promise<void> => {
     if (!owner.startsWith('acct:')) return
@@ -200,9 +222,13 @@ export function initializeSync(): void {
     const firstAccount = window.localStorage.getItem(mergeMarker) === null
     let records = await collectOwner(owner)
     if (firstAccount) {
+      await dbMergeGuestFilesIntoAccount(owner)
       mergeGuestNamespaceInto(owner)
       const guestRecords = await collectOwner('guest')
       records = mergeRecordSets(records, guestRecords)
+      records = records.map(record => record.kind === 'files' && record.data && typeof record.data === 'object'
+        ? { ...record, data: { ...(record.data as Record<string, unknown>), storagePath: `${owner.slice(5)}/${record.id}` } }
+        : record)
       for (const record of records) await applyRecord(record, owner)
       try { window.localStorage.setItem(mergeMarker, owner) } catch { /* Repeat the idempotent union on the next session. */ }
     }
@@ -211,12 +237,60 @@ export function initializeSync(): void {
   }
   const unsubscribeOwner = subscribeLocalDataOwner(() => { void activate(getLocalDataOwner()) })
   const unsubscribeChanges = subscribeLocalChanges(schedulePush)
-  supabase.auth.getSession().then(({ data }) => { if (data.session?.user.id) void activate(`acct:${data.session.user.id}`) }).catch(() => undefined)
-  supabase.auth.onAuthStateChange((_event, session) => { if (session?.user.id) void activate(`acct:${session.user.id}`) })
-  window.addEventListener('online', () => { void syncNow() })
+  supabase.auth.getSession().then(({ data }) => { if (data.session?.user.id) void activate(`acct:${data.session.user.id}`); else updateStatus({ phase: 'offline' }) }).catch(() => updateStatus({ phase: 'error', error: 'Could not check your account session.' }))
+  supabase.auth.onAuthStateChange((_event, session) => { if (session?.user.id) void activate(`acct:${session.user.id}`); else updateStatus({ phase: 'offline' }) })
+  window.addEventListener('online', () => { updateStatus({ phase: 'syncing', error: null }); void syncNow() })
+  window.addEventListener('offline', () => updateStatus({ phase: 'offline', error: null }))
   window.addEventListener('focus', () => { void syncNow() })
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void syncNow() })
   window.setInterval(() => { if (document.visibilityState === 'visible') void syncNow() }, 60_000)
   void unsubscribeOwner
   void unsubscribeChanges
+}
+
+export function retrySyncNow(): void { void syncNow() }
+
+
+async function uploadPendingFiles(owner: LocalDataOwner): Promise<void> {
+  if (!supabase || !navigator.onLine || !owner.startsWith('acct:')) return
+  const [records] = await Promise.all([dbGetSyncRecords(owner)])
+  for (const record of records) {
+    if (record.kind !== 'files' || record.deleted) continue
+    const key = `${owner}\u0000${record.id}`
+    if (uploadedFiles()[key] === record.updatedAt) { setFileStatus(record.id, 'synced'); continue }
+    const stored = await dbGetSyncFile(record.id, owner)
+    if (!(stored?.file instanceof Blob)) continue
+    if (stored.file.size > MAX_FILE_BYTES) { setFileStatus(record.id, 'too-large'); continue }
+    if (!navigator.onLine) { setFileStatus(record.id, 'offline'); return }
+    const path = `${owner.slice(5)}/${record.id}`
+    setFileStatus(record.id, 'uploading')
+    const { error } = await supabase.storage.from('vexale-files').upload(path, stored.file, { upsert: true, contentType: stored.file.type || 'application/octet-stream' })
+    if (error) { setFileStatus(record.id, 'error'); throw error }
+    markFileUploaded(owner, record.id, record.updatedAt)
+    setFileStatus(record.id, 'synced')
+  }
+}
+
+export async function ensureFileAvailable(id: string): Promise<void> {
+  const owner = getLocalDataOwner()
+  if (!supabase || !owner.startsWith('acct:')) throw new Error('Sign in to download this file.')
+  const local = await dbGetSyncFile(id, owner)
+  if (local?.file instanceof Blob) { setFileStatus(id, 'synced'); return }
+  if (!navigator.onLine) { setFileStatus(id, 'offline'); throw new Error('You are offline.') }
+  setFileStatus(id, 'downloading')
+  try {
+    const { data: row, error: rowError } = await supabase.from('sync_items').select('data').eq('kind', 'files').eq('id', id).maybeSingle()
+    if (rowError) throw rowError
+    const payload = row?.data as { storagePath?: string } | undefined
+    const path = payload?.storagePath || `${owner.slice(5)}/${id}`
+    const { data, error } = await supabase.storage.from('vexale-files').download(path)
+    if (error) throw error
+    if (!data) throw new Error('The file is not available in cloud storage yet.')
+    await dbSaveSyncFile(id, data, owner)
+    if (local) markFileUploaded(owner, id, local.updatedAt ?? 0)
+    setFileStatus(id, 'synced')
+  } catch (error) {
+    setFileStatus(id, navigator.onLine ? 'error' : 'offline')
+    throw error
+  }
 }
