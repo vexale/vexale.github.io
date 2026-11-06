@@ -1,101 +1,34 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import type { ChangeEvent, FormEvent } from 'react'
-import { AlertTriangle, Bug, Check, CheckCircle2, Download, FileText, Lightbulb, Moon, Send, Upload, UserRound } from 'lucide-react'
-import { dbGetAll, dbGetNote, dbPutNote } from '../../db'
+import type { FormEvent } from 'react'
+import { AlertTriangle, Bug, Check, CheckCircle2, Lightbulb, Moon, Send, UserRound } from 'lucide-react'
 import { content as legalContent, LAST_UPDATED } from '../../lib/legalContent'
-import { isAnalyticsEnabled, setAnalyticsConsent, trackAnalytics } from '../../lib/analytics'
+import { isAnalyticsEnabled, setAnalyticsConsent } from '../../lib/analytics'
 import { createSharedWorkspace } from '../../lib/libraryApi'
-import { MAX_LIBRARY_BACKUP_BYTES, parseLibraryBackup, serializeLibraryBackup } from '../../lib/libraryBackup'
 import { activateWorkspace, createWorkspaceInvite, leaveSharedWorkspace, useSharedWorkspace } from '../../lib/sharedWorkspace'
 import { useGoogleAuth, getGoogleIdToken, renderGoogleButton, signOutGoogle } from '../../lib/googleAuth'
 import { submitSupportRequest } from '../../lib/libraryApi'
 import { SUPPORT_EMAIL } from '../../lib/contact'
 import { useLocale, setLocale } from '../../lib/i18n'
-import { useLibrary, useTree } from '../../shared'
 import { useDesktopMessages } from './i18n'
 import { updateDesktopPreferences, useDesktopPreferences } from './preferences'
 import type { DesktopPage } from './types'
 import TrashPage from './TrashPage'
-import NotionImport from './NotionImport'
 import { DESKTOP_THEME_COLORS as THEME_COLORS } from './themeCatalog'
-import { getTaskTree, replaceTaskTree } from './taskStore'
-import type { TaskRecord } from './taskStore'
 import ReviewPage from './ReviewPage'
 import CalendarPage from './CalendarPage'
 
 const DesktopToolsPage = lazy(() => import('./DesktopToolsPage'))
 const DesktopTaskTreePage = lazy(() => import('./DesktopTaskTreePage'))
 
-function download(name: string, data: Blob): void {
-  const url = URL.createObjectURL(data)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = name
-  link.click()
-  URL.revokeObjectURL(url)
-}
-
-function toBase64(file: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '')
-    reader.onerror = () => reject(reader.error)
-    reader.readAsDataURL(file)
-  })
-}
-
-function flatten(nodes: ReturnType<typeof useTree>['tree']): Array<{ id: string; title: string }> {
-  return nodes.flatMap(node => [{ id: node.id, title: node.title }, ...flatten(node.children)])
-}
-
-function nodeDepth(nodes: ReturnType<typeof useTree>['tree'], targetId: string, depth = 0): number | undefined {
-  for (const node of nodes) {
-    if (node.id === targetId) return depth
-    const childDepth = nodeDepth(node.children, targetId, depth + 1)
-    if (childDepth !== undefined) return childDepth
-  }
-  return undefined
-}
-
-function validImportNode(value: unknown): boolean {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
-  const node = value as { id?: unknown; title?: unknown; children?: unknown }
-  return typeof node.id === 'string' && typeof node.title === 'string' && Array.isArray(node.children) && node.children.every(validImportNode)
-}
-
-function parseImportedTasks(value: unknown): TaskRecord[] | null {
-  if (value === undefined) return null
-  if (!Array.isArray(value) || value.length > 200) throw new Error('tasks')
-  const valid = value.every(item => {
-    if (!item || typeof item !== 'object' || Array.isArray(item)) return false
-    const task = item as Partial<TaskRecord>
-    return typeof task.id === 'string' && (task.parentId === null || typeof task.parentId === 'string') && typeof task.title === 'string' && ['todo', 'doing', 'done', 'late'].includes(String(task.status)) && (task.dueDate === null || typeof task.dueDate === 'string') && typeof task.order === 'number' && Array.isArray(task.attachedFileIds) && task.attachedFileIds.every(id => typeof id === 'string') && Array.isArray(task.attachedNoteIds) && task.attachedNoteIds.every(id => typeof id === 'string')
-  })
-  if (!valid) throw new Error('tasks')
-  return value as TaskRecord[]
-}
-
-function importErrorMessage(error: unknown, fallback: string, locale: 'en' | 'ar'): string {
-  const code = error instanceof Error ? error.message : ''
-  const errors = locale === 'ar'
-    ? { notObject: 'الملف ليس كائن JSON صالحاً.', format: 'هذه ليست نسخة Vexale احتياطية.', version: 'إصدار هذه النسخة الاحتياطية غير مدعوم.', tree: 'بنية شجرة الأقسام غير صالحة.', notes: 'ملاحظات النسخة تالفة أو أكبر من الحد المسموح.', files: 'مرفقات النسخة غير صالحة أو تتجاوز حدود الحجم.', size: 'حجم ملف النسخة يتجاوز حد الاستيراد 64 ميغابايت.', tasks: 'تحتوي شجرة المهام على سجلات غير صالحة.' }
-    : { notObject: 'The file is not a JSON object.', format: 'This is not a Vexale backup.', version: 'This backup version is not supported.', tree: 'The section tree is invalid.', notes: 'Backup notes are malformed or too large.', files: 'Backup attachments are invalid or exceed size limits.', size: 'Backup file exceeds the 64 MB import limit.', tasks: 'The task tree contains invalid records.' }
-  return errors[code as keyof typeof errors] ?? fallback
-}
-
 export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { page: DesktopPage; onSwitchToSpace: () => void; onOpenPrivacy: () => void }) {
   const m = useDesktopMessages()
   const locale = useLocale()
   const prefs = useDesktopPreferences()
-  const [busy, setBusy] = useState(false)
   const [shareBusy, setShareBusy] = useState(false)
   const [shareLink, setShareLink] = useState('')
   const [status, setStatus] = useState('')
   const { user } = useGoogleAuth()
   const sharedWorkspace = useSharedWorkspace()
-  const { tree, addNode } = useTree()
-  const { add } = useLibrary()
-  const fileRef = useRef<HTMLInputElement>(null)
   const authRef = useRef<HTMLDivElement>(null)
   const t = m.workspacePages
   const [workspaceMode, setWorkspaceMode] = useState<'office' | 'space'>('office')
@@ -117,65 +50,6 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
       setShareLink(link)
       try { await navigator.clipboard.writeText(link); setStatus(t.shareCopied) } catch { setStatus(t.shareReady) }
     } catch { setStatus(t.shareFailed) } finally { setShareBusy(false) }
-  }
-
-  const exportLibrary = async (format: 'json' | 'markdown' | 'backup'): Promise<void> => {
-    setBusy(true); setStatus('')
-    try {
-      const records = await dbGetAll()
-      const nodes = flatten(tree)
-      const notes = await Promise.all(nodes.map(async node => [node.id, await dbGetNote(node.id)] as const))
-      if (format === 'markdown') {
-        const body = nodes.map(node => {
-          const note = notes.find(([id]) => id === node.id)?.[1]
-          const depth = nodeDepth(tree, node.id) ?? 0
-          const text = note?.html ? new DOMParser().parseFromString(note.html, 'text/html').body.textContent ?? '' : ''
-          return `${'#'.repeat(Math.min(depth + 1, 6))} ${node.title}${text ? `\n\n${text}` : ''}`
-        }).join('\n\n')
-        download('vexale-library.md', new Blob([body], { type: 'text/markdown;charset=utf-8' }))
-      } else {
-        const blobs = await Promise.all(records.map(async record => ({ ...record, file: undefined, mimeType: record.file.type, data: await toBase64(record.file) })))
-        const payload = { format: 'vexale-library' as const, version: 2, exportedAt: new Date().toISOString(), tree, notes: Object.fromEntries(notes), files: blobs, tasks: getTaskTree() }
-        download(format === 'backup' ? 'vexale-backup.json' : 'vexale-library.json', new Blob([serializeLibraryBackup(payload)], { type: 'application/json' }))
-      }
-      if (format === 'backup') localStorage.setItem('vexale-last-backup-v1', String(Date.now()))
-      trackAnalytics('export_done')
-      setStatus(t.exportDone)
-    } catch { setStatus(t.exportFailed) } finally { setBusy(false) }
-  }
-
-  const importLibrary = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file) return
-    setBusy(true); setStatus('')
-    try {
-      if (file.size > MAX_LIBRARY_BACKUP_BYTES) throw new Error('size')
-      const pack = parseLibraryBackup(await file.text()) as { tree?: Array<{ id?: string; title?: string; children?: unknown[] }>; notes?: Record<string, { html?: string; updatedAt?: number } | null>; files?: Array<{ nodeId: string; name: string; kind: 'image' | 'audio' | 'doc' | 'drawing'; data: string; mimeType?: string }>; tasks?: unknown }
-      if (!Array.isArray(pack.tree) || !pack.tree.every(validImportNode)) throw new Error('tree')
-      const importedTasks = parseImportedTasks(pack.tasks)
-      if (importedTasks) replaceTaskTree(importedTasks)
-      const idMap = new Map<string, string>()
-      const copyNodes = (nodes: typeof pack.tree, parentId: string | null): void => {
-        for (const node of nodes ?? []) {
-          if (typeof node.title !== 'string' || !node.title.trim()) continue
-          const id = addNode(parentId, node.title.trim())
-          if (typeof node.id === 'string') idMap.set(node.id, id)
-          copyNodes(node.children as typeof pack.tree, id)
-        }
-      }
-      copyNodes(pack.tree, null)
-      for (const [sourceId, note] of Object.entries(pack.notes ?? {})) if (note?.html) await dbPutNote({ nodeId: idMap.get(sourceId) ?? sourceId, html: note.html, updatedAt: note.updatedAt ?? Date.now() })
-      for (const fileRecord of pack.files ?? []) {
-        if (!fileRecord.data || typeof fileRecord.name !== 'string' || !/^[A-Za-z0-9+/=]+$/.test(fileRecord.data)) continue
-        const mimeType = typeof fileRecord.mimeType === 'string' && /^[\w.+-]+\/[\w.+-]+$/.test(fileRecord.mimeType) ? fileRecord.mimeType : 'application/octet-stream'
-        const blob = await (await fetch(`data:${mimeType};base64,${fileRecord.data}`)).blob()
-        const imported = new File([blob], fileRecord.name, { type: blob.type })
-        const kind = ['image', 'audio', 'doc', 'drawing'].includes(fileRecord.kind) ? fileRecord.kind : 'doc'
-        add({ nodeId: idMap.get(fileRecord.nodeId) ?? fileRecord.nodeId, name: imported.name, kind, url: URL.createObjectURL(imported), size: imported.size, file: imported })
-      }
-      setStatus(t.importDone)
-    } catch (error) { setStatus(`${t.importErrorPrefix} ${importErrorMessage(error, t.importFailed, locale)}`) } finally { setBusy(false) }
   }
 
   if (page === 'themes') return <section className="desk-theme-grid" aria-label={m.pages.themes.title}>{Object.keys(THEME_COLORS).map(id => {
@@ -202,16 +76,9 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
   if (page === 'account') return <section className="desk-account-layout">
     <div className="desk-account-profile">{user?.picture ? <img src={user.picture} alt="" /> : <UserRound size={30} aria-hidden="true" />}<div><strong>{user?.name ?? t.signedOut}</strong><span>{user?.email ?? t.signInPrompt}</span></div>{user ? <button type="button" className="desk-button" onClick={signOutGoogle}>{t.signOut}</button> : <div className="desk-google-signin" ref={authRef} aria-label={t.signInGoogle} />}</div>
     <div className="desk-account-actions">
-      <button type="button" className="desk-button" disabled={busy} onClick={() => void exportLibrary('json')}><Download size={16} />{t.exportJson}</button>
-      <button type="button" className="desk-button" disabled={busy} onClick={() => void exportLibrary('markdown')}><FileText size={16} />{t.exportMarkdown}</button>
-      <button type="button" className="desk-button" disabled={busy} onClick={() => void exportLibrary('backup')}><Download size={16} />{t.downloadBackup}</button>
-      <button type="button" className="desk-button" disabled={busy} onClick={() => fileRef.current?.click()}><Upload size={16} />{t.import}</button>
       <button type="button" className="desk-button" disabled={shareBusy} onClick={() => void createOrCopyShareLink()}>{shareBusy ? t.sharing : t.shareLink}</button>
-      <input ref={fileRef} hidden type="file" accept="application/json,.json" onChange={e => void importLibrary(e)} />
     </div>
-    <NotionImport />
     {shareLink && <p className="desk-share-link" dir="ltr"><a href={shareLink}>{shareLink}</a></p>}
-    <StorageSafety t={t} onBackup={() => void exportLibrary('backup')} />
     <DeleteLocalData t={t} />
     {status && <p className="desk-inline-status" role="status">{status}</p>}
   </section>
@@ -228,30 +95,6 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
 
 function RouteSkeleton({ label }: { label: string }) {
   return <section className="desk-route-skeleton" aria-busy="true" aria-label={label}><span className="desk-route-skeleton-line is-title" /><span className="desk-route-skeleton-line is-copy" /><span className="desk-route-skeleton-panel" /></section>
-}
-
-function StorageSafety({ t, onBackup }: { t: ReturnType<typeof useDesktopMessages>['workspacePages']; onBackup: () => void }) {
-  const [usage, setUsage] = useState<{ used: number; quota: number } | null>(null)
-  const [lastBackup, setLastBackup] = useState(() => Number(localStorage.getItem('vexale-last-backup-v1') ?? 0))
-  useEffect(() => {
-    let active = true
-    navigator.storage?.estimate?.().then(result => { if (active && result.usage !== undefined && result.quota) setUsage({ used: result.usage, quota: result.quota }) }).catch(() => undefined)
-    return () => { active = false }
-  }, [])
-  const stale = !lastBackup || Date.now() - lastBackup > 7 * 86_400_000
-  const markBackup = (): void => { onBackup(); const next = Date.now(); localStorage.setItem('vexale-last-backup-v1', String(next)); setLastBackup(next) }
-  return <section className="desk-data-safety" aria-label={t.storageUsage}>
-    {stale && <div className="desk-backup-reminder"><span>{t.backupReminder}</span><button type="button" className="desk-button desk-button-primary" onClick={markBackup}>{t.backupNow}</button></div>}
-    <div className="desk-storage-heading"><strong>{t.storageUsage}</strong>{usage ? <span>{formatBytes(usage.used)} / {formatBytes(usage.quota)} ({Math.round((usage.used / usage.quota) * 100)}% {t.storageUsed})</span> : <span>{t.storageUnavailable}</span>}</div>
-    {usage && <progress value={usage.used} max={usage.quota} aria-label={t.storageUsage} />}
-  </section>
-}
-
-function formatBytes(value: number): string {
-  if (value < 1024) return `${Math.round(value)} B`
-  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`
-  if (value < 1024 * 1024 * 1024) return `${(value / (1024 * 1024)).toFixed(1)} MB`
-  return `${(value / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
 function DeleteLocalData({ t }: { t: ReturnType<typeof useDesktopMessages>['workspacePages'] }) {
