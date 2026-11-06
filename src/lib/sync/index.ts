@@ -17,9 +17,8 @@ const LAST_SYNC_KEY = 'vexale-sync-last-success-v1'
 const PAGE_SIZE = 250
 const MAX_FILE_BYTES = 50 * 1024 * 1024
 let running = false
-let retryTimer: ReturnType<typeof setTimeout> | undefined
 let debounceTimer: ReturnType<typeof setTimeout> | undefined
-let retryAttempt = 0
+const SERVER_UNAVAILABLE = 'الخادم غير متاح'
 
 function readLastSyncAt(): number | null {
   try { const value = Number(localStorage.getItem(LAST_SYNC_KEY)); return Number.isFinite(value) && value > 0 ? value : null } catch { return null }
@@ -175,14 +174,9 @@ async function push(): Promise<boolean> {
       if (error) throw error
       await removeOutbox(batch.map(entry => entry.key))
     }
-    retryAttempt = 0
     return true
   } catch {
-    retryAttempt += 1
-    updateStatus({ phase: 'error', error: 'Sync failed. Changes are still saved on this device.' })
-    const delay = Math.min(60_000, 1000 * 2 ** Math.min(retryAttempt, 6)) + Math.random() * 500
-    clearTimeout(retryTimer)
-    retryTimer = setTimeout(() => { void push() }, delay)
+    updateStatus({ phase: 'error', error: SERVER_UNAVAILABLE })
     return false
   } finally { running = false }
 }
@@ -197,11 +191,8 @@ async function syncNow(): Promise<void> {
     if (!await push()) return
     await uploadPendingFiles(owner)
     updateStatus({ phase: 'synced', error: null, lastSyncAt: Date.now(), pendingCount: (await getOutbox(owner)).length })
-  } catch (error) {
-    updateStatus({ phase: 'error', error: error instanceof Error ? error.message : 'Sync failed. Changes remain on this device.' })
-    retryAttempt += 1
-    clearTimeout(retryTimer)
-    retryTimer = setTimeout(() => { void syncNow() }, Math.min(60_000, 1000 * 2 ** Math.min(retryAttempt, 6)) + Math.random() * 500)
+  } catch {
+    updateStatus({ phase: 'error', error: SERVER_UNAVAILABLE })
   }
 }
 function schedulePush(immediate = false): void {
@@ -213,7 +204,7 @@ function schedulePush(immediate = false): void {
       await queue(await collectOwner(owner), owner)
       if (!navigator.onLine) { updateStatus({ phase: 'offline', error: null }); return }
       if (await push()) { await uploadPendingFiles(owner); updateStatus({ phase: 'synced', error: null, lastSyncAt: Date.now() }) }
-    } catch (error) { updateStatus({ phase: navigator.onLine ? 'error' : 'offline', error: error instanceof Error ? error.message : 'Sync failed. Changes remain on this device.' }) }
+    } catch { updateStatus({ phase: navigator.onLine ? 'error' : 'offline', error: navigator.onLine ? SERVER_UNAVAILABLE : null }) }
   }
   if (immediate) void run()
   else debounceTimer = setTimeout(() => { void run() }, 2000)
@@ -246,13 +237,12 @@ export function initializeSync(): void {
   }
   const unsubscribeOwner = subscribeLocalDataOwner(() => { void activate(getLocalDataOwner()) })
   const unsubscribeChanges = subscribeLocalChanges(schedulePush)
-  supabase.auth.getSession().then(({ data }) => { if (data.session?.user.id) void activate(`acct:${data.session.user.id}`); else updateStatus({ phase: 'offline' }) }).catch(() => updateStatus({ phase: 'error', error: 'Could not check your account session.' }))
+  supabase.auth.getSession().then(({ data }) => { if (data.session?.user.id) void activate(`acct:${data.session.user.id}`); else updateStatus({ phase: 'offline' }) }).catch(() => updateStatus({ phase: 'error', error: SERVER_UNAVAILABLE }))
   supabase.auth.onAuthStateChange((_event, session) => { if (session?.user.id) void activate(`acct:${session.user.id}`); else updateStatus({ phase: 'offline' }) })
   window.addEventListener('online', () => { updateStatus({ phase: 'syncing', error: null }); void syncNow() })
   window.addEventListener('offline', () => updateStatus({ phase: 'offline', error: null }))
   window.addEventListener('focus', () => { void syncNow() })
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void syncNow() })
-  window.setInterval(() => { if (document.visibilityState === 'visible') void syncNow() }, 60_000)
   void unsubscribeOwner
   void unsubscribeChanges
 }

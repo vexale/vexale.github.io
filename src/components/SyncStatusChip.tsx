@@ -8,7 +8,7 @@ export default function SyncStatusChip() {
   const label = status.phase === 'syncing'
     ? tr(locale, 'Syncing', 'جارٍ المزامنة')
     : status.phase === 'error'
-      ? tr(locale, 'Sync error — retry', 'خطأ في المزامنة — أعد المحاولة')
+      ? tr(locale, 'Server unavailable', 'الخادم غير متاح')
       : status.phase === 'offline'
         ? tr(locale, 'Offline — saved on this device', 'دون اتصال — محفوظ على هذا الجهاز')
         : tr(locale, 'Synced', 'تمت المزامنة')
