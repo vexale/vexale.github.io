@@ -5,8 +5,10 @@ import './App.css'
 import { initializePwa } from './lib/pwa'
 import App from './App.tsx'
 import GlobalErrorBoundary from './components/GlobalErrorBoundary'
+import { initializeSync } from './lib/sync'
 
 initializePwa()
+initializeSync()
 
 const rootElement = document.getElementById('root') as HTMLElement
 const landingElement = document.getElementById('vexale-landing')

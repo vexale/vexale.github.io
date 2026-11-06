@@ -6,8 +6,11 @@ create table public.sync_items (
   data jsonb not null default '{}'::jsonb,
   updated_at bigint not null,
   deleted boolean not null default false,
+  device_id text not null default '',
   primary key (user_id, kind, id)
 );
+
+alter table public.sync_items add column if not exists device_id text not null default '';
 
 -- سرّع جلب عناصر كل مستخدم بترتيب وقت التحديث.
 create index sync_items_user_updated_at_idx on public.sync_items (user_id, updated_at);

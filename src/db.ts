@@ -1,5 +1,5 @@
 /* ============ طبقة IndexedDB للملفات والملاحظات وOCR ============ */
-import { clearLocalTombstones, getLocalDataOwner, recordLocalTombstones } from './lib/localData'
+import { clearLocalTombstones, getLocalDataOwner, recordLocalTombstones, notifyLocalDataChanged } from './lib/localData'
 import type { LocalDataOwner } from './lib/localData'
 
 const DB_NAME = 'atelier-library'
@@ -132,7 +132,7 @@ export async function dbPut(record: StoredItem, ownerId: LocalDataOwner = getLoc
       updatedAt: record.updatedAt ?? Date.now(),
       deleted: false,
     } satisfies ScopedItem)
-    transaction.oncomplete = () => resolve()
+    transaction.oncomplete = () => { notifyLocalDataChanged(); resolve() }
     transaction.onerror = transaction.onabort = () => reject(transaction.error ?? new Error('تعذّر حفظ الملف'))
   })
 }
@@ -159,7 +159,7 @@ export async function dbDelete(ids: string[]): Promise<void> {
         if (record) ocrStore.put({ ...record, updatedAt: Date.now(), deleted: true })
       }
     })
-    transaction.oncomplete = () => resolve()
+    transaction.oncomplete = () => { notifyLocalDataChanged(); resolve() }
     transaction.onerror = transaction.onabort = () => reject(transaction.error ?? new Error('تعذّر حذف الملف محلياً'))
   })
 }
@@ -181,7 +181,7 @@ export async function dbPutOcr(itemId: string, text: string): Promise<void> {
       if (!item || item.deleted) { transaction.abort(); return }
       transaction.objectStore(SCOPED_OCR_STORE).put({ itemId, text, ownerId, storageKey: itemKey, updatedAt: Date.now(), deleted: false } satisfies ScopedOcr)
     }
-    transaction.oncomplete = () => resolve()
+    transaction.oncomplete = () => { notifyLocalDataChanged(); resolve() }
     transaction.onerror = transaction.onabort = () => reject(transaction.error ?? new Error('تعذّر حفظ نص OCR'))
   })
 }
@@ -209,7 +209,7 @@ export async function dbPutNote(note: StoredNote, ownerId: LocalDataOwner = getL
   return new Promise((resolve, reject) => {
     const transaction = database.transaction(SCOPED_NOTES_STORE, 'readwrite')
     transaction.objectStore(SCOPED_NOTES_STORE).put({ ...note, ownerId, storageKey: `${ownerId}:${note.nodeId}`, updatedAt: note.updatedAt || Date.now(), deleted: false } satisfies ScopedNote)
-    transaction.oncomplete = () => resolve()
+    transaction.oncomplete = () => { notifyLocalDataChanged(); resolve() }
     transaction.onerror = transaction.onabort = () => reject(transaction.error ?? new Error('تعذّر حفظ الملاحظة'))
   })
 }
@@ -229,7 +229,7 @@ export async function dbDeleteNotes(nodeIds: string[]): Promise<void> {
         if (note) store.put({ ...note, updatedAt: Date.now(), deleted: true })
       }
     })
-    transaction.oncomplete = () => resolve()
+    transaction.oncomplete = () => { notifyLocalDataChanged(); resolve() }
     transaction.onerror = transaction.onabort = () => reject(transaction.error ?? new Error('تعذّر حذف الملاحظات محلياً'))
   })
 }
@@ -252,5 +252,32 @@ export async function dbClearCurrentUserData(ownerId: LocalDataOwner = getLocalD
     }
     transaction.oncomplete = () => resolve()
     transaction.onerror = transaction.onabort = () => reject(transaction.error ?? new Error('تعذّر حذف البيانات المحلية'))
+  })
+}
+
+
+export interface DbSyncRecord { kind: 'files' | 'notes' | 'ocr'; id: string; data: unknown; updatedAt: number; deleted: boolean }
+
+export async function dbGetSyncRecords(ownerId: LocalDataOwner = getLocalDataOwner()): Promise<DbSyncRecord[]> {
+  const [items, notes, ocr] = await Promise.all([
+    readAll<ScopedItem>(SCOPED_STORE, ownerId), readAll<ScopedNote>(SCOPED_NOTES_STORE, ownerId), readAll<ScopedOcr>(SCOPED_OCR_STORE, ownerId),
+  ])
+  return [
+    ...items.map(record => ({ kind: 'files' as const, id: record.id, data: { id: record.id, nodeId: record.nodeId, name: record.name, kind: record.kind, size: record.size, file: record.file, createdAt: record.createdAt }, updatedAt: record.updatedAt, deleted: record.deleted })),
+    ...notes.map(record => ({ kind: 'notes' as const, id: record.nodeId, data: { nodeId: record.nodeId, html: record.html }, updatedAt: record.updatedAt, deleted: record.deleted })),
+    ...ocr.map(record => ({ kind: 'ocr' as const, id: record.itemId, data: { itemId: record.itemId, text: record.text }, updatedAt: record.updatedAt, deleted: record.deleted })),
+  ]
+}
+
+export async function dbApplySyncRecord(record: DbSyncRecord, ownerId: LocalDataOwner = getLocalDataOwner()): Promise<void> {
+  const data = record.data as Record<string, unknown>
+  const database = await openDB()
+  const storeName = record.kind === 'files' ? SCOPED_STORE : record.kind === 'notes' ? SCOPED_NOTES_STORE : SCOPED_OCR_STORE
+  const storageId = record.kind === 'files' ? String(data.id ?? record.id) : record.kind === 'notes' ? String(data.nodeId ?? record.id) : String(data.itemId ?? record.id)
+  return new Promise((resolve, reject) => {
+    const tx = database.transaction(storeName, 'readwrite')
+    tx.objectStore(storeName).put({ ...data, ownerId, storageKey: `${ownerId}:${storageId}`, updatedAt: record.updatedAt, deleted: record.deleted })
+    tx.oncomplete = () => resolve()
+    tx.onerror = tx.onabort = () => reject(tx.error ?? new Error('Failed to apply sync record'))
   })
 }

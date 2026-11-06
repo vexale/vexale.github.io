@@ -34,7 +34,8 @@ const listeners = new Set<OwnerListener>()
 function isDeviceOnlyKey(key: string): boolean {
   return key.startsWith('sb-') || key === 'atelier-google-auth-v1' || key === 'atelier-shared-workspace-v1' ||
     key === 'vexale-locale-v1' || key === 'vexale-workspace-mode-v1' || key === 'vexale-workspace-setup-v1' ||
-    key === 'vexale-anonymous-analytics' || key === 'vexale-last-backup-v1' || key.startsWith('vexale-tour-')
+    key === 'vexale-anonymous-analytics' || key === 'vexale-last-backup-v1' || key.startsWith('vexale-tour-') ||
+    key.startsWith('vexale-sync-')
 }
 
 export function getScopedStorageKey(key: string, dataOwner: LocalDataOwner = owner): string {
@@ -68,6 +69,7 @@ export function setScopedStorageItem(key: string, value: string, dataOwner: Loca
   try {
     const envelope: StoredEnvelope = { __vexaleLocalRecord: 1, ownerId: dataOwner, value, updatedAt: Date.now(), deleted: false }
     window.localStorage.setItem(getScopedStorageKey(key, dataOwner), JSON.stringify(envelope))
+    notifyLocalDataChanged()
     return true
   } catch { return false }
 }
@@ -101,6 +103,7 @@ export function removeScopedStorageItem(key: string): void {
   try {
     const envelope: StoredEnvelope = { __vexaleLocalRecord: 1, ownerId: owner, value: '', updatedAt: Date.now(), deleted: true }
     window.localStorage.setItem(getScopedStorageKey(key), JSON.stringify(envelope))
+    notifyLocalDataChanged()
   } catch { /* تجاهل تعذّر التخزين */ }
 }
 
@@ -187,6 +190,7 @@ export function recordLocalTombstones(kind: string, ids: string[], updatedAt = D
   const nextByKey = new Map(records.map(record => [`${record.kind}\u0000${record.id}`, record]))
   ids.forEach(id => nextByKey.set(`${kind}\u0000${id}`, { kind, id, updatedAt, deleted: true }))
   setScopedStorageItem(key, JSON.stringify([...nextByKey.values()]), dataOwner)
+  notifyLocalDataChanged()
 }
 
 export function getLocalTombstones(dataOwner: LocalDataOwner = owner): LocalTombstone[] {
@@ -208,4 +212,38 @@ export function clearLocalTombstones(kind: string, ids: string[], dataOwner: Loc
 export function subscribeLocalDataOwner(listener: OwnerListener): () => void {
   listeners.add(listener)
   return () => listeners.delete(listener)
+}
+
+
+const localChangeListeners = new Set<() => void>()
+export function subscribeLocalChanges(listener: () => void): () => void {
+  localChangeListeners.add(listener)
+  return () => localChangeListeners.delete(listener)
+}
+export function notifyLocalDataChanged(): void { localChangeListeners.forEach(listener => listener()) }
+export function getSyncDeviceId(): string {
+  const key = 'vexale-sync-device-id-v1'
+  try {
+    let id = window.localStorage.getItem(key)
+    if (!id) { id = crypto.randomUUID(); window.localStorage.setItem(key, id) }
+    return id
+  } catch { return 'device-unknown' }
+}
+export function mergeGuestNamespaceInto(dataOwner: LocalDataOwner): void {
+  if (dataOwner === 'guest' || typeof window === 'undefined') return
+  const guest = getScopedLocalRecords('guest')
+  const accountByKey = new Map(getScopedLocalRecords(dataOwner).map(record => [record.key, record]))
+  for (const record of guest) {
+    const existing = accountByKey.get(record.key)
+    if (!existing || record.updatedAt > existing.updatedAt) {
+      const envelope: StoredEnvelope = { __vexaleLocalRecord: 1, ownerId: dataOwner, value: record.value, updatedAt: record.updatedAt, deleted: record.deleted }
+      try { window.localStorage.setItem(getScopedStorageKey(record.key, dataOwner), JSON.stringify(envelope)) } catch { /* Keep both namespaces intact. */ }
+    }
+  }
+}
+
+export function applyScopedRecord(record: ScopedLocalRecord, dataOwner: LocalDataOwner): void {
+  if (typeof window === 'undefined') return
+  const envelope: StoredEnvelope = { __vexaleLocalRecord: 1, ownerId: dataOwner, value: record.value, updatedAt: record.updatedAt, deleted: record.deleted }
+  try { window.localStorage.setItem(getScopedStorageKey(record.key, dataOwner), JSON.stringify(envelope)) } catch { /* Keep the remote record in the outbox for a later retry. */ }
 }
