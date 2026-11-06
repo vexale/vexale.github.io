@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import { reorderSiblingTaskTree, reparentTaskTree } from './taskTreeLogic'
 import { trackAnalytics } from '../../lib/analytics'
+import { clearLocalTombstones, getScopedStorageItem, getScopedStorageKey, recordLocalTombstones, setScopedStorageItem, subscribeLocalDataOwner } from '../../lib/localData'
 
 export type TaskStatus = 'todo' | 'doing' | 'done' | 'late'
 export const MAX_TASK_COUNT = 200
@@ -13,6 +14,8 @@ export interface TaskRecord {
   order: number
   attachedFileIds: string[]
   attachedNoteIds: string[]
+  updatedAt?: number
+  deleted?: boolean
 }
 export const TASK_TREE_KEY = 'vexale-task-tree-v1'
 export interface TaskHistoryState { canUndo: boolean; canRedo: boolean }
@@ -26,7 +29,7 @@ function validTask(value: unknown): value is TaskRecord {
 }
 function load(): TaskRecord[] {
   if (typeof window === 'undefined') return []
-  try { const value: unknown = JSON.parse(localStorage.getItem(TASK_TREE_KEY) ?? '[]'); return Array.isArray(value) ? value.filter(validTask) : [] } catch { return [] }
+  try { const value: unknown = JSON.parse(getScopedStorageItem(TASK_TREE_KEY) ?? '[]'); return Array.isArray(value) ? value.filter(validTask).map(task => ({ ...task, updatedAt: task.updatedAt ?? Date.now(), deleted: false })) : [] } catch { return [] }
 }
 let tasks = load()
 const listeners = new Set<() => void>()
@@ -37,40 +40,55 @@ const undoStack: TaskRecord[][] = []
 const redoStack: TaskRecord[][] = []
 const EMPTY_HISTORY: TaskHistoryState = { canUndo: false, canRedo: false }
 let historySnapshot: TaskHistoryState = EMPTY_HISTORY
+function persist(): void { setScopedStorageItem(TASK_TREE_KEY, JSON.stringify(tasks)) }
 function publish(): void {
   historySnapshot = { canUndo: undoStack.length > 0, canRedo: redoStack.length > 0 }
   listeners.forEach(listener => listener())
 }
 function commit(next: TaskRecord[]): void {
   if (next === tasks) return
+  const nextIds = new Set(next.map(task => task.id))
+  recordLocalTombstones('tasks', tasks.filter(task => !nextIds.has(task.id)).map(task => task.id))
+  clearLocalTombstones('tasks', next.map(task => task.id))
   undoStack.push(tasks)
   if (undoStack.length > 100) undoStack.shift()
   redoStack.length = 0
-  tasks = next
-  try { localStorage.setItem(TASK_TREE_KEY, JSON.stringify(tasks)) } catch { /* keep this session's edits if storage is unavailable */ }
+  const updatedAt = Date.now()
+  tasks = next.map(task => ({ ...task, updatedAt, deleted: false }))
+  persist()
   publish()
 }
-if (typeof window !== 'undefined') window.addEventListener('storage', event => { if (event.key === TASK_TREE_KEY) { tasks = load(); undoStack.length = 0; redoStack.length = 0; publish() } })
+if (typeof window !== 'undefined') window.addEventListener('storage', event => { if (event.key === getScopedStorageKey(TASK_TREE_KEY)) { tasks = load(); undoStack.length = 0; redoStack.length = 0; publish() } })
+subscribeLocalDataOwner(() => { tasks = load(); undoStack.length = 0; redoStack.length = 0; publish() })
 export function useTaskTreeStore(): TaskRecord[] { return useSyncExternalStore(subscribe, snapshot, () => EMPTY_TASKS) }
 export function useTaskTreeHistory(): TaskHistoryState { return useSyncExternalStore(subscribe, () => historySnapshot, () => EMPTY_HISTORY) }
 export function getTaskTree(): TaskRecord[] { return tasks.map(task => ({ ...task, attachedFileIds: [...task.attachedFileIds], attachedNoteIds: [...task.attachedNoteIds] })) }
 export function replaceTaskTree(next: TaskRecord[]): boolean {
   if (next.length > MAX_TASK_COUNT) return false
+  const nextIds = new Set(next.map(task => task.id))
+  recordLocalTombstones('tasks', tasks.filter(task => !nextIds.has(task.id)).map(task => task.id))
+  clearLocalTombstones('tasks', next.map(task => task.id))
   commit(next.map(task => ({ ...task, attachedFileIds: [...task.attachedFileIds], attachedNoteIds: [...task.attachedNoteIds] })))
   return true
 }
 export function undoTaskTree(): void {
   const previous = undoStack.pop()
   if (!previous) return
-  redoStack.push(tasks); tasks = previous
-  try { localStorage.setItem(TASK_TREE_KEY, JSON.stringify(tasks)) } catch { /* keep this session's edits if storage is unavailable */ }
+  const previousIds = new Set(previous.map(task => task.id))
+  recordLocalTombstones('tasks', tasks.filter(task => !previousIds.has(task.id)).map(task => task.id))
+  clearLocalTombstones('tasks', previous.map(task => task.id))
+  redoStack.push(tasks); tasks = previous.map(task => ({ ...task, updatedAt: Date.now(), deleted: false }))
+  persist()
   publish()
 }
 export function redoTaskTree(): void {
   const next = redoStack.pop()
   if (!next) return
-  undoStack.push(tasks); tasks = next
-  try { localStorage.setItem(TASK_TREE_KEY, JSON.stringify(tasks)) } catch { /* keep this session's edits if storage is unavailable */ }
+  const nextIds = new Set(next.map(task => task.id))
+  recordLocalTombstones('tasks', tasks.filter(task => !nextIds.has(task.id)).map(task => task.id))
+  clearLocalTombstones('tasks', next.map(task => task.id))
+  undoStack.push(tasks); tasks = next.map(task => ({ ...task, updatedAt: Date.now(), deleted: false }))
+  persist()
   publish()
 }
 export function createTask(parentId: string | null, title: string, afterId?: string): string | null {
@@ -92,6 +110,7 @@ export function removeTask(id: string): void {
   const ids = new Set<string>([id]); let changed = true
   while (changed) { changed = false; for (const task of tasks) if (task.parentId && ids.has(task.parentId) && !ids.has(task.id)) { ids.add(task.id); changed = true } }
   if (!tasks.some(task => ids.has(task.id))) return
+  recordLocalTombstones('tasks', [...ids])
   commit(tasks.filter(task => !ids.has(task.id)))
 }
 export function reparentTask(sourceId: string, parentId: string): boolean {

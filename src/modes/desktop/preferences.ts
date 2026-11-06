@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { trackAnalytics } from '../../lib/analytics'
+import { getScopedStorageItem, getScopedStorageKey, setScopedStorageItem, subscribeLocalDataOwner } from '../../lib/localData'
 
 export type DesktopTheme = 'calm-violet' | 'charcoal' | 'midnight-blue' | 'forest' | 'sand-dark' | 'rose-dusk' | 'soft-light'
 export type DesktopFont = 'instrument' | 'noto' | 'system'
@@ -83,7 +84,7 @@ function sanitize(value: unknown): DesktopPreferences {
 function loadPreferences(): DesktopPreferences {
   if (typeof window === 'undefined') return { ...DEFAULT_DESKTOP_PREFERENCES }
   try {
-    const raw = window.localStorage.getItem(DESKTOP_PREFERENCES_KEY)
+    const raw = getScopedStorageItem(DESKTOP_PREFERENCES_KEY)
     return raw ? sanitize(JSON.parse(raw) as unknown) : { ...DEFAULT_DESKTOP_PREFERENCES }
   } catch {
     return { ...DEFAULT_DESKTOP_PREFERENCES }
@@ -100,11 +101,16 @@ const getSnapshot = (): DesktopPreferences => preferences
 
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', event => {
-    if (event.key !== DESKTOP_PREFERENCES_KEY) return
+    if (event.key !== getScopedStorageKey(DESKTOP_PREFERENCES_KEY)) return
     preferences = loadPreferences()
     listeners.forEach(listener => listener())
   })
 }
+
+subscribeLocalDataOwner(() => {
+  preferences = loadPreferences()
+  listeners.forEach(listener => listener())
+})
 
 export function useDesktopPreferences(): DesktopPreferences {
   return useSyncExternalStore(subscribe, getSnapshot, () => DEFAULT_DESKTOP_PREFERENCES)
@@ -114,7 +120,7 @@ export function updateDesktopPreferences(patch: Partial<DesktopPreferences>): vo
   if (patch.theme !== undefined && patch.theme !== preferences.theme) trackAnalytics('theme_changed')
   preferences = sanitize({ ...preferences, ...patch })
   try {
-    window.localStorage.setItem(DESKTOP_PREFERENCES_KEY, JSON.stringify(preferences))
+    setScopedStorageItem(DESKTOP_PREFERENCES_KEY, JSON.stringify(preferences))
   } catch {
     // تظل التفضيلات الحالية فعالة في الجلسة عند تعذر التخزين.
   }

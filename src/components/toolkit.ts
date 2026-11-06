@@ -3,6 +3,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import { PALETTE, findNode } from '../shared'
 import type { TNode } from '../shared'
 import { isSupabaseConfigured } from '../lib/supabase'
+import { getLocalDataOwner, getScopedStorageItem, getScopedStorageKey, setScopedStorageItem, subscribeLocalDataOwner } from '../lib/localData'
 
 /* ============ رموز نظام التصميم المشترك ============ */
 export const ACCENT = '#a78bfa'
@@ -41,12 +42,29 @@ export const copy = (t: string) => navigator.clipboard?.writeText(t).catch(() =>
 /* ============ حالة محفوظة في localStorage (كتابة مؤجلة 300ms) ============ */
 export function usePersisted<T>(key: string, init: T): [T, Dispatch<SetStateAction<T>>] {
   const [v, setV] = useState<T>(() => {
-    try { const r = localStorage.getItem(key); return r ? (JSON.parse(r) as T) : init } catch { return init }
+    try { const r = getScopedStorageItem(key); return r ? (JSON.parse(r) as T) : init } catch { return init }
   })
   const latest = useRef(v)
   useEffect(() => { latest.current = v }, [v])
-  const write = () => { try { localStorage.setItem(key, JSON.stringify(latest.current)) } catch { /* تجاهل */ } }
-  useEffect(() => { const t = setTimeout(write, 300); return () => clearTimeout(t) }, [v]) // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => write, []) // eslint-disable-line react-hooks/exhaustive-deps -- نكتب آخر قيمة عند إغلاق الأداة
+  useEffect(() => subscribeLocalDataOwner(() => {
+    try { const raw = getScopedStorageItem(key); const next = raw ? JSON.parse(raw) as T : init; latest.current = next; setV(next) } catch { latest.current = init; setV(init) }
+  }), [key, init])
+  useEffect(() => {
+    const owner = getLocalDataOwner()
+    const timer = setTimeout(() => setScopedStorageItem(key, JSON.stringify(latest.current), owner), 300)
+    return () => clearTimeout(timer)
+  }, [key, v])
+  useEffect(() => {
+    const owner = getLocalDataOwner()
+    return () => { setScopedStorageItem(key, JSON.stringify(latest.current), owner) }
+  }, [key])
+  useEffect(() => {
+    const onStorage = (event: StorageEvent): void => {
+      if (event.key !== getScopedStorageKey(key)) return
+      try { const raw = getScopedStorageItem(key); const next = raw ? JSON.parse(raw) as T : init; latest.current = next; setV(next) } catch { setV(init) }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [key, init])
   return [v, setV]
 }

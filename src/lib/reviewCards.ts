@@ -1,3 +1,5 @@
+import { getScopedStorageItem, setScopedStorageItem } from './localData'
+
 export interface ReviewCard {
   id: string
   nodeId: string
@@ -10,6 +12,8 @@ export interface ReviewCard {
   easeFactor: number
   repetitions: number
   lastReviewedAt: number | null
+  updatedAt?: number
+  deleted?: boolean
 }
 
 const STORAGE_KEY = 'vexale-review-cards-v1'
@@ -18,7 +22,7 @@ const DAY = 86_400_000
 
 function read<T>(key: string, fallback: T): T {
   try {
-    const value: unknown = JSON.parse(localStorage.getItem(key) ?? 'null')
+    const value: unknown = JSON.parse(getScopedStorageItem(key) ?? 'null')
     return value === null ? fallback : value as T
   } catch {
     return fallback
@@ -26,7 +30,7 @@ function read<T>(key: string, fallback: T): T {
 }
 
 function write<T>(key: string, value: T): void {
-  try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* المراجعة تستمر خلال الجلسة عند تعذر التخزين */ }
+  setScopedStorageItem(key, JSON.stringify(value))
 }
 
 function startOfDay(timestamp = Date.now()): number {
@@ -38,10 +42,10 @@ function startOfDay(timestamp = Date.now()): number {
 export function getReviewCards(): ReviewCard[] {
   const value = read<unknown>(STORAGE_KEY, [])
   if (!Array.isArray(value)) return []
-  return value.filter((card): card is ReviewCard => Boolean(card && typeof card === 'object' && typeof (card as ReviewCard).id === 'string' && typeof (card as ReviewCard).question === 'string' && typeof (card as ReviewCard).answer === 'string' && typeof (card as ReviewCard).dueAt === 'number'))
+  return value.filter((card): card is ReviewCard => Boolean(card && typeof card === 'object' && typeof (card as ReviewCard).id === 'string' && typeof (card as ReviewCard).question === 'string' && typeof (card as ReviewCard).answer === 'string' && typeof (card as ReviewCard).dueAt === 'number')).filter(card => !card.deleted).map(card => ({ ...card, updatedAt: card.updatedAt ?? card.createdAt, deleted: false }))
 }
 
-export function saveReviewCards(cards: ReviewCard[]): void { write(STORAGE_KEY, cards) }
+export function saveReviewCards(cards: ReviewCard[]): void { const updatedAt = Date.now(); write(STORAGE_KEY, cards.map(card => ({ ...card, updatedAt, deleted: false }))) }
 
 export function addReviewCards(input: Array<{ nodeId: string; sourceTitle: string; question: string; answer: string }>): ReviewCard[] {
   const now = Date.now()

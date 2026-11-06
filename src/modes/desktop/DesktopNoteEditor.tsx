@@ -5,6 +5,8 @@ import { dbGetNote, dbPutNote } from '../../db'
 import { useDesktopMessages } from './i18n'
 import { useLocale } from '../../lib/i18n'
 import { trackAnalytics } from '../../lib/analytics'
+import { getLocalDataOwner, getScopedStorageItem, setScopedStorageItem, subscribeLocalDataOwner } from '../../lib/localData'
+import type { LocalDataOwner } from '../../lib/localData'
 
 interface DesktopNoteEditorProps {
   nodeId: string
@@ -22,22 +24,19 @@ const CHECKBOX_MARKS = new Set(['☐', '☑'])
 const ALLOWED_TAGS = new Set(['P', 'DIV', 'BR', 'H2', 'H3', 'H4', 'STRONG', 'B', 'EM', 'I', 'U', 'S', 'UL', 'OL', 'LI', 'BLOCKQUOTE', 'PRE', 'CODE', 'A', 'HR', 'SPAN', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TH', 'TD'])
 const NOTE_STYLES = new Set(['text-light', 'text-dark', 'text-lilac', 'text-sky', 'text-rose', 'text-mint', 'highlight-yellow', 'highlight-lilac', 'highlight-mint', 'highlight-rose'])
 
-function readNoteVersions(nodeId: string): NoteVersion[] {
+function noteHistoryKey(nodeId: string): string { return `vexale-note-history-v1:${encodeURIComponent(nodeId)}` }
+function readNoteVersions(nodeId: string, owner: LocalDataOwner): NoteVersion[] {
   try {
-    const key = `vexale-note-history-v1:${encodeURIComponent(nodeId)}`
-    const legacy = localStorage.getItem(key)
-    if (legacy) localStorage.removeItem(key)
-    const value: unknown = JSON.parse(sessionStorage.getItem(key) ?? legacy ?? '[]')
-    if (legacy && !sessionStorage.getItem(key)) sessionStorage.setItem(key, legacy)
+    const value: unknown = JSON.parse(getScopedStorageItem(noteHistoryKey(nodeId), owner) ?? '[]')
     return Array.isArray(value) ? value.filter((item): item is NoteVersion => Boolean(item && typeof item === 'object' && 'html' in item && typeof item.html === 'string' && 'savedAt' in item && typeof item.savedAt === 'number' && Number.isFinite(item.savedAt) && item.savedAt >= 0 && item.savedAt <= 8.64e15)).slice(0, NOTE_VERSION_LIMIT) : []
   } catch { return [] }
 }
 
-function writeNoteVersion(nodeId: string, html: string, savedAt = Date.now()): NoteVersion[] {
-  const history = readNoteVersions(nodeId)
+function writeNoteVersion(nodeId: string, html: string, savedAt = Date.now(), owner: LocalDataOwner = getLocalDataOwner()): NoteVersion[] {
+  const history = readNoteVersions(nodeId, owner)
   if (history[0]?.html === html) return history
   const next = [{ html, savedAt }, ...history.filter(version => version.html !== html)].slice(0, NOTE_VERSION_LIMIT)
-  try { sessionStorage.setItem(`vexale-note-history-v1:${encodeURIComponent(nodeId)}`, JSON.stringify(next)); localStorage.removeItem(`vexale-note-history-v1:${encodeURIComponent(nodeId)}`) } catch { /* note saving must work even when local history storage is unavailable */ }
+  setScopedStorageItem(noteHistoryKey(nodeId), JSON.stringify(next), owner)
   return next
 }
 
@@ -205,6 +204,7 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
   const [saveError, setSaveError] = useState('')
   const [words, setWords] = useState(0)
   const [noteVersions, setNoteVersions] = useState<NoteVersion[]>([])
+  const [localOwner, setLocalOwner] = useState<LocalDataOwner>(getLocalDataOwner)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [fullWidth, setFullWidth] = useState(false)
   const [writingFocus, setWritingFocus] = useState(false)
@@ -214,6 +214,8 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
   const noteMessages = messages.notes
   const errorMessageRef = useRef(noteMessages.error)
   const copyLabelRef = useRef(locale === 'ar' ? 'نسخ الشيفرة' : 'Copy code')
+
+  useEffect(() => subscribeLocalDataOwner(() => setLocalOwner(getLocalDataOwner())), [])
 
   useEffect(() => {
     if (writingFocus) document.documentElement.dataset.writingFocus = 'true'
@@ -243,7 +245,7 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
 
   useEffect(() => {
     let cancelled = false
-    void dbGetNote(nodeId)
+    void dbGetNote(nodeId, localOwner)
       .then(note => {
         if (cancelled) return
         const safeHtml = sanitizeNoteHtml(note?.html ?? '')
@@ -255,7 +257,7 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
         }
         setHasContent(hasReadableText(safeHtml))
         setWords(wordCount(safeHtml))
-        setNoteVersions(writeNoteVersion(nodeId, safeHtml, note?.updatedAt ?? Date.now()))
+        setNoteVersions(writeNoteVersion(nodeId, safeHtml, note?.updatedAt ?? Date.now(), localOwner))
         setSaveError('')
         setSaveState('saved')
       })
@@ -265,7 +267,7 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
         if (editorRef.current) editorRef.current.innerHTML = ''
         setHasContent(false)
         setWords(0)
-        setNoteVersions(readNoteVersions(nodeId))
+        setNoteVersions(readNoteVersions(nodeId, localOwner))
         setSaveError(errorMessageRef.current)
         setSaveState('error')
       })
@@ -278,15 +280,15 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
       }
       if (dirtyRef.current) {
         const html = latestHtmlRef.current
-        saveQueueRef.current = saveQueueRef.current.catch(() => undefined).then(() => dbPutNote({ nodeId, html, updatedAt: Date.now() })).then(() => { writeNoteVersion(nodeId, html) })
+        saveQueueRef.current = saveQueueRef.current.catch(() => undefined).then(() => dbPutNote({ nodeId, html, updatedAt: Date.now() }, localOwner)).then(() => { writeNoteVersion(nodeId, html, Date.now(), localOwner) })
       }
     }
-  }, [nodeId])
+  }, [nodeId, localOwner])
 
   const queueSave = (html: string): Promise<void> => {
     const next = saveQueueRef.current.catch(() => undefined).then(async () => {
-      await dbPutNote({ nodeId, html, updatedAt: Date.now() })
-      const versions = writeNoteVersion(nodeId, html)
+      await dbPutNote({ nodeId, html, updatedAt: Date.now() }, localOwner)
+      const versions = writeNoteVersion(nodeId, html, Date.now(), localOwner)
       if (mountedRef.current) setNoteVersions(versions)
     })
     saveQueueRef.current = next
@@ -500,7 +502,7 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
     const restored = sanitizeNoteHtml(version.html)
     if (restored === latestHtmlRef.current) { setHistoryOpen(false); return }
     if (timerRef.current !== null) { window.clearTimeout(timerRef.current); timerRef.current = null }
-    setNoteVersions(writeNoteVersion(nodeId, sanitizeNoteHtml(editor.innerHTML)))
+    setNoteVersions(writeNoteVersion(nodeId, sanitizeNoteHtml(editor.innerHTML), Date.now(), localOwner))
     editor.innerHTML = restored
     decorateCodeBlocks(editor, copyLabelRef.current)
     latestHtmlRef.current = restored
@@ -552,7 +554,7 @@ export default function DesktopNoteEditor({ nodeId, sectionTitle, onGenerateCard
         <button type="button" className="desk-note-toolbar-button" aria-label={noteMessages.undo} title={noteMessages.undo} disabled={saveState === 'loading'} onMouseDown={event => event.preventDefault()} onClick={() => runCommand('undo')}><Undo2 size={16} aria-hidden="true" /></button>
         <button type="button" className="desk-note-toolbar-button" aria-label={noteMessages.redo} title={noteMessages.redo} disabled={saveState === 'loading'} onMouseDown={event => event.preventDefault()} onClick={() => runCommand('redo')}><Redo2 size={16} aria-hidden="true" /></button>
         <div className="desk-note-history-wrap">
-        <button type="button" className="desk-note-toolbar-button" aria-label={noteMessages.versionHistory} title={noteMessages.versionHistory} aria-expanded={historyOpen} aria-controls="desk-note-history-panel" onMouseDown={event => event.preventDefault()} onClick={() => { setNoteVersions(readNoteVersions(nodeId)); setHistoryOpen(open => !open) }}><History size={16} aria-hidden="true" /></button>
+    <button type="button" className="desk-note-toolbar-button" aria-label={noteMessages.versionHistory} title={noteMessages.versionHistory} aria-expanded={historyOpen} aria-controls="desk-note-history-panel" onMouseDown={event => event.preventDefault()} onClick={() => { setNoteVersions(readNoteVersions(nodeId, localOwner)); setHistoryOpen(open => !open) }}><History size={16} aria-hidden="true" /></button>
         {onGenerateCards && <button type="button" className="desk-note-toolbar-button" aria-label={noteMessages.generateCards} title={noteMessages.generateCards} disabled={saveState !== 'saved' || !hasContent} onMouseDown={event => event.preventDefault()} onClick={() => onGenerateCards(plainText(latestHtmlRef.current))}><Sparkles size={16} aria-hidden="true" /></button>}
           {historyOpen && <div id="desk-note-history-panel" className="desk-note-history-popover" role="dialog" aria-label={noteMessages.versionHistoryTitle}>
             <strong>{noteMessages.versionHistoryTitle} <span>({noteVersions.length}/{NOTE_VERSION_LIMIT})</span></strong>

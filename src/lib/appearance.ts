@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { getScopedStorageItem, setScopedStorageItem, subscribeLocalDataOwner } from './localData'
 
 /* ============ إعدادات المظهر المحفوظة (الخلفية حية أم ثابتة) ============ */
 export type BgMode = 'live' | 'static'
@@ -8,7 +9,7 @@ const KEY = 'atelier-appearance-v1'
 
 function load(): Appearance {
   try {
-    const raw = localStorage.getItem(KEY)
+    const raw = getScopedStorageItem(KEY)
     const p = raw ? (JSON.parse(raw) as Partial<Appearance>) : null
     if (p && (p.bg === 'live' || p.bg === 'static')) return { bg: p.bg }
   } catch { /* تجاهل: قيمة تالفة */ }
@@ -19,10 +20,11 @@ function load(): Appearance {
 
 export function useAppearance(): [Appearance, (patch: Partial<Appearance>) => void] {
   const [appearance, setAppearance] = useState<Appearance>(load)
+  useEffect(() => subscribeLocalDataOwner(() => setAppearance(load())), [])
   const update = useCallback((patch: Partial<Appearance>) => {
     setAppearance(prev => {
       const next = { ...prev, ...patch }
-      try { localStorage.setItem(KEY, JSON.stringify(next)) } catch { /* تجاهل: التخزين ممتلئ أو ممنوع */ }
+      setScopedStorageItem(KEY, JSON.stringify(next))
       return next
     })
   }, [])

@@ -2,7 +2,8 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { trackAnalytics } from './lib/analytics'
 import type { ReactNode } from 'react'
-import { dbDelete, dbGetAll, dbPut } from './db'
+import { dbDelete, dbDeleteNotes, dbGetAll, dbPut } from './db'
+import { clearLocalTombstones, getScopedStorageItem, recordLocalTombstones, setScopedStorageItem, subscribeLocalDataOwner } from './lib/localData'
 
 // إعادة تصدير حتى لا يحتاج TreeSidebar.tsx لأي تعديل (الدالة نفسها في src/drive.ts)
 export { backupAll } from './drive'
@@ -40,7 +41,7 @@ export const sfx = {
 }
 
 /* ============ الأنواع المشتركة ============ */
-export interface TNode { id: string; title: string; ci: number; children: TNode[] }
+export interface TNode { id: string; title: string; ci: number; children: TNode[]; updatedAt?: number; deleted?: boolean }
 
 export interface Item {
   id: string
@@ -50,6 +51,8 @@ export interface Item {
   url: string
   size: number
   file?: File
+  updatedAt?: number
+  deleted?: boolean
 }
 
 // نتيجة استعادة فرع من السلة:
@@ -88,14 +91,17 @@ const insertAt = (list: TNode[], node: TNode, index: number): TNode[] => {
 /* ============ القراءة والكتابة الآمنة في localStorage ============ */
 function readJSON(key: string): unknown {
   try {
-    const raw = localStorage.getItem(key)
+    const raw = getScopedStorageItem(key)
     return raw ? JSON.parse(raw) : null
   } catch {
     return null // بيانات تالفة أو التخزين غير متاح
   }
 }
 function writeJSON(key: string, value: unknown) {
-  try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* ممتلئ أو ممنوع: نتجاهل */ }
+  const timestamp = Date.now()
+  const withSyncFields = (nodes: TNode[]): TNode[] => nodes.map(node => ({ ...node, updatedAt: timestamp, deleted: false, children: withSyncFields(node.children) }))
+  const stored = key === TREE_KEY && Array.isArray(value) ? withSyncFields(value as TNode[]) : value
+  setScopedStorageItem(key, JSON.stringify(stored))
 }
 
 // يتحقق أن كل عقدة سليمة البنية، حتى لا تنهار الواجهة إن تلف المحتوى المحفوظ
@@ -156,28 +162,34 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   // استرجاع الملفات المحفوظة عند فتح الصفحة
   useEffect(() => {
     let cancelled = false
-    dbGetAll()
-      .then(recs => {
-        if (cancelled) return
-        const loaded: Item[] = recs
-          .filter(r => r.file instanceof Blob)
-          .sort((a, b) => a.createdAt - b.createdAt)
-          .map(r => ({
-            id: r.id, nodeId: r.nodeId, name: r.name, kind: r.kind, size: r.size,
-            file: r.file, url: URL.createObjectURL(r.file),
+    let generation = 0
+    const reload = (): void => {
+      const requestGeneration = ++generation
+      itemsRef.current.forEach(item => { if (item.url) URL.revokeObjectURL(item.url) })
+      itemsRef.current = []
+      setItems([])
+      setReady(false)
+      void dbGetAll()
+        .then(records => {
+          if (cancelled || requestGeneration !== generation) return
+          const loaded: Item[] = records.filter(record => record.file instanceof Blob).sort((a, b) => a.createdAt - b.createdAt).map(record => ({
+            id: record.id, nodeId: record.nodeId, name: record.name, kind: record.kind, size: record.size,
+            file: record.file, url: URL.createObjectURL(record.file), updatedAt: record.updatedAt, deleted: false,
           }))
-        // دمج آمن: لا نكرر ملفاً أُضيف قبل اكتمال القراءة
-        setItems(p => {
-          const have = new Set(p.map(x => x.id))
-          return [...loaded.filter(x => !have.has(x.id)), ...p]
+          itemsRef.current.forEach(item => { if (item.url) URL.revokeObjectURL(item.url) })
+          itemsRef.current = loaded
+          setItems(loaded)
+          setStorageError('')
         })
-      })
-      .catch(() => { if (!cancelled) setStorageError('التخزين الدائم غير متاح في هذا المتصفح أو الوضع، ستبقى الملفات حتى تحديث الصفحة فقط') })
-      .finally(() => { if (!cancelled) setReady(true) })
+        .catch(() => { if (!cancelled && requestGeneration === generation) setStorageError('التخزين الدائم غير متاح في هذا المتصفح أو الوضع، ستبقى الملفات حتى تحديث الصفحة فقط') })
+        .finally(() => { if (!cancelled && requestGeneration === generation) setReady(true) })
+    }
+    const unsubscribe = subscribeLocalDataOwner(reload)
+    reload()
 
     // نطلب من المتصفح ألا يمسح البيانات تلقائياً عند ضيق المساحة
     navigator.storage?.persist?.().catch(() => { /* تجاهل */ })
-    return () => { cancelled = true }
+    return () => { cancelled = true; unsubscribe() }
   }, [])
 
   const add: LibCtx['add'] = i => {
@@ -234,6 +246,13 @@ export function TreeProvider({ children }: { children: ReactNode }) {
   const treeRef = useRef(tree) // آخر نسخة من الشجرة، تتيح لـ restoreNode إرجاع نتيجة فورية متزامنة
   useLayoutEffect(() => { treeRef.current = tree }, [tree])
 
+  useEffect(() => subscribeLocalDataOwner(() => {
+    const nextTree = loadTree()
+    treeRef.current = nextTree
+    setTree(nextTree)
+    setPath(loadPath())
+  }), [])
+
   // المسار المعروض دائماً سليم: لا يشير أبداً إلى فرع محذوف
   const path = useMemo(() => validPath(tree, rawPath), [tree, rawPath])
 
@@ -243,13 +262,15 @@ export function TreeProvider({ children }: { children: ReactNode }) {
 
   const addNode: TreeCtx['addNode'] = (parentId, title, trackCreatedEvent = true) => {
     const id = crypto.randomUUID()
+    clearLocalTombstones('sections', [id])
     if (trackCreatedEvent) trackAnalytics('section_created')
+    const createdAt = Date.now()
     setTree(t =>
       parentId === null
-        ? [...t, { id, title, ci: t.length % PALETTE.length, children: [] }]
+        ? [...t, { id, title, ci: t.length % PALETTE.length, children: [], updatedAt: createdAt, deleted: false }]
         : mapTree(t, parentId, p => ({
             ...p,
-            children: [...p.children, { id, title, ci: (p.ci + 1 + p.children.length) % PALETTE.length, children: [] }],
+            children: [...p.children, { id, title, ci: (p.ci + 1 + p.children.length) % PALETTE.length, children: [], updatedAt: createdAt, deleted: false }],
           })),
     )
     return id
@@ -257,14 +278,19 @@ export function TreeProvider({ children }: { children: ReactNode }) {
 
   const removeNode = (id: string) => {
     const n = findNode(tree, id)
-    if (n) removeByNodes(collectIds(n)) // يحذف ملفات الفرع وفروعه من الذاكرة ومن IndexedDB
+    if (n) {
+      const ids = collectIds(n)
+      removeByNodes(ids)
+      void dbDeleteNotes(ids)
+      recordLocalTombstones('sections', ids)
+    }
     setTree(t => removeFrom(t, id))
   }
 
   const renameNode: TreeCtx['renameNode'] = (id, title) => {
     const nextTitle = title.trim()
     if (!nextTitle || !findNode(treeRef.current, id)) return
-    const next = mapTree(treeRef.current, id, node => ({ ...node, title: nextTitle }))
+    const next = mapTree(treeRef.current, id, node => ({ ...node, title: nextTitle, updatedAt: Date.now(), deleted: false }))
     treeRef.current = next
     setTree(next)
   }
@@ -293,6 +319,7 @@ export function TreeProvider({ children }: { children: ReactNode }) {
   const restoreNode: TreeCtx['restoreNode'] = (node, parentId, index) => {
     const current = treeRef.current
     if (collectIds(node).some(id => findNode(current, id))) return 'conflict'
+    clearLocalTombstones('sections', collectIds(node))
 
     const parent = parentId === null ? undefined : findNode(current, parentId)
     const next: TNode[] = parent

@@ -4,6 +4,7 @@ import { useLocale } from '../../lib/i18n'
 import { useDesktopMessages } from './i18n'
 import { getTaskTree, updateTask, useTaskTreeStore } from './taskStore'
 import type { TaskRecord } from './taskStore'
+import { getScopedStorageItem, setScopedStorageItem } from '../../lib/localData'
 
 function dayKey(date: Date): string {
   const year = date.getFullYear()
@@ -56,9 +57,9 @@ export default function CalendarPage() {
     if (notificationState !== 'granted' || !dueToday.length) return
     const key = `vexale-calendar-notified-v1:${today}`
     try {
-      if (localStorage.getItem(key)) return
+      if (getScopedStorageItem(key)) return
       new Notification(t.notificationsTitle, { body: `${dueToday.length} ${t.tasksDueToday}` })
-      localStorage.setItem(key, '1')
+      setScopedStorageItem(key, '1')
     } catch { /* التذكيرات اختيارية ولا تؤثر على التقويم عند منعها */ }
   }, [dueToday, notificationState, t.notificationsTitle, t.tasksDueToday, today])
 

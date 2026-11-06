@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { trackAnalytics } from './analytics'
+import { getScopedStorageItem, getScopedStorageKey, setScopedStorageItem, subscribeLocalDataOwner } from './localData'
 
 export type ThemeId = 'space-live' | 'wave-field' | 'orbit-drift' | 'liquid-velvet' | 'pastel-waves' | 'botanical-flow' | 'rose-nebula' | 'moonlit-bloom' | 'cyber-grid' | 'geometric-matrix' | 'tech-pulse' | 'nova-drive' | 'star-forge' | 'space-static' | 'solid' | 'cats' | 'floral' | 'butterflies' | 'dark-vintage' | 'pastel-ai'
 export type WindowStyle = 'glass' | 'solid'
@@ -117,9 +118,9 @@ function sanitize(raw: unknown, base: Settings): Settings {
 function load(): Settings {
   const base = defaults()
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY)
+    const raw = getScopedStorageItem(SETTINGS_KEY)
     if (raw) return sanitize(JSON.parse(raw), base)
-    const legacy = localStorage.getItem(LEGACY_APPEARANCE_KEY)
+    const legacy = getScopedStorageItem(LEGACY_APPEARANCE_KEY)
     if (legacy) {
       const appearance = JSON.parse(legacy) as { bg?: unknown }
       if (appearance.bg === 'live') return { ...base, theme: 'space-live' }
@@ -133,7 +134,7 @@ function load(): Settings {
 
 function persist(settings: Settings): void {
   try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+    setScopedStorageItem(SETTINGS_KEY, JSON.stringify(settings))
   } catch {
     // تبقى الإعدادات الحالية فعالة في الجلسة.
   }
@@ -167,12 +168,18 @@ apply(state)
 
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', event => {
-    if (event.key !== SETTINGS_KEY) return
+    if (event.key !== getScopedStorageKey(SETTINGS_KEY)) return
     state = load()
     apply(state)
     emit()
   })
 }
+
+subscribeLocalDataOwner(() => {
+  state = load()
+  apply(state)
+  emit()
+})
 
 function subscribe(listener: () => void): () => void {
   listeners.add(listener)

@@ -7,6 +7,7 @@ import { useLocale } from '../../lib/i18n'
 import { useDesktopMessages } from './i18n'
 import { useDesktopPreferences } from './preferences'
 import { useFocusSessions } from './focusStore'
+import { getScopedStorageItem, setScopedStorageItem, subscribeLocalDataOwner } from '../../lib/localData'
 import type { FocusSession } from './focusStore'
 import { createTask, MAX_TASK_COUNT, updateTask, useTaskTreeStore } from './taskStore'
 import type { DesktopPage } from './types'
@@ -84,7 +85,7 @@ export default function DesktopHomePage({ onNavigate }: HomeProps) {
   const [quickTitle, setQuickTitle] = useState('')
   const [taskLimitReached, setTaskLimitReached] = useState(false)
   const [sampleLoaded, setSampleLoaded] = useState(() => {
-    try { return typeof window !== 'undefined' && window.localStorage.getItem(SAMPLE_LIBRARY_KEY) === 'loaded' }
+    try { return typeof window !== 'undefined' && getScopedStorageItem(SAMPLE_LIBRARY_KEY) === 'loaded' }
     catch { return false }
   })
   const [sampleLoading, setSampleLoading] = useState(false)
@@ -103,6 +104,8 @@ export default function DesktopHomePage({ onNavigate }: HomeProps) {
   const currentSection = path.length ? findNode(tree, path[path.length - 1]) : undefined
   const continueSection = currentSection ? sections.find(section => section.id === currentSection.id) : sections.find(section => section.id === preferences.recentItems.find(id => id.startsWith('section:'))?.slice('section:'.length))
   const recentFiles = items.slice().reverse().slice(0, 4)
+
+  useEffect(() => subscribeLocalDataOwner(() => setSampleLoaded(getScopedStorageItem(SAMPLE_LIBRARY_KEY) === 'loaded')), [])
 
   useEffect(() => {
     let cancelled = false
@@ -154,7 +157,7 @@ export default function DesktopHomePage({ onNavigate }: HomeProps) {
       setSampleStatus(sample.taskLimit)
       return
     }
-    try { window.localStorage.setItem(SAMPLE_LIBRARY_KEY, 'loaded') } catch { /* Keep this load guarded for the current view. */ }
+    setScopedStorageItem(SAMPLE_LIBRARY_KEY, 'loaded')
     setSampleLoaded(true)
     void dbPutNote({ nodeId: biologyId, html: `<h2>${sample.noteTitle}</h2><p>${sample.noteBody}</p>`, updatedAt: Date.now() })
       .then(() => setSampleStatus(sample.success))

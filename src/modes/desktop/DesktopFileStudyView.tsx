@@ -5,6 +5,7 @@ import { useLocale } from '../../lib/i18n'
 import type { Item } from '../../shared'
 import AIChat from '../../components/AIChat'
 import type { DesktopMessages } from './i18n'
+import { getScopedStorageItem, setScopedStorageItem, subscribeLocalDataOwner } from '../../lib/localData'
 
 type ChatMode = 'side' | 'split' | 'full'
 const LAYOUT_KEY = 'vexale-desktop-study-chat-layout-v1'
@@ -13,7 +14,7 @@ const MAX_CHAT_WIDTH = 900
 interface LayoutPreference { mode: ChatMode; width: number }
 function readLayout(): LayoutPreference {
   try {
-    const saved: unknown = JSON.parse(window.localStorage.getItem(LAYOUT_KEY) ?? 'null')
+    const saved: unknown = JSON.parse(getScopedStorageItem(LAYOUT_KEY) ?? 'null')
     if (saved && typeof saved === 'object') {
       const value = saved as Record<string, unknown>
       return {
@@ -48,8 +49,10 @@ export default function DesktopFileStudyView({ item, extractedText, messages, on
   const isPdf = type === 'application/pdf' || item.name.toLowerCase().endsWith('.pdf')
   const text = (english: string, arabic: string): string => locale === 'ar' ? arabic : english
 
+  useEffect(() => subscribeLocalDataOwner(() => { const layout = readLayout(); setMode(layout.mode); setChatWidth(layout.width) }), [])
+
   useEffect(() => {
-    try { window.localStorage.setItem(LAYOUT_KEY, JSON.stringify({ mode, width: chatWidth })) } catch { /* Keep the selection for this session. */ }
+    setScopedStorageItem(LAYOUT_KEY, JSON.stringify({ mode, width: chatWidth }))
   }, [mode, chatWidth])
 
   useEffect(() => {

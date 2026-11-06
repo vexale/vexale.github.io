@@ -1,9 +1,10 @@
 import { useSyncExternalStore } from 'react'
+import { getScopedStorageItem, getScopedStorageKey, setScopedStorageItem, subscribeLocalDataOwner } from '../../lib/localData'
 
 export type FocusTargetType = 'task' | 'section'
 export type FocusAmbient = 'none' | 'drone' | 'wind' | 'stars'
 export interface FocusTarget { type: FocusTargetType; id: string; title: string }
-export interface FocusSession { id: string; targetType: FocusTargetType | null; targetId: string | null; targetTitle: string | null; startedAt: number; endedAt: number; durationSeconds: number }
+export interface FocusSession { id: string; targetType: FocusTargetType | null; targetId: string | null; targetTitle: string | null; startedAt: number; endedAt: number; durationSeconds: number; updatedAt?: number; deleted?: boolean }
 export interface FocusSettings { workMinutes: number; breakMinutes: number; ambient: FocusAmbient; volume: number }
 
 export const FOCUS_SESSIONS_KEY = 'vexale-office-focus-sessions-v1'
@@ -23,24 +24,25 @@ function validSession(value: unknown): value is FocusSession {
 }
 function loadSessions(): FocusSession[] {
   if (typeof window === 'undefined') return EMPTY_SESSIONS
-  try { const value: unknown = JSON.parse(localStorage.getItem(FOCUS_SESSIONS_KEY) ?? '[]'); return Array.isArray(value) ? value.filter(validSession).slice(-1000) : [] } catch { return [] }
+  try { const value: unknown = JSON.parse(getScopedStorageItem(FOCUS_SESSIONS_KEY) ?? '[]'); return Array.isArray(value) ? value.filter(validSession).map(session => ({ ...session, updatedAt: session.updatedAt ?? session.endedAt, deleted: false })).slice(-1000) : [] } catch { return [] }
 }
 let sessions = loadSessions()
 const snapshot = (): FocusSession[] => sessions
-if (typeof window !== 'undefined') window.addEventListener('storage', event => { if (event.key === FOCUS_SESSIONS_KEY) { sessions = loadSessions(); listeners.forEach(listener => listener()) } })
+if (typeof window !== 'undefined') window.addEventListener('storage', event => { if (event.key === getScopedStorageKey(FOCUS_SESSIONS_KEY)) { sessions = loadSessions(); listeners.forEach(listener => listener()) } })
+subscribeLocalDataOwner(() => { sessions = loadSessions(); listeners.forEach(listener => listener()) })
 
 export function useFocusSessions(): FocusSession[] { return useSyncExternalStore(subscribe, snapshot, () => EMPTY_SESSIONS) }
 export function addFocusSession(session: FocusSession): void {
   if (!validSession(session)) return
-  sessions = [...sessions, session].slice(-1000)
-  try { localStorage.setItem(FOCUS_SESSIONS_KEY, JSON.stringify(sessions)) } catch { /* retain this session in memory if storage is unavailable */ }
+  sessions = [...sessions, { ...session, updatedAt: Date.now(), deleted: false }].slice(-1000)
+  setScopedStorageItem(FOCUS_SESSIONS_KEY, JSON.stringify(sessions))
   listeners.forEach(listener => listener())
 }
 
 export function readFocusSettings(): FocusSettings {
   if (typeof window === 'undefined') return DEFAULT_FOCUS_SETTINGS
   try {
-    const value: unknown = JSON.parse(localStorage.getItem(FOCUS_SETTINGS_KEY) ?? 'null')
+    const value: unknown = JSON.parse(getScopedStorageItem(FOCUS_SETTINGS_KEY) ?? 'null')
     if (!value || typeof value !== 'object' || Array.isArray(value)) return DEFAULT_FOCUS_SETTINGS
     const raw = value as Record<string, unknown>
     return {
@@ -53,5 +55,5 @@ export function readFocusSettings(): FocusSettings {
 }
 export function saveFocusSettings(settings: FocusSettings): void {
   const safe: FocusSettings = { workMinutes: Math.max(1, Math.min(120, Math.round(settings.workMinutes))), breakMinutes: Math.max(1, Math.min(60, Math.round(settings.breakMinutes))), ambient: settings.ambient, volume: Math.max(0, Math.min(1, settings.volume)) }
-  try { localStorage.setItem(FOCUS_SETTINGS_KEY, JSON.stringify(safe)) } catch { /* keep settings available for this session */ }
+  setScopedStorageItem(FOCUS_SETTINGS_KEY, JSON.stringify(safe))
 }

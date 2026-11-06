@@ -3,9 +3,11 @@ import type { FormEvent } from 'react'
 import { AlertTriangle, Bug, Check, CheckCircle2, Lightbulb, Moon, Send, UserRound } from 'lucide-react'
 import { content as legalContent, LAST_UPDATED } from '../../lib/legalContent'
 import { isAnalyticsEnabled, setAnalyticsConsent } from '../../lib/analytics'
-import { leaveSharedWorkspace } from '../../lib/sharedWorkspace'
 import { getGoogleAuthErrorMessage, useGoogleAuth, renderGoogleButton, signOutGoogle } from '../../lib/googleAuth'
 import { submitSupportRequest } from '../../lib/libraryApi'
+import { dbClearCurrentUserData } from '../../db'
+import { clearCurrentLocalStorageData, getLocalDataOwner } from '../../lib/localData'
+import { clearCurrentTrash } from '../../lib/trash'
 import { SUPPORT_EMAIL } from '../../lib/contact'
 import { useLocale, setLocale } from '../../lib/i18n'
 import { useDesktopMessages } from './i18n'
@@ -83,18 +85,23 @@ function RouteSkeleton({ label }: { label: string }) {
 function DeleteLocalData({ t }: { t: ReturnType<typeof useDesktopMessages>['workspacePages'] }) {
   const [open, setOpen] = useState(false)
   const [typed, setTyped] = useState('')
+  const [failure, setFailure] = useState('')
   const phrase = t.deletePhrase
   const erase = async (): Promise<void> => {
     if (typed !== phrase) return
-    for (const key of ['atelier-tree-v1', 'atelier-path-v1', 'vexale-office-preferences-v1', 'vexale-task-tree-v1', 'atelier-google-auth-v1', 'vexale-anonymous-analytics', 'vexale-last-backup-v1']) localStorage.removeItem(key)
-    leaveSharedWorkspace()
-    await signOutGoogle()
-    const request = indexedDB.deleteDatabase('atelier-library')
-    indexedDB.deleteDatabase('atelier-trash')
-    request.onsuccess = request.onerror = request.onblocked = () => window.location.reload()
+    const owner = getLocalDataOwner()
+    try {
+      await Promise.all([dbClearCurrentUserData(owner), clearCurrentTrash(owner)])
+      clearCurrentLocalStorageData(owner)
+      await signOutGoogle()
+      window.location.reload()
+    } catch {
+      setFailure(t.deleteFailed)
+    }
   }
   return <section className="desk-danger-zone"><h2><AlertTriangle size={18} />{t.dangerZone}</h2><p>{t.deleteWarning}</p>
-    {!open ? <button type="button" className="desk-button desk-danger-button" onClick={() => setOpen(true)}>{t.deleteLocal}</button> : <div className="desk-confirm-delete"><label>{t.typeToConfirm}<input value={typed} onChange={e => setTyped(e.target.value)} autoComplete="off" /></label><button type="button" className="desk-button desk-danger-button" disabled={typed !== phrase} onClick={() => void erase()}>{t.confirmDelete}</button><button type="button" className="desk-button" onClick={() => { setOpen(false); setTyped('') }}>{t.cancel}</button></div>}
+    {!open ? <button type="button" className="desk-button desk-danger-button" onClick={() => { setFailure(''); setOpen(true) }}>{t.deleteLocal}</button> : <div className="desk-confirm-delete"><label>{t.typeToConfirm}<input value={typed} onChange={e => setTyped(e.target.value)} autoComplete="off" /></label><button type="button" className="desk-button desk-danger-button" disabled={typed !== phrase} onClick={() => void erase()}>{t.confirmDelete}</button><button type="button" className="desk-button" onClick={() => { setOpen(false); setTyped(''); setFailure('') }}>{t.cancel}</button></div>}
+    {failure && <p role="alert" className="desk-inline-status">{failure}</p>}
   </section>
 }
 

@@ -1,10 +1,11 @@
 import { dbGetAll, dbGetNote } from '../db'
 import { getTaskTree } from '../modes/desktop/taskStore'
 import { serializeLibraryBackup } from './libraryBackup'
+import { getScopedStorageItem } from './localData'
 
 function readTree(): unknown {
   try {
-    const raw = localStorage.getItem('atelier-tree-v1')
+    const raw = getScopedStorageItem('atelier-tree-v1')
     return raw ? JSON.parse(raw) : []
   } catch {
     return []
