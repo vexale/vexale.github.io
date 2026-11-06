@@ -322,6 +322,7 @@ export async function dbMergeGuestFilesIntoAccount(accountOwner: LocalDataOwner)
     for (const record of guest) {
       const existing = byId.get(record.id)
       if (!existing || record.updatedAt > existing.updatedAt) store.put({ ...record, ownerId: accountOwner, storageKey: `${accountOwner}:${record.id}` })
+      else if (record.file instanceof Blob && !(existing.file instanceof Blob)) store.put({ ...existing, file: record.file, ownerId: accountOwner, storageKey: `${accountOwner}:${record.id}` })
     }
     tx.oncomplete = () => { notifyLocalDataChanged(); resolve() }
     tx.onerror = tx.onabort = () => reject(tx.error ?? new Error('Could not merge guest files'))

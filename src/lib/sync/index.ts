@@ -13,6 +13,7 @@ const OUTBOX_DB = 'vexale-sync-outbox-v1'
 const OUTBOX_STORE = 'records'
 const DEVICE_META_KEY = 'vexale-sync-record-devices-v1'
 const FILE_UPLOAD_META_KEY = 'vexale-sync-file-uploaded-v1'
+const LAST_SYNC_KEY = 'vexale-sync-last-success-v1'
 const PAGE_SIZE = 250
 const MAX_FILE_BYTES = 50 * 1024 * 1024
 let running = false
@@ -20,12 +21,19 @@ let retryTimer: ReturnType<typeof setTimeout> | undefined
 let debounceTimer: ReturnType<typeof setTimeout> | undefined
 let retryAttempt = 0
 
+function readLastSyncAt(): number | null {
+  try { const value = Number(localStorage.getItem(LAST_SYNC_KEY)); return Number.isFinite(value) && value > 0 ? value : null } catch { return null }
+}
 export type SyncPhase = 'synced' | 'syncing' | 'offline' | 'error'
 export type FileSyncState = 'pending' | 'uploading' | 'synced' | 'offline' | 'error' | 'too-large' | 'downloading'
 export interface SyncStatus { phase: SyncPhase; pendingCount: number; lastSyncAt: number | null; error: string | null; files: Record<string, FileSyncState> }
-let syncStatus: SyncStatus = { phase: typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'synced', pendingCount: 0, lastSyncAt: null, error: null, files: {} }
+let syncStatus: SyncStatus = { phase: typeof navigator !== 'undefined' && !navigator.onLine ? 'offline' : 'synced', pendingCount: 0, lastSyncAt: readLastSyncAt(), error: null, files: {} }
 const statusListeners = new Set<() => void>()
-function updateStatus(update: Partial<SyncStatus>): void { syncStatus = { ...syncStatus, ...update }; statusListeners.forEach(listener => listener()) }
+function updateStatus(update: Partial<SyncStatus>): void {
+  syncStatus = { ...syncStatus, ...update }
+  if (typeof update.lastSyncAt === 'number') { try { localStorage.setItem(LAST_SYNC_KEY, String(update.lastSyncAt)) } catch { /* Keep this diagnostic optional. */ } }
+  statusListeners.forEach(listener => listener())
+}
 const subscribeStatus = (listener: () => void): (() => void) => { statusListeners.add(listener); return () => statusListeners.delete(listener) }
 export function useSyncStatus(): SyncStatus { return useSyncExternalStore(subscribeStatus, () => syncStatus, () => syncStatus) }
 export function getSyncStatus(): SyncStatus { return syncStatus }
@@ -233,6 +241,7 @@ export function initializeSync(): void {
       try { window.localStorage.setItem(mergeMarker, owner) } catch { /* Repeat the idempotent union on the next session. */ }
     }
     await queue(records, owner)
+    updateStatus({ pendingCount: (await getOutbox(owner)).length })
     void syncNow()
   }
   const unsubscribeOwner = subscribeLocalDataOwner(() => { void activate(getLocalDataOwner()) })

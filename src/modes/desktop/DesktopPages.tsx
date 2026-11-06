@@ -17,6 +17,7 @@ import TrashPage from './TrashPage'
 import { DESKTOP_THEME_COLORS as THEME_COLORS } from './themeCatalog'
 import ReviewPage from './ReviewPage'
 import CalendarPage from './CalendarPage'
+import { retrySyncNow, useSyncStatus } from '../../lib/sync'
 
 const DesktopToolsPage = lazy(() => import('./DesktopToolsPage'))
 const DesktopTaskTreePage = lazy(() => import('./DesktopTaskTreePage'))
@@ -27,6 +28,7 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
   const prefs = useDesktopPreferences()
   const [status, setStatus] = useState('')
   const { user, loading } = useGoogleAuth()
+  const sync = useSyncStatus()
   const authRef = useRef<HTMLDivElement>(null)
   const t = m.workspacePages
   const [workspaceMode, setWorkspaceMode] = useState<'office' | 'space'>('office')
@@ -61,6 +63,14 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
 
   if (page === 'account') return <section className="desk-account-layout">
     <div className="desk-account-profile">{user?.picture ? <img src={user.picture} alt="" /> : <UserRound size={30} aria-hidden="true" />}<div><strong>{user?.name ?? t.signedOut}</strong><span>{user?.email ?? t.signInPrompt}</span></div>{user ? <button type="button" className="desk-button" onClick={signOutGoogle}>{t.signOut}</button> : <div className="desk-google-signin" ref={authRef} aria-label={t.signInGoogle} />}</div>
+    <section className="desk-account-sync" aria-labelledby="desk-account-sync-title">
+      <h2 id="desk-account-sync-title">{locale === 'ar' ? 'مزامنة المكتبة' : 'Library sync'}</h2>
+      <p>{locale === 'ar' ? 'الحالة' : 'Status'}: {sync.phase === 'syncing' ? (locale === 'ar' ? 'جارٍ المزامنة' : 'Syncing') : sync.phase === 'error' ? (locale === 'ar' ? 'خطأ' : 'Error') : sync.phase === 'offline' ? (locale === 'ar' ? 'دون اتصال — محفوظ على هذا الجهاز' : 'Offline — saved on this device') : (locale === 'ar' ? 'تمت المزامنة' : 'Synced')}</p>
+      <p>{locale === 'ar' ? 'آخر مزامنة' : 'Last sync'}: {sync.lastSyncAt ? new Date(sync.lastSyncAt).toLocaleString(locale === 'ar' ? 'ar' : 'en') : (locale === 'ar' ? 'لم تتم المزامنة بعد' : 'Not synced yet')}</p>
+      <p>{locale === 'ar' ? 'التغييرات المعلّقة' : 'Pending changes'}: <strong>{new Intl.NumberFormat(locale === 'ar' ? 'ar' : 'en').format(sync.pendingCount)}</strong></p>
+      {sync.error && <p role="alert" className="desk-inline-error">{sync.error}</p>}
+      <button type="button" className="desk-button desk-button-primary" disabled={!user || sync.phase === 'syncing'} onClick={retrySyncNow} style={{ minHeight: 44, background: 'var(--accent)' }}>{locale === 'ar' ? 'زامن الآن' : 'Sync now'}</button>
+    </section>
     <div className="desk-account-actions">
       <button type="button" className="desk-button" disabled aria-disabled="true">{t.comingSoon}</button>
     </div>

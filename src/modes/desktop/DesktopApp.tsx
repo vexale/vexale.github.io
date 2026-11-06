@@ -15,6 +15,7 @@ import FeedbackWidget from './FeedbackWidget'
 import DesktopSkeleton from './DesktopSkeleton'
 import OfflineNotice from './OfflineNotice'
 import { activatePwaUpdate, promptPwaInstall, usePwaState } from '../../lib/pwa'
+import SyncStatusChip from '../../components/SyncStatusChip'
 import './desktop.css'
 import './performance.css'
 
@@ -165,6 +166,7 @@ export default function DesktopApp({ onSwitchToSpace }: DesktopAppProps) {
           <button type="button" className="desk-command-trigger" aria-label={messages.commandPalette.open} onClick={() => setPaletteOpen(true)}><Search size={16} aria-hidden="true" /><span>{messages.commandPalette.open}</span><kbd dir="ltr">Ctrl+K</kbd></button>
           <button type="button" className="desk-button desk-language-toggle" aria-label={messages.language.switch} onClick={() => setLocale(locale === 'ar' ? 'en' : 'ar')}><span>{messages.language.nextLabel}</span></button>
           <button type="button" className="desk-button desk-mode-switch" aria-label={messages.mode.switchToSpace} onClick={onSwitchToSpace}><Monitor size={17} aria-hidden="true" /><span>{messages.mode.space}</span></button>
+          <SyncStatusChip />
           <DesktopFocusTimer />
         </div>
       </header>
