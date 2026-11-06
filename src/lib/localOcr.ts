@@ -41,6 +41,9 @@ export async function extractLocalOcr(
   const worker = await createWorker('ara', 1, {
     workerPath: tesseractWorkerUrl,
     workerBlobURL: false,
+    corePath: new URL('/ocr/core', window.location.origin).href,
+    langPath: new URL('/ocr/lang', window.location.origin).href,
+    gzip: true,
     logger: ({ progress, status }) => {
       if (signal.aborted) return
       const phase: OcrPhase = status.includes('traineddata') || status.includes('language')
@@ -81,7 +84,12 @@ export async function extractLocalOcr(
     if (signal.aborted) throw new DOMException('OCR cancelled', 'AbortError')
     pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl
     const bytes = await withAbort(file.arrayBuffer(), signal)
-    const loadingTask = pdfjs.getDocument({ data: new Uint8Array(bytes) })
+    const loadingTask = pdfjs.getDocument({
+      data: new Uint8Array(bytes),
+      standardFontDataUrl: new URL('/pdf/standard_fonts/', window.location.origin).href,
+      cMapUrl: new URL('/pdf/cmaps/', window.location.origin).href,
+      cMapPacked: true,
+    })
     let destroyPromise: Promise<void> | undefined
     const destroyLoadingTask = () => (destroyPromise ??= loadingTask.destroy())
     activePdfDestroy = () => { void destroyLoadingTask() }
