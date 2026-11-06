@@ -3,9 +3,8 @@ import type { FormEvent } from 'react'
 import { AlertTriangle, Bug, Check, CheckCircle2, Lightbulb, Moon, Send, UserRound } from 'lucide-react'
 import { content as legalContent, LAST_UPDATED } from '../../lib/legalContent'
 import { isAnalyticsEnabled, setAnalyticsConsent } from '../../lib/analytics'
-import { createSharedWorkspace } from '../../lib/libraryApi'
-import { activateWorkspace, createWorkspaceInvite, leaveSharedWorkspace, useSharedWorkspace } from '../../lib/sharedWorkspace'
-import { useGoogleAuth, getGoogleIdToken, renderGoogleButton, signOutGoogle } from '../../lib/googleAuth'
+import { leaveSharedWorkspace } from '../../lib/sharedWorkspace'
+import { getGoogleAuthErrorMessage, useGoogleAuth, renderGoogleButton, signOutGoogle } from '../../lib/googleAuth'
 import { submitSupportRequest } from '../../lib/libraryApi'
 import { SUPPORT_EMAIL } from '../../lib/contact'
 import { useLocale, setLocale } from '../../lib/i18n'
@@ -24,33 +23,18 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
   const m = useDesktopMessages()
   const locale = useLocale()
   const prefs = useDesktopPreferences()
-  const [shareBusy, setShareBusy] = useState(false)
-  const [shareLink, setShareLink] = useState('')
   const [status, setStatus] = useState('')
-  const { user } = useGoogleAuth()
-  const sharedWorkspace = useSharedWorkspace()
+  const { user, loading } = useGoogleAuth()
   const authRef = useRef<HTMLDivElement>(null)
   const t = m.workspacePages
   const [workspaceMode, setWorkspaceMode] = useState<'office' | 'space'>('office')
 
   useEffect(() => {
-    if (page === 'account' && !user && authRef.current) {
-      void renderGoogleButton(authRef.current, 240, result => setStatus(result.error ?? t.signedIn), locale)
-        .catch(() => setStatus(t.authUnavailable))
+    if (page === 'account' && !user && !loading && authRef.current) {
+      void renderGoogleButton(authRef.current, 240, result => setStatus(result.error ? getGoogleAuthErrorMessage(result.error, locale) : t.signedIn), locale)
+        .catch(reason => setStatus(getGoogleAuthErrorMessage(reason instanceof Error ? reason.message : t.authUnavailable, locale)))
     }
-  }, [page, user, locale, t.authUnavailable, t.signedIn])
-
-  const createOrCopyShareLink = async (): Promise<void> => {
-    if (!getGoogleIdToken()) { setStatus(t.shareSignIn); return }
-    setShareBusy(true); setStatus('')
-    try {
-      let activeWorkspace = sharedWorkspace
-      if (!activeWorkspace) { activeWorkspace = await createSharedWorkspace(); activateWorkspace(activeWorkspace) }
-      const link = createWorkspaceInvite(activeWorkspace)
-      setShareLink(link)
-      try { await navigator.clipboard.writeText(link); setStatus(t.shareCopied) } catch { setStatus(t.shareReady) }
-    } catch { setStatus(t.shareFailed) } finally { setShareBusy(false) }
-  }
+  }, [page, user, loading, locale, t.authUnavailable, t.signedIn])
 
   if (page === 'themes') return <section className="desk-theme-grid" aria-label={m.pages.themes.title}>{Object.keys(THEME_COLORS).map(id => {
     const [bg, surface, accent] = THEME_COLORS[id as keyof typeof THEME_COLORS]
@@ -76,9 +60,8 @@ export function DesktopPageContent({ page, onSwitchToSpace, onOpenPrivacy }: { p
   if (page === 'account') return <section className="desk-account-layout">
     <div className="desk-account-profile">{user?.picture ? <img src={user.picture} alt="" /> : <UserRound size={30} aria-hidden="true" />}<div><strong>{user?.name ?? t.signedOut}</strong><span>{user?.email ?? t.signInPrompt}</span></div>{user ? <button type="button" className="desk-button" onClick={signOutGoogle}>{t.signOut}</button> : <div className="desk-google-signin" ref={authRef} aria-label={t.signInGoogle} />}</div>
     <div className="desk-account-actions">
-      <button type="button" className="desk-button" disabled={shareBusy} onClick={() => void createOrCopyShareLink()}>{shareBusy ? t.sharing : t.shareLink}</button>
+      <button type="button" className="desk-button" disabled aria-disabled="true">{t.comingSoon}</button>
     </div>
-    {shareLink && <p className="desk-share-link" dir="ltr"><a href={shareLink}>{shareLink}</a></p>}
     <DeleteLocalData t={t} />
     {status && <p className="desk-inline-status" role="status">{status}</p>}
   </section>
@@ -101,17 +84,17 @@ function DeleteLocalData({ t }: { t: ReturnType<typeof useDesktopMessages>['work
   const [open, setOpen] = useState(false)
   const [typed, setTyped] = useState('')
   const phrase = t.deletePhrase
-  const erase = (): void => {
+  const erase = async (): Promise<void> => {
     if (typed !== phrase) return
     for (const key of ['atelier-tree-v1', 'atelier-path-v1', 'vexale-office-preferences-v1', 'vexale-task-tree-v1', 'atelier-google-auth-v1', 'vexale-anonymous-analytics', 'vexale-last-backup-v1']) localStorage.removeItem(key)
     leaveSharedWorkspace()
-    signOutGoogle()
+    await signOutGoogle()
     const request = indexedDB.deleteDatabase('atelier-library')
     indexedDB.deleteDatabase('atelier-trash')
     request.onsuccess = request.onerror = request.onblocked = () => window.location.reload()
   }
   return <section className="desk-danger-zone"><h2><AlertTriangle size={18} />{t.dangerZone}</h2><p>{t.deleteWarning}</p>
-    {!open ? <button type="button" className="desk-button desk-danger-button" onClick={() => setOpen(true)}>{t.deleteLocal}</button> : <div className="desk-confirm-delete"><label>{t.typeToConfirm}<input value={typed} onChange={e => setTyped(e.target.value)} autoComplete="off" /></label><button type="button" className="desk-button desk-danger-button" disabled={typed !== phrase} onClick={erase}>{t.confirmDelete}</button><button type="button" className="desk-button" onClick={() => { setOpen(false); setTyped('') }}>{t.cancel}</button></div>}
+    {!open ? <button type="button" className="desk-button desk-danger-button" onClick={() => setOpen(true)}>{t.deleteLocal}</button> : <div className="desk-confirm-delete"><label>{t.typeToConfirm}<input value={typed} onChange={e => setTyped(e.target.value)} autoComplete="off" /></label><button type="button" className="desk-button desk-danger-button" disabled={typed !== phrase} onClick={() => void erase()}>{t.confirmDelete}</button><button type="button" className="desk-button" onClick={() => { setOpen(false); setTyped('') }}>{t.cancel}</button></div>}
   </section>
 }
 
@@ -132,7 +115,7 @@ function SupportPage({ onOpenPrivacy }: { onOpenPrivacy: () => void }) {
   const submit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault()
     if (busy) return
-    if (!getGoogleIdToken()) { setStatus({ kind: 'error', text: t.signInToSend }); return }
+    if (!user) { setStatus({ kind: 'error', text: t.signInToSend }); return }
     setBusy(true); setStatus(null)
     try { await submitSupportRequest({ category, subject: title, message: details, contactEmail: email || user?.email || '' }); setStatus({ kind: 'success', text: t.messageSent }); setTitle(''); setDetails('') }
     catch { setStatus({ kind: 'error', text: t.messageFailed }) } finally { setBusy(false) }

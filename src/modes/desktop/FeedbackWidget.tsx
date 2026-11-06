@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
 import { MessageSquareText, Star, X } from 'lucide-react'
-import { getGoogleIdToken } from '../../lib/googleAuth'
+import { useGoogleAuth } from '../../lib/googleAuth'
 import { submitSupportRequest } from '../../lib/libraryApi'
 import type { DesktopPage } from './types'
 import { useDesktopMessages } from './i18n'
@@ -16,6 +16,7 @@ interface FeedbackWidgetProps {
 export default function FeedbackWidget({ open, page, onClose, onRequestAuth }: FeedbackWidgetProps) {
   const messages = useDesktopMessages()
   const t = messages.feedback
+  const { user } = useGoogleAuth()
   const pageName = page === 'home' ? messages.homeDashboard.pageTitle : messages.pages[page].title
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
@@ -44,7 +45,7 @@ export default function FeedbackWidget({ open, page, onClose, onRequestAuth }: F
   const submit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault()
     if (busy || rating < 1 || rating > 5) return
-    if (!getGoogleIdToken()) { setStatus('signIn'); return }
+    if (!user) { setStatus('signIn'); return }
     busyRef.current = true
     setBusy(true)
     setStatus('')

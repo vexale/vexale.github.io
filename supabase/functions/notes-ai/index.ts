@@ -1,7 +1,5 @@
-import { createRemoteJWKSet, jwtVerify } from 'npm:jose@6'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
-const GOOGLE_JWKS = createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'))
 const GEMINI_MODEL = 'gemini-3.6-flash'
 const MAX_BODY_BYTES = 100 * 1024
 const MAX_NOTE_CHARACTERS = 16_000
@@ -133,36 +131,16 @@ Deno.serve(async request => {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: makeHeaders(origin) })
   if (request.method !== 'POST') return jsonResponse(request, { error: 'This request could not be completed.' }, 405, { Allow: 'POST, OPTIONS' })
 
-  const googleClientId = Deno.env.get('GOOGLE_CLIENT_ID')?.trim()
   const geminiApiKey = Deno.env.get('GEMINI_API_KEY')?.trim()
-  if (!googleClientId || !geminiApiKey) {
+  if (!geminiApiKey) {
     return jsonResponse(request, { error: 'The AI assistant is being prepared. Please try again soon.' }, 503)
   }
 
   const authorization = request.headers.get('authorization') ?? ''
   const bearerMatch = authorization.match(/^Bearer\s+(.+)$/i)
-  const googleIdToken = bearerMatch?.[1]?.trim()
-  if (!googleIdToken || googleIdToken.length > 8_192) {
+  const accessToken = bearerMatch?.[1]?.trim()
+  if (!accessToken || accessToken.length > 8_192) {
     return jsonResponse(request, { error: 'Sign in with Google to use the AI assistant.' }, 401)
-  }
-
-  let googleSubject: string
-  try {
-    const verified = await jwtVerify(googleIdToken, GOOGLE_JWKS, {
-      algorithms: ['RS256'],
-      audience: googleClientId,
-      issuer: ['accounts.google.com', 'https://accounts.google.com'],
-      clockTolerance: 5,
-    })
-    if (typeof verified.payload.sub !== 'string' || !verified.payload.sub) {
-      return jsonResponse(request, { error: 'We could not verify this Google account.' }, 401)
-    }
-    if (verified.payload.email_verified !== true && verified.payload.email_verified !== 'true') {
-      return jsonResponse(request, { error: 'Use a verified Google account to continue.' }, 401)
-    }
-    googleSubject = verified.payload.sub
-  } catch {
-    return jsonResponse(request, { error: 'Your Google session needs to be refreshed. Please sign in again.' }, 401)
   }
 
   let admin: ReturnType<typeof getAdminClient>
@@ -171,6 +149,11 @@ Deno.serve(async request => {
   } catch {
     return jsonResponse(request, { error: 'The AI assistant is being prepared. Please try again soon.' }, 503)
   }
+  const { data: authData, error: authError } = await admin.auth.getUser(accessToken)
+  if (authError || !authData.user) {
+    return jsonResponse(request, { error: 'Your session needs to be refreshed. Please sign in again.' }, 401)
+  }
+  const googleSubject = authData.user.id
   const { data: allowed, error: rateLimitError } = await admin.rpc('claim_notes_ai_request', { p_google_subject_hash: await hashSubject(googleSubject) })
   if (rateLimitError) {
     console.error('AI request quota check failed', rateLimitError.code ?? 'database error')

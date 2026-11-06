@@ -150,8 +150,9 @@ Deno.serve(async request => {
   }
 
   if (body.action === 'support.submit') {
-    const subjectId = await verifyGoogleToken(token)
-    if (!subjectId) return jsonResponse({ error: 'Sign in again to send your message.' }, 401)
+    const { data: authData, error: authError } = await admin.auth.getUser(token)
+    const subjectId = authData.user?.id
+    if (authError || !subjectId) return jsonResponse({ error: 'Sign in again to send your message.' }, 401)
 
     const category = body.category
     const subject = typeof body.subject === 'string' ? body.subject.trim() : ''

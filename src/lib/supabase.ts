@@ -160,7 +160,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
 export async function signOutUser(): Promise<AuthResult> {
   if (!supabase) return { error: null }
   try {
-    const { error } = await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut({ scope: 'local' })
     return { error: error ? translateError(error.message) : null }
   } catch (e) {
     return { error: errorText(e) }

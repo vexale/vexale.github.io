@@ -35,6 +35,14 @@ function getGoogleToken(): string {
   return token
 }
 
+async function getSupabaseAccessToken(): Promise<string> {
+  if (!supabase) throw new Error('Supabase is not configured.')
+  if (typeof navigator !== 'undefined' && !navigator.onLine) throw new Error('offline')
+  const { data, error } = await supabase.auth.getSession()
+  if (error || !data.session?.access_token) throw new Error(error?.message ?? 'Sign in to continue.')
+  return data.session.access_token
+}
+
 async function invokeLibraryApi(
   body: Record<string, unknown>,
   bearerToken: string,
@@ -57,7 +65,7 @@ async function invokeLibraryApi(
 }
 
 export async function submitSupportRequest(request: SupportRequest): Promise<void> {
-  await invokeLibraryApi({ action: 'support.submit', ...request }, getGoogleToken())
+  await invokeLibraryApi({ action: 'support.submit', ...request }, await getSupabaseAccessToken())
 }
 
 export async function createSharedWorkspace(): Promise<SharedWorkspaceCredentials> {

@@ -1,4 +1,3 @@
-import { getGoogleIdToken } from './googleAuth'
 import type { Locale } from './i18n'
 import { supabase } from './supabase'
 
@@ -51,9 +50,11 @@ function localizeServerError(message: string | null, language: Locale): string {
 export async function requestStudyAI(request: StudyAIRequest): Promise<string> {
   const language = request.language ?? 'en'
   const message = (english: string, arabic: string): string => language === 'ar' ? arabic : english
-  const googleIdToken = getGoogleIdToken()
-  if (!googleIdToken) throw new Error(message('Sign in or reconnect your Google account to continue.', 'سجّل الدخول بحساب Google أو أعد الاتصال للمتابعة.'))
   if (!supabase) throw new Error(message('AI tools are not configured yet. Check the Supabase public URL and key.', 'لم يتم إعداد اتصال Supabase بعد. تحقّق من رابط المشروع ومفتاحه العام.'))
+  if (typeof navigator !== 'undefined' && !navigator.onLine) throw new Error(message('You are offline. The AI request needs an internet connection.', 'أنت غير متصل. يحتاج طلب الذكاء الاصطناعي إلى اتصال بالإنترنت.'))
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+  const accessToken = sessionData.session?.access_token
+  if (sessionError || !accessToken) throw new Error(message('Sign in with Google to continue.', 'سجّل الدخول عبر Google للمتابعة.'))
 
   const notes = request.notes.trim()
   const question = request.question?.trim() ?? ''
@@ -82,7 +83,7 @@ export async function requestStudyAI(request: StudyAIRequest): Promise<string> {
         language,
         questionCount: request.questionCount,
       },
-      headers: { Authorization: `Bearer ${googleIdToken}` },
+      headers: { Authorization: `Bearer ${accessToken}` },
     }).catch(async requestError => {
     const serverMessage = await getServerErrorMessage(requestError)
     throw new Error(localizeServerError(serverMessage, language), { cause: requestError })

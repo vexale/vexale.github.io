@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { LogOut, X } from 'lucide-react'
-import { getGoogleIdToken, isGoogleConfigured, renderGoogleButton, signOutGoogle, useGoogleAuth } from '../lib/googleAuth'
+import { getGoogleAuthErrorMessage, isGoogleConfigured, renderGoogleButton, signOutGoogle, useGoogleAuth } from '../lib/googleAuth'
 import { tr, useLocale } from '../lib/i18n'
 import { sfx } from '../shared'
 
@@ -10,15 +10,10 @@ interface Props {
   onClose: () => void
 }
 
-function localizeAuthError(error: string, locale: 'en' | 'ar'): string {
-  void error
-  return locale === 'en' ? 'Sign-in could not finish. Please try again.' : 'لم يكتمل تسجيل الدخول. حاول مرة أخرى.'
-}
-
 export default function AuthModal({ open, onClose }: Props) {
   const locale = useLocale()
-  const { user } = useGoogleAuth()
-  const activeUser = user && getGoogleIdToken() ? user : null
+  const { user, loading } = useGoogleAuth()
+  const activeUser = user
   const buttonRef = useRef<HTMLDivElement>(null)
   const closeRef = useRef(onClose)
   const [error, setError] = useState('')
@@ -29,14 +24,14 @@ export default function AuthModal({ open, onClose }: Props) {
   useEffect(() => { closeRef.current = onClose }, [onClose])
 
   useEffect(() => {
-    if (!open || activeUser || !isGoogleConfigured || !buttonRef.current) return undefined
+    if (!open || activeUser || loading || !isGoogleConfigured || !buttonRef.current) return undefined
     let cancelled = false
     setError('')
     setReady(false)
     renderGoogleButton(buttonRef.current, 300, result => {
       if (cancelled) return
       if (result.error) {
-        setError(localizeAuthError(result.error, locale))
+        setError(getGoogleAuthErrorMessage(result.error, locale))
         return
       }
       sfx.success()
@@ -44,10 +39,10 @@ export default function AuthModal({ open, onClose }: Props) {
     }, locale)
       .then(() => { if (!cancelled) setReady(true) })
       .catch((reason: unknown) => {
-        if (!cancelled) setError(localizeAuthError(reason instanceof Error ? reason.message : 'Unexpected sign-in error.', locale))
+        if (!cancelled) setError(getGoogleAuthErrorMessage(reason instanceof Error ? reason.message : 'Unexpected sign-in error.', locale))
       })
     return () => { cancelled = true }
-  }, [activeUser, locale, open])
+  }, [activeUser, loading, locale, open])
 
   useEffect(() => {
     if (!open) return undefined
@@ -105,7 +100,7 @@ export default function AuthModal({ open, onClose }: Props) {
                   </div>
                   <button
                     type="button"
-                    onClick={() => { signOutGoogle(); sfx.close(); onClose() }}
+                    onClick={() => { void signOutGoogle().then(result => { if (result.error) setError(getGoogleAuthErrorMessage(result.error, locale)); else { sfx.close(); onClose() } }) }}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-white/10 px-3 py-2.5 text-sm transition hover:bg-white/20 active:scale-[0.99]"
                   >
                     <LogOut size={14} />{text('Sign out', 'تسجيل الخروج')}
@@ -123,9 +118,7 @@ export default function AuthModal({ open, onClose }: Props) {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <p className="text-sm opacity-75">{user
-                    ? text('Reconnect with Google to continue using your account across cloud features.', 'أعد الاتصال بحساب Google لمتابعة استخدام الميزات السحابية.')
-                    : text('Sign in to create a shared workspace or send a support message.', 'سجّل الدخول لإنشاء مساحة مشتركة أو إرسال رسالة دعم.')}</p>
+                  <p className="text-sm opacity-75">{text('Sign in with Google to enable account features and send support messages.', 'سجّل الدخول عبر Google لتفعيل ميزات الحساب وإرسال رسائل الدعم.')}</p>
                   <div className="relative flex min-h-11 items-center justify-center">
                     <div ref={buttonRef} />
                     {!ready && !error && <span className="absolute text-xs opacity-55">{text('Loading Google sign-in…', 'جارٍ تحميل تسجيل الدخول بحساب Google…')}</span>}

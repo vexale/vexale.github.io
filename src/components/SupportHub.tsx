@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Bug, CheckCircle2, Lightbulb, Send } from 'lucide-react'
-import { getGoogleIdToken, useGoogleAuth } from '../lib/googleAuth'
+import { useGoogleAuth } from '../lib/googleAuth'
 import { submitSupportRequest } from '../lib/libraryApi'
 import { tr, useLocale } from '../lib/i18n'
 import type { SupportCategory } from '../lib/libraryApi'
@@ -30,7 +30,7 @@ export default function SupportHub({ onRequestAuth }: SupportHubProps) {
   const send = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault()
     if (busy) return
-    if (!getGoogleIdToken()) {
+    if (!user) {
       setStatus({ kind: 'error', text: text('Sign in to send your message.', 'سجّل الدخول لإرسال رسالتك.') })
       onRequestAuth()
       return
